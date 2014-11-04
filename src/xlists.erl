@@ -1,23 +1,16 @@
 -module(xlists).
 
--export([find/2, sorted_find/2, subsets/2, unique/1, drop/2, take/2]).
+-export([sorted_member/2, subsets/2, unique/1, drop/2, take/2]).
 
-
-%%%%% ------------------------------------------------------- %%%%%
-
-    
-find(_X, []) -> false;
-find(X, [X | _Tl]) -> true;
-find(X, [_Hd | Tl]) -> find(X, Tl).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-sorted_find(_X, []) -> false;
-sorted_find(X, [X | _Tl]) -> true;
-sorted_find(X, [Hd, _Tl]) when X < Hd -> false;
-sorted_find(X, [_Hd | Tl]) -> sorted_find(X, Tl).
+sorted_member(_X, []) -> false;
+sorted_member(X, [X | _Tl]) -> true;
+sorted_member(X, [Hd, _Tl]) when X < Hd -> false;
+sorted_member(X, [_Hd | Tl]) -> sorted_member(X, Tl).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -40,8 +33,10 @@ unique(List) when is_list(List) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
 drop(N, List) when is_list(List) ->
     lists:nthtail(N, List).
 
 take(N, List) when is_list(List) ->
     lists:sublist(List, N).
+
