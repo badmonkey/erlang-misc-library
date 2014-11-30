@@ -40,8 +40,20 @@ unique(List) when is_list(List) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
 drop(N, List) when is_list(List) ->
     lists:nthtail(N, List).
 
 take(N, List) when is_list(List) ->
     lists:sublist(List, N).
+
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+foldl(F, [Hd | Tl]) ->
+    lists:foldl(F, Hd, Tl).
+
+foldr(F, [Hd | Tl]) ->
+    lists:foldr(F, Hd, Tl).
+
