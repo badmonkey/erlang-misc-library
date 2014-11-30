@@ -62,7 +62,7 @@ ages(X) ->
     { Result, _, _ } = lists:foldl(
         fun( {_, Nums}, { Ages, Cnt, Last} ) ->
             Sorted = lists:sort(Nums),
-            case xlists:sorted_find(X, Sorted) of
+            case xlists:sorted_member(X, Sorted) of
                 true    -> { Ages ++ [Cnt - Last], Cnt +1, Cnt }
             ;   false   -> { Ages, Cnt +1, Last }
             end

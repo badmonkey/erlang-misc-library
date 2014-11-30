@@ -11,7 +11,6 @@
 
 start() ->
     application:load(libmisc).
-%    application:ensure_all_started(libmisc).
     
 start(_StartType, _StartArgs) ->
     ignore.

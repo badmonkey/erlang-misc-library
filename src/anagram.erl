@@ -7,7 +7,7 @@ has_suffix(Letters, Suffix) ->
     SortedSuffix = lists:sort(Suffix),
     {Found, Remains} = lists:foldl(
             fun(X, {Capture, AccLetters} = Acc) ->
-                case xlists:sorted_find(X, AccLetters) of
+                case xlists:sorted_member(X, AccLetters) of
                     true    -> { Capture ++ [X], AccLetters -- [X] }
                 ;   false   -> Acc
                 end

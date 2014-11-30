@@ -161,5 +161,3 @@ std_spread({M, S}) ->
 root_mean_square(List) when is_list(List) ->
     math:sqrt(arithmetic_mean([ Val*Val || Val <- List ])).
 
-    
-%%%%% ------------------------------------------------------- %%%%%
