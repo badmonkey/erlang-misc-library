@@ -107,14 +107,15 @@ median(List) when is_list(List) ->
     SList = lists:sort(List),
     Length = length(SList),
     case even_or_odd(Length) of
-        even -> [A,B] = lists:sublist(SList, round(Length/2), 2), (A+B)/2;
-        odd  -> lists:nth( round((Length+1)/2), SList )
+        even -> [A,B] = lists:sublist(SList, round(Length/2), 2),
+                (A+B)/2
+    ;   odd  -> lists:nth( round((Length+1)/2), SList )
     end.
 
 even_or_odd(Num) when is_integer(Num) ->
     if
-        Num band 1 == 0 -> even;
-        true            -> odd
+        Num band 1 == 0 -> even
+    ;   true            -> odd
     end.
 
     
