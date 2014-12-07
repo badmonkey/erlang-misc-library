@@ -3,7 +3,7 @@
     {description, ""},
     {vsn, "1.0.0"},
     {modules, [
-            libmisc, xlists, xmaths, xmaps, anagram, lotto
+            libmisc, xlists, xmaths, xmaps, anagram, erlx_server
         ]},
     {registered, []},
     {applications, [
