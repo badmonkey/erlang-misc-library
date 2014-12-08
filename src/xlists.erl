@@ -1,6 +1,6 @@
 -module(xlists).
 
--export([sorted_member/2, subsets/2, unique/1, drop/2, take/2]).
+-export([sorted_member/2, subsets/2, unique/1, drop/2, take/2, foldl/2, foldr/2]).
 
 
 
@@ -49,4 +49,7 @@ foldl(F, [Hd | Tl]) ->
 
 foldr(F, [Hd | Tl]) ->
     lists:foldr(F, Hd, Tl).
+
+    
+%%%%% ------------------------------------------------------- %%%%%
 

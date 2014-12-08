@@ -1,8 +1,9 @@
 -module(xmaths).
 
--export([list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1, weighted_arithmetic_mean/1,
-         histograph/1, median/1, mode/1, std_deviation/1, std_deviation2/1, root_mean_square/1,
-         list_partial_sums/1, list_differences/1, std_spread/1]).
+-export([list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1,
+		 weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1,
+		 std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1,
+		 std_spread/1, primes/1]).
 
          
 
@@ -26,24 +27,24 @@ list_sums(List) when is_list(List) ->
 
 
 list_partial_sums(List) when is_list(List) ->
-    {Result,_} = lists:foldl(
-        fun(X, {L, Acc}) ->
-            NewAcc = Acc + X,
-            { L ++ [NewAcc], NewAcc }
-        end,
-        {[], 0}, List),
-    Result.
+    {Result, _} = lists:mapfoldl(
+		fun(X, Sum) ->
+			NewSum = Sum + X,
+			{NewSum, NewSum}
+		end,
+		0, List),
+	Result.
 
         
 %%%%% ------------------------------------------------------- %%%%%
 
 
 list_differences(List) when is_list(List) ->
-    {Result,_} = lists:foldl(
-        fun(X, {L, Prev}) ->
-            { L ++ [X - Prev], X }
+	{Result,_} = lists:mapfoldl(
+        fun(X, Prev) ->
+            { X - Prev, X }
         end,
-        {[], 0}, List),
+        0, List),
     Result.
 
 
@@ -151,9 +152,9 @@ std_deviation(Values) ->
     X.
 
 std_spread({M, S}) ->
-    [{0.6827, M -  S, M +  S},
-     {0.9545, M -2*S, M +2*S},
-     {0.9973, M -3*S, M +3*S} ].
+    [{0.6827, M -  S, M +  S}
+    ,{0.9545, M -2*S, M +2*S}
+    ,{0.9973, M -3*S, M +3*S}].
     
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -162,3 +163,16 @@ std_spread({M, S}) ->
 root_mean_square(List) when is_list(List) ->
     math:sqrt(arithmetic_mean([ Val*Val || Val <- List ])).
 
+
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+primes(Prime, Max, Primes,Integers) when Prime > Max ->
+    lists:reverse([Prime|Primes]) ++ Integers;
+primes(Prime, Max, Primes, Integers) ->
+    [NewPrime|NewIntegers] = [ X || X <- Integers, X rem Prime =/= 0 ],
+    primes(NewPrime, Max, [Prime|Primes], NewIntegers).
+
+primes(N) ->
+    primes(2, round(math:sqrt(N)), [], lists:seq(3,N,2)). % skip odds
+    
