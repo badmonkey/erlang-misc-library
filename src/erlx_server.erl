@@ -55,22 +55,10 @@
                       Extra :: term()) ->
     {ok, NewState :: term()} | {error, Reason :: term()}.
 
+    
 %%%  -----------------------------------------------------------------
-%%% Starts a generic server.
-%%% start(Mod, Args, Options)
-%%% start(Name, Mod, Args, Options)
-%%% start_link(Mod, Args, Options)
-%%% start_link(Name, Mod, Args, Options) where:
-%%%    Name ::= {local, atom()} | {global, atom()} | {via, atom(), term()}
-%%%    Mod  ::= atom(), callback module implementing the 'real' server
-%%%    Args ::= term(), init arguments (to Mod:init/1)
-%%%    Options ::= [{timeout, Timeout} | {debug, [Flag]}]
-%%%      Flag ::= trace | log | {logfile, File} | statistics | debug
-%%%          (debug == log && statistics)
-%%% Returns: {ok, Pid} |
-%%%          {error, {already_started, Pid}} |
-%%%          {error, Reason}
-%%% -----------------------------------------------------------------
+
+
 start(Mod, Args, Options) ->
     gen:start(?MODULE, nolink, Mod, Args, Options).
 
@@ -85,12 +73,8 @@ start_link(Name, Mod, Args, Options) ->
 
 
 %% -----------------------------------------------------------------
-%% Make a call to a generic server.
-%% If the server is located at another node, that node will
-%% be monitored.
-%% If the client is trapping exits and is linked server termination
-%% is handled here (? Shall we do that here (or rely on timeouts) ?).
-%% ----------------------------------------------------------------- 
+
+
 call(Name, Request) ->
     case catch gen:call(Name, '$gen_call', Request) of
 	{ok,Res} ->
@@ -129,62 +113,17 @@ do_cast(Dest, Request) ->
     
 cast_msg(Request) -> {'$gen_cast',Request}.
 
+
 %% -----------------------------------------------------------------
 %% Send a reply to the client.
 %% -----------------------------------------------------------------
 reply({To, Tag}, Reply) ->
     catch To ! {Tag, Reply}.
 
-%% ----------------------------------------------------------------- 
-%% Asynchronous broadcast, returns nothing, it's just send 'n' pray
-%%-----------------------------------------------------------------  
-abcast(Name, Request) when is_atom(Name) ->
-    do_abcast([node() | nodes()], Name, cast_msg(Request)).
 
-abcast(Nodes, Name, Request) when is_list(Nodes), is_atom(Name) ->
-    do_abcast(Nodes, Name, cast_msg(Request)).
-
-do_abcast([Node|Nodes], Name, Msg) when is_atom(Node) ->
-    do_send({Name,Node},Msg),
-    do_abcast(Nodes, Name, Msg);
-do_abcast([], _,_) -> abcast.
-
-%%% -----------------------------------------------------------------
-%%% Make a call to servers at several nodes.
-%%% Returns: {[Replies],[BadNodes]}
-%%% A Timeout can be given
-%%% 
-%%% A middleman process is used in case late answers arrives after
-%%% the timeout. If they would be allowed to glog the callers message
-%%% queue, it would probably become confused. Late answers will 
-%%% now arrive to the terminated middleman and so be discarded.
-%%% -----------------------------------------------------------------
-multi_call(Name, Req)
-  when is_atom(Name) ->
-    do_multi_call([node() | nodes()], Name, Req, infinity).
-
-multi_call(Nodes, Name, Req) 
-  when is_list(Nodes), is_atom(Name) ->
-    do_multi_call(Nodes, Name, Req, infinity).
-
-multi_call(Nodes, Name, Req, infinity) ->
-    do_multi_call(Nodes, Name, Req, infinity);
-multi_call(Nodes, Name, Req, Timeout) 
-  when is_list(Nodes), is_atom(Name), is_integer(Timeout), Timeout >= 0 ->
-    do_multi_call(Nodes, Name, Req, Timeout).
+%% -----------------------------------------------------------------
 
 
-%%-----------------------------------------------------------------
-%% enter_loop(Mod, Options, State, <ServerName>, <TimeOut>) ->_ 
-%%   
-%% Description: Makes an existing process into a gen_server. 
-%%              The calling process will enter the gen_server receive 
-%%              loop and become a gen_server process.
-%%              The process *must* have been started using one of the 
-%%              start functions in proc_lib, see proc_lib(3). 
-%%              The user is responsible for any initialization of the 
-%%              process, including registering a name for it.
-%%-----------------------------------------------------------------
 enter_loop(Mod, Options, State) ->
     enter_loop(Mod, Options, State, self(), infinity).
 
@@ -204,17 +143,12 @@ enter_loop(Mod, Options, State, ServerName, Timeout) ->
     Debug = debug_options(Name, Options),
     loop(Parent, Name, State, Mod, Timeout, Debug).
 
+
 %%%========================================================================
 %%% Gen-callback functions
 %%%========================================================================
 
-%%% ---------------------------------------------------
-%%% Initiate the new process.
-%%% Register the name using the Rfunc function
-%%% Calls the Mod:init/Args function.
-%%% Finally an acknowledge is sent to Parent and the main
-%%% loop is entered.
-%%% ---------------------------------------------------
+
 init_it(Starter, self, Name, Mod, Args, Options) ->
     init_it(Starter, self(), Name, Mod, Args, Options);
 init_it(Starter, Parent, Name0, Mod, Args, Options) ->
@@ -304,6 +238,7 @@ decode_msg(Msg, Parent, Name, State, Mod, Time, Debug, Hib) ->
 	    handle_msg(Msg, Parent, Name, State, Mod, Debug1)
     end.
 
+   
 %%% ---------------------------------------------------
 %%% Send/receive functions
 %%% ---------------------------------------------------
