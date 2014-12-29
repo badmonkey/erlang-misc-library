@@ -28,7 +28,7 @@
 %%%  API
 %%%=========================================================================
 
--type server_cmd() :: {clear} | {pop} | {push, atom()}.
+-type server_cmd() :: {clear} | {reset, atom()} | {pop} | {push, atom()}.
     
 -type noreply_type() ::
         {noreply, NewState :: term()} |
@@ -222,23 +222,26 @@ loop(Parent, Name, State, Mod, hibernate, Debug, _) ->
     
 loop(Parent, Name, {SrvrState, ClntState} = State, Mod, Time, Debug, Hib) ->
     Category = bugnutz,
-    ProcessAll = false,
+    ProcessAll = true,
+    DefaultBehav = false,
     {RFrom, RprtMsg, Reply} = receive
                     %% system
                 {system, From, Req} = M                 ->
                     sys:handle_system_msg(Req, From, Parent, ?MODULE, Debug, [Name, State, Mod, Time], Hib),
-                    {undefined, M, system}
+                    {undefined, M, idle}
             ;   {'EXIT', Parent, Reason} = M            ->
                     terminate(Reason, Name, M, Mod, ClntState, Debug)
             
                     %% gen_call
             ;   {'$gen_call', From, Msg}                -> {From, Msg, catch Mod:handle_call(Msg, From, ClntState)}
             ;   {{'$gen_call', always}, From, Msg}      -> {From, Msg, catch Mod:handle_call(Msg, From, ClntState)}
+            ;   {{'$gen_call', _}, From, Msg} when DefaultBehav -> {From, Msg, catch Mod:handle_call(Msg, From, ClntState)}
             ;   {{'$gen_call', Category}, From, Msg}    -> {From, Msg, catch Mod:handle_call(Msg, From, ClntState)}
             
                     %% gen_cast
             ;   {'$gen_cast', Msg}                      -> {undefined, Msg, Mod:handle_cast(Msg, ClntState)}
             ;   {'$gen_cast', always, Msg}              -> {undefined, Msg, Mod:handle_cast(Msg, ClntState)}
+            ;   {'$gen_cast', _, Msg} when DefaultBehav -> {undefined, Msg, Mod:handle_cast(Msg, ClntState)}
             ;   {'$gen_cast', Category, Msg}            -> {undefined, Msg, Mod:handle_cast(Msg, ClntState)}
             
                     %% common system info
@@ -254,7 +257,8 @@ loop(Parent, Name, {SrvrState, ClntState} = State, Mod, Time, Debug, Hib) ->
             end,
             
     case Reply of
-        system -> ok
+        idle ->
+			loop(Parent, Name, State, Mod, Time, Debug, Hib)
         
             %% gen_call
     ;   {reply, Reply, NState} when RFrom =/= undefined ->
@@ -270,17 +274,12 @@ loop(Parent, Name, {SrvrState, ClntState} = State, Mod, Time, Debug, Hib) ->
             exit(R)
             
             %% common
-    ;   {noreply, NState} when Debug =/= [] ->
-            Debug1 = sys:handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
-            loop(Parent, Name, {SrvrState, NState}, Mod, infinity, Debug1, Hib)
-    ;   {noreply, NState, Time1} when Debug =/= [] ->
-            Debug1 = sys:handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
-            loop(Parent, Name, {SrvrState, NState}, Mod, Time1, Debug1, Hib)
-        
     ;   {noreply, NState} ->
-            loop(Parent, Name, {SrvrState, NState}, Mod, infinity, [], Hib)
+			Debug1 = handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
+            loop(Parent, Name, {SrvrState, NState}, Mod, infinity, Debug1, Hib)
     ;   {noreply, NState, Time1} ->
-            loop(Parent, Name, {SrvrState, NState}, Mod, Time1, [], Hib)
+			Debug1 = handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
+            loop(Parent, Name, {SrvrState, NState}, Mod, Time1, Debug1, Hib)
             
             %% stopping/system
     ;   {stop, RReason, NState} ->
@@ -300,18 +299,19 @@ wake_hib(Parent, Name, State, Mod, Debug) ->
     loop(Parent, Name, State, Mod, hibernate, Debug, true).
 
 
+handle_debug([], _Fun, _Name, _Msg) -> [];
+handle_debug(Debug, Fun, Name, Msg) ->
+	sys:handle_debug(Debug, Fun, Name, Msg).
+	
     
 debug_reply(_Name, From, Reply, _State, []) ->
     reply(From, Reply),
     [];    
-debug_reply(Name, From, Reply, State, Debug) ->
-    reply(Name, From, Reply, State, Debug).
-    
-reply(Name, {To, Tag}, Reply, State, Debug) ->
+debug_reply(Name, {To, Tag}, Reply, State, Debug) ->
     reply({To, Tag}, Reply),
-    sys:handle_debug(Debug, fun print_event/3, Name,
-            {out, Reply, To, State} ).
+    sys:handle_debug(Debug, fun print_event/3, Name, {out, Reply, To, State} ).
 
+   
    
 %%% ---------------------------------------------------
 %%% Send/receive functions
