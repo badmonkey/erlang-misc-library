@@ -1,9 +1,9 @@
 -module(xmaths).
 
 -export([list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1,
-		 weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1,
-		 std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1,
-		 std_spread/1, primes/1]).
+         weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1,
+         std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1,
+         std_spread/1, primes/1]).
 
          
 
@@ -28,19 +28,19 @@ list_sums(List) when is_list(List) ->
 
 list_partial_sums(List) when is_list(List) ->
     {Result, _} = lists:mapfoldl(
-		fun(X, Sum) ->
-			NewSum = Sum + X,
-			{NewSum, NewSum}
-		end,
-		0, List),
-	Result.
+        fun(X, Sum) ->
+            NewSum = Sum + X,
+            {NewSum, NewSum}
+        end,
+        0, List),
+    Result.
 
         
 %%%%% ------------------------------------------------------- %%%%%
 
 
 list_differences(List) when is_list(List) ->
-	{Result,_} = lists:mapfoldl(
+    {Result,_} = lists:mapfoldl(
         fun(X, Prev) ->
             { X - Prev, X }
         end,
