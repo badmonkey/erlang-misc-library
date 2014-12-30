@@ -16,7 +16,7 @@
 
 % Same behaviour as gen_server plus addition api functions
 behaviour_info(callbacks) ->
-    [ {handle_connection, 1}, {handle_error, 3}, {handle_data, 2}
+    [ {handle_connection, 1}, {handle_error, 3}
     , {init, 1}, {handle_call, 3}, {handle_cast, 2}, {handle_info, 2}
     , {terminate, 2}, {code_change, 3} ];
 behaviour_info(_) -> undefined.
@@ -35,14 +35,8 @@ behaviour_info(_) -> undefined.
 -record(state, 
     { module                        % callback module
     , proxystate                    % state of callback module
-    
-        % when erlx_tcp_server is used as a async acceptor
     , addrs         = dict:new()    % socket -> {ipaddr, port, userdata}
     , sockets       = dict:new()    % {ipaddr, port} -> socket
-    
-        % when erlx_tcp_server is used as a packet processor
-    , packetmode    = ?PACKET_PROCESSOR_NONE
-    , buffer        = undefined
     }).
 
     
@@ -51,6 +45,7 @@ behaviour_info(_) -> undefined.
 
 %start_listener
 %stop_listener(IpAddr, Port)
+%stop_listener(Socket)
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -58,11 +53,7 @@ behaviour_info(_) -> undefined.
 
 start_link(CallbackModule, Port)
         when is_atom(CallbackModule), is_integer(Port) ->
-    start_link(CallbackModule, ?MODULE, [], [{undefined, Port, [], undefined}]);
-    
-start_link(CallbackModule, InitParams)
-        when is_atom(CallbackModule), is_list(InitParams) ->
-    start_link(CallbackModule, ?MODULE, InitParams, []).
+    start_link(CallbackModule, ?MODULE, [], [{undefined, Port, [], undefined}]).
 
 
 start_link(CallbackModule, Port, InitParams)
@@ -102,31 +93,6 @@ start_link(CallbackModule, Name, InitParams, ListenerList)
 %%%%% ------------------------------------------------------- %%%%%
 
 
-%
-% start as a packet processor
-init([CallbackModule, InitParams, []]) ->
-    process_flag(trap_exit, true),
-
-    InitState = #state{
-                      module = CallbackModule
-                    , packetmode = proplists:get_value(packet, InitParams, raw) },
-    NInitParams = proplists:delete(packet, InitParams),
-
-    try
-        case CallbackModule:init(NInitParams) of
-            {ok, ProxyState}        -> {ok, InitState#state{proxystate = ProxyState}}
-        ;   {ok, ProxyState, Arg}   -> {ok, InitState#state{proxystate = ProxyState}, Arg}
-        ;   {stop, _} = Stop        -> Stop
-        ;   ignore                  -> ignore
-        ;   Err                     -> {stop, {unknown_reply, Err}}
-        end
-    catch
-        exit:Why                    -> {stop, Why}
-    end;
-    
-
-%
-% start as an async acceptor    
 init([CallbackModule, InitParams, Listeners]) ->
     process_flag(trap_exit, true),
 
@@ -212,7 +178,7 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 %%%%% ------------------------------------------------------- %%%%%
 
-    
+
 handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
            , #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses} = State) ->
     try
@@ -256,11 +222,10 @@ handle_info( {inet_async, ListenSock, _Ref, Error}
     end;
 
 
-%%{tcp, Socket, Data}
-%%{tcp_closed, Socket}
-%%{tcp_error, Socket, Reason}
+%
+%% Passthrough
+%
 
-    
 handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
     case CallbackModule:handle_info(Info, ProxyState) of
         {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
@@ -268,13 +233,12 @@ handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = Sta
     ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
     end.
 
-    
+
 %%%%% ------------------------------------------------------- %%%%%
 
 
-terminate(Reason, #state{module = CallbackModule, proxystate = ProxyState}) ->
-%    [gen_tcp:close(Sock) || Sock <- dict:fetch_keys(Addrs)],
-%    State1 = State#state{addrs=dict:new(), socks=dict:new()},
+terminate(Reason, #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses}) ->
+    [gen_tcp:close(Sock) || Sock <- dict:fetch_keys(Addresses)],
     CallbackModule:terminate(Reason, ProxyState),
     ok.
 
