@@ -1,4 +1,5 @@
--module(libmisc).
+
+-module(erlangx).
 
 -behaviour(application).
 
@@ -10,10 +11,15 @@
 %% ===================================================================
 
 start() ->
-    application:load(libmisc).
+    application:load(erlangx).
     
 start(_StartType, _StartArgs) ->
-    ignore.
+    {ok, spawn(
+            fun() ->
+                receive
+                    X -> ok
+                end
+            end )}.
 
 stop(_State) ->
     ok.

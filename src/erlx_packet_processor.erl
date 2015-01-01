@@ -3,7 +3,7 @@
 
 
 %% External API
--export([start_link/3, start_link/4]).
+-export([start_link/3]).
 -export([behaviour_info/1]).
         
 -export([ init/1, handle_call/3, handle_cast/2, handle_info/2
@@ -43,12 +43,7 @@ behaviour_info(_) -> undefined.
 
 start_link(CallbackModule, Socket, InitParams)
         when is_atom(CallbackModule), is_list(InitParams) ->
-    start_link(CallbackModule, ?MODULE, Socket, InitParams).
-    
-
-start_link(CallbackModule, Name, Socket, InitParams)
-        when is_atom(CallbackModule), is_list(InitParams) ->
-    gen_server:start_link(Name, ?MODULE, [CallbackModule, Socket, InitParams], []).
+    gen_server:start_link(?MODULE, [CallbackModule, Socket, InitParams], []).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -59,14 +54,19 @@ init([CallbackModule, Socket, InitParams]) ->
 
     InitState = #state{
                       module = CallbackModule
-                    , socket = Socket
-                    , packetmode = proplists:get_value(packet, InitParams, raw) },
-    NInitParams = proplists:delete(packet, InitParams),
+                    , socket = Socket },
 
+    init_callback(CallbackModule, Socket, InitParams, InitState).
+
+    
+init_callback(CallbackModule, Socket, InitParams, State) ->
     try
-        case CallbackModule:init(Socket, NInitParams) of
-            {ok, ProxyState}        -> {ok, InitState#state{proxystate = ProxyState}}
-        ;   {ok, ProxyState, Arg}   -> {ok, InitState#state{proxystate = ProxyState}, Arg}
+        case CallbackModule:init(Socket, InitParams) of
+            {ok, ProxyState}        -> {ok, State#state{proxystate = ProxyState}}
+        ;   {ok, ProxyState, {packet, Mode}} ->
+                validate_mode(Mode),
+                {ok, State#state{proxystate = ProxyState, packetmode = Mode}}
+        ;   {ok, ProxyState, Arg}   -> {ok, State#state{proxystate = ProxyState}, Arg}
         ;   {stop, _} = Stop        -> Stop
         ;   ignore                  -> ignore
         ;   Err                     -> {stop, {unknown_reply, Err}}
@@ -74,6 +74,19 @@ init([CallbackModule, Socket, InitParams]) ->
     catch
         exit:Why                    -> {stop, Why}
     end.
+    
+    
+init_replace_callback(CallbackModule, Socket, InitParams, Bytes, State0) ->
+    InitState = State0#state{module = CallbackModule},
+    
+    case init_callback(CallbackModule, Socket, InitParams, InitState) of
+        {ok, StateN}    -> handle_info( {tcp, Socket, Bytes}, StateN )
+    ;   {ok, StateN, _} -> handle_info( {tcp, Socket, Bytes}, StateN )
+    
+    ;   {stop, Reason}  -> {stop, Reason, InitState}
+    ;   ignore          -> {stop, cant_ignore_replace, InitState}
+    end.
+
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -116,15 +129,16 @@ handle_info( {tcp, Socket, Data}
         FullData = <<Buffer/binary, Data/binary>>,
         ResetState = State#state{buffer = <<>>, wait_size = 0},
         
-        case CallbackModule:handle_data({raw, FullData}, Socket, ProxyState) of
+        case CallbackModule:handle_data({raw, FullData}, ProxyState) of
             {ok, NewState}                          ->
                 {noreply, ResetState#state{proxystate = NewState}}
                 
-        ;   {reply, Reply, NewState}                          ->
+        ;   {reply, Reply, NewState}                ->
                 gen_tcp:send(Socket, Reply),
                 {noreply, ResetState#state{proxystate = NewState}}
 
-        ;   {more, Length, NewState} when is_integer(Length), Length > 0 ->                
+        ;   {more, Length, NewState} when is_integer(Length), Length > 0 ->      
+                xerlang:trace("MORE", {Length, byte_size(FullData)}),
                 {noreply, ResetState#state{proxystate = NewState, buffer = <<FullData>>, wait_size = byte_size(FullData) + Length}}
                 
         ;   {ok, NewState, PktType}                 ->
@@ -142,9 +156,17 @@ handle_info( {tcp, Socket, Data}
         ;   {close, Reply, NewState}                ->
                 gen_tcp:send(Socket, Reply),
                 {stop, normal, ResetState#state{proxystate = NewState}}
+                
+        ;   {replace_callback, Module, InitParams}
+                    when is_atom(Module), is_list(InitParams) ->
+                init_replace_callback(Module, Socket, InitParams, FullData, ResetState)
+                
+        ;   {replace_callback, Bytes, Module, InitParams}
+                    when is_binary(Bytes), is_atom(Module), is_list(InitParams) ->
+                init_replace_callback(Module, Socket, InitParams, Bytes, ResetState)
         end
     catch exit:Why ->
-        {stop, Why, State}
+        xerlang:trace({stop, Why, State})
     end;
 
     
@@ -156,13 +178,14 @@ handle_info( {tcp, Socket, Data}
         
         case get_packet(Mode, FullData) of
             {ok, Value, Rest} when is_binary(Rest) ->
-                case CallbackModule:handle_data({packet, FullData}, Socket, ProxyState) of
+                case CallbackModule:handle_data({packet, Value}, ProxyState) of
                     {ok, NewState}                          ->
                         % check for more packets
                         handle_info( {tcp, Socket, Rest}, ResetState#state{proxystate = NewState} )
 
-                ;   {reply, Reply, NewState}                          ->
+                ;   {reply, Reply, NewState}                ->
                         gen_tcp:send(Socket, Reply),
+                        xerlang:trace("Data Sent"),
                         % check for more packets
                         handle_info( {tcp, Socket, Rest}, ResetState#state{proxystate = NewState} )
                         
@@ -183,10 +206,18 @@ handle_info( {tcp, Socket, Data}
                 ;   {close, Reply, NewState}                ->
                         gen_tcp:send(Socket, Reply),
                         {stop, normal, ResetState#state{proxystate = NewState}}
+                        
+                ;   {replace_callback, Module, InitParams}
+                            when is_atom(Module), is_list(InitParams) ->
+                        init_replace_callback(Module, Socket, InitParams, FullData, ResetState)
+                
+                ;   {replace_callback, Bytes, Module, InitParams}
+                            when is_binary(Bytes), is_atom(Module), is_list(InitParams) ->
+                        init_replace_callback(Module, Socket, InitParams, <<Bytes/binary, Rest/binary>>, ResetState)
                 end
                 
         ;   {more, Length} when is_integer(Length), Length > 0 ->
-                {noreply, ResetState#state{buffer = <<FullData>>, wait_size = byte_size(FullData) + Length}}
+                {noreply, ResetState#state{buffer = FullData, wait_size = byte_size(FullData) + Length}}
                 
         ;   {error, Reason}     ->
                 {stop, {error, Reason}, ResetState#state{buffer = FullData}}
@@ -200,8 +231,11 @@ handle_info( {tcp, Socket, Data}
 handle_info( {tcp_closed, Socket}
            , #state{module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
     try
-        case CallbackModule:handle_data({closed, Buffer}, Socket, ProxyState) of
-            {stop, Reason, NewState}    ->
+        case CallbackModule:handle_data({closed, Buffer}, ProxyState) of
+            {ok, NewState}              ->
+                {stop, normal, State#state{proxystate = NewState}}
+                
+        ;   {stop, Reason, NewState}    ->
                 {stop, Reason, State#state{proxystate = NewState}}
                 
         ;   _                           ->
@@ -216,14 +250,20 @@ handle_info( {tcp_closed, Socket}
 handle_info( {tcp_error, Socket, Reason}
            , #state{module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
     try
-        case CallbackModule:handle_data({error, Reason, Buffer}, Socket, ProxyState) of
-            {reply, Reply, NewState}    ->
+        case CallbackModule:handle_data({error, Reason, Buffer}, ProxyState) of
+            {ok, NewState}              ->
+                {stop, normal, State#state{proxystate = NewState}}
+                
+        ;   {stop, Reason2, NewState}    ->
+                {stop, Reason2, State#state{proxystate = NewState}}
+                
+        ;   {reply, Reply, NewState}    ->
                 gen_tcp:send(Socket, Reply),
-                {stop, {tcp_error, Reason}, State#state{proxystate = NewState}}
+                {stop, Reason, State#state{proxystate = NewState}}
 
         ;   {close, Reply, NewState}    ->
                 gen_tcp:send(Socket, Reply),
-                {stop, {tcp_error, Reason}, State#state{proxystate = NewState}}}
+                {stop, Reason, State#state{proxystate = NewState}}
                 
         ;   _                           ->
                 {stop, {tcp_error, Reason}, State}
@@ -255,7 +295,6 @@ validate_mode(2) -> true;
 validate_mode(4) -> true;
 validate_mode(varint) -> true;
 validate_mode({chunk,N}) when is_integer(N) -> true;
-validate_mode(F) when is_function(F, 1) -> true;
 validate_mode(X) -> exit({invalid_packet_mode, X}).
     
 
@@ -264,7 +303,6 @@ get_packet(2, Bytes) -> bindecoder:packet_N(fun bindecoder:ushort/1, Bytes);
 get_packet(4, Bytes) -> bindecoder:packet_N(fun bindecoder:ulong/1, Bytes);
 get_packet(varint, Bytes) -> bindecoder:packet_N(fun bindecoder:varint/1, Bytes);
 get_packet({chunk,N}, Bytes) when is_integer(N) -> bindecoder:nbytes(N, Bytes);
-get_packet(F, Bytes) when is_function(F, 1) -> F(Bytes);
 get_packet(Mode, _Bytes) -> {error, {invalid_mode,Mode}}.
     
     

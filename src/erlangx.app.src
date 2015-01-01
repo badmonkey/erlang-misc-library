@@ -1,0 +1,16 @@
+{application, erlangx,
+[
+    {description, ""},
+    {vsn, "1.0.0"},
+    {modules, [
+              erlangx, xlists, xmaths, xmaps, xproplists, xerlang, anagram, bindecoder
+            , erlx_server, erlx_tcp_server, erlx_packet_processor
+        ]},
+    {registered, []},
+    {applications, [
+            kernel, stdlib
+        ]},
+    {mod, { erlangx, []}},
+    {env, []}
+]}.
+

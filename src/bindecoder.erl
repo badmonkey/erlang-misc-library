@@ -3,7 +3,7 @@
 
 -export([byte/1, ushort/1, ulong/1, varint/1]).
 -export([sequence/2, nbytes/2, packet_N/2]).
--export([match_sequence/1, match_nbytes/1, match_packet_N/1]).
+-export([match_sequence/1, match_nbytes/1, match_packet_N/1, match_utf16_string/0]).
 
 %
 % decoder(Bytes) ->
@@ -85,11 +85,21 @@ match_packet_N(LenFun) ->
         packet_N(LenFun, Bytes)
     end.
     
+    
+match_utf16_string() ->
+    fun(Bytes) ->
+        Header = ushort(Bytes),
+        case Header of
+            {ok, Value, Rest}   -> nbytes(Value * 2, Rest)
+        ;   _                   -> Header
+        end
+    end.
+    
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-sequence(List, Bytes) ->
+sequence(List, Bytes) when is_list(List), is_binary(Bytes) ->
     {OutBytes, OutValues} =
         lists:foldl(
             fun

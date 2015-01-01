@@ -25,8 +25,7 @@ behaviour_info(_) -> undefined.
 -define(ERLX_TCP_SERVER_SYSTEM, '$erlx_tcp_server').
 -define(PACKET_PROCESSOR_NONE, '$erlx_tcp_server$packet_none').
 -define(COPY_SOCK_OPTS, [active, nodelay, keepalive, delay_send, priority, tos, sndbuf]).
--define(REQUIRED_SOCK_OPTS, [{active, true}, binary, {packet, raw}]).
--define(DEFAULT_SOCK_OPTS, [{reuseaddr, true}, {nodelay, true}, {keepalive, true}, {backlog, 30}]).
+-define(REQUIRED_SOCK_OPTS, [binary, {packet, raw}]).
 
      
 %%%%% ------------------------------------------------------- %%%%%
@@ -53,48 +52,52 @@ behaviour_info(_) -> undefined.
 
 start_link(CallbackModule, Port)
         when is_atom(CallbackModule), is_integer(Port) ->
-    start_link(CallbackModule, ?MODULE, [], [{undefined, Port, [], undefined}]).
+    start_link(CallbackModule, undefined, [], [{undefined, Port, undefined}]).
 
 
 start_link(CallbackModule, Port, InitParams)
         when is_atom(CallbackModule), is_integer(Port), is_list(InitParams) ->
-    start_link(CallbackModule, ?MODULE, InitParams, [{undefined, Port, [], undefined}]);
+    start_link(CallbackModule, undefined, InitParams, [{undefined, Port, undefined}]);
     
 start_link(CallbackModule, Name, Port)
         when is_atom(CallbackModule), is_integer(Port) ->
-    start_link(CallbackModule, Name, [], [{undefined, Port, [], undefined}]);
+    start_link(CallbackModule, Name, [], [{undefined, Port, undefined}]);
     
 start_link(CallbackModule, Port, UserData)
         when is_atom(CallbackModule), is_integer(Port) ->
-    start_link(CallbackModule, ?MODULE, [], [{undefined, Port, [], UserData}]);
+    start_link(CallbackModule, undefined, [], [{undefined, Port, UserData}]);
     
 start_link(CallbackModule, IpAddr, Port)
         when is_atom(CallbackModule), is_tuple(IpAddr), is_integer(Port) ->
-    start_link(CallbackModule, ?MODULE, [], [{IpAddr, Port, [], undefined}]).
+    start_link(CallbackModule, undefined, [], [{IpAddr, Port, undefined}]).
 
 
 start_link(CallbackModule, Name, Port, InitParams)
         when is_atom(CallbackModule), is_integer(Port), is_list(InitParams) ->
-    start_link(CallbackModule, Name, InitParams, [{undefined, Port, [], undefined}]);
+    start_link(CallbackModule, Name, InitParams, [{undefined, Port, undefined}]);
     
 start_link(CallbackModule, IpAddr, Port, UserData)
         when is_atom(CallbackModule), is_tuple(IpAddr), is_integer(Port) ->
-    start_link(CallbackModule, ?MODULE, [], [{IpAddr, Port, [], UserData}]);
+    start_link(CallbackModule, undefined, [], [{IpAddr, Port, UserData}]);
 
 
 %%  
-%% ListenerList = [{IpAddr, Port, SockOpts, Userdata}]
+%% ListenerList = [{IpAddr, Port, Userdata}]
 %%
 start_link(CallbackModule, Name, InitParams, ListenerList)
         when is_atom(CallbackModule), is_list(InitParams), is_list(ListenerList) ->
-    gen_server:start_link(Name, ?MODULE, [CallbackModule, InitParams, ListenerList], []).
+    case Name of
+        undefined           -> gen_server:start_link(?MODULE, [CallbackModule, InitParams, ListenerList], [])
+    ;   X when is_atom(X)   -> gen_server:start_link({local, Name}, ?MODULE, [CallbackModule, InitParams, ListenerList], [])
+    ;   _                   -> gen_server:start_link(Name, ?MODULE, [CallbackModule, InitParams, ListenerList], [])
+    end.
     
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
 init([CallbackModule, InitParams, Listeners]) ->
-    process_flag(trap_exit, true),
+    %process_flag(trap_exit, true),
 
     InitState = #state{module = CallbackModule},
 
@@ -118,18 +121,17 @@ start_all_listeners(ListenerList, State0, Arg) ->
                 fun
                     (_Listener, {error, _} = Err)   -> Err
                     
-                ;   ({IpAddr, Port, SockOpts, UserData}, #state{module = CallbackModule, proxystate = ProxyState} = State)   ->
-                        NSockOpts = xproplists:merge(?DEFAULT_SOCK_OPTS, SockOpts),
-                        {NIpAddr, XSockOpts} =  case IpAddr of
-                                                    undefined           -> { {0,0,0,0}, NSockOpts }
-                                                ;   {0,0,0,0}           -> { IpAddr, NSockOpts }
-                                                ;   {_,_,_,_}           -> { IpAddr, xproplists:merge(NSockOpts, {ip, IpAddr}) }
-                                                ;   {_,_,_,_,_,_,_,_}   -> { IpAddr, xproplists:merge(NSockOpts, {ip, IpAddr}) }
-                                                ;   _                   -> { {0,0,0,0}, NSockOpts }
+                ;   ({IpAddr, Port, UserData}, #state{module = CallbackModule, proxystate = ProxyState} = State)   ->
+                        {NIpAddr, NSockOpts} =  case IpAddr of
+                                                    undefined           -> { {0,0,0,0}, ?REQUIRED_SOCK_OPTS }
+                                                ;   {0,0,0,0}           -> { IpAddr, ?REQUIRED_SOCK_OPTS }
+                                                ;   {_,_,_,_}           -> { IpAddr, [{ip, IpAddr} | ?REQUIRED_SOCK_OPTS] }
+                                                ;   {_,_,_,_,_,_,_,_}   -> { IpAddr, [{ip, IpAddr} | ?REQUIRED_SOCK_OPTS] }
+                                                ;   _                   -> { {0,0,0,0}, ?REQUIRED_SOCK_OPTS }
                                                 end,
-                        
-                        NextState = start_listener(NIpAddr, Port, UserData, xproplists:merge(XSockOpts, ?REQUIRED_SOCK_OPTS), State),
-                        
+
+                        NextState = start_listener(NIpAddr, Port, UserData, NSockOpts, State),
+
                         case NextState of
                             {error, Reason}     ->
                                 case CallbackModule:handle_error({IpAddr, Port, UserData}, {start_listener, Reason}, ProxyState) of
@@ -141,8 +143,10 @@ start_all_listeners(ListenerList, State0, Arg) ->
                         end
                         
                 end, State0, ListenerList),
+                
     case {StateN, Arg} of
         {{error,Reason}, _} -> {stop, Reason}
+        
     ;   {_, undefined}      -> {ok, StateN}
     ;   _                   -> {ok, StateN, Arg}
     end.
@@ -236,9 +240,13 @@ handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = Sta
 
 %%%%% ------------------------------------------------------- %%%%%
 
+trace_close(Sock) ->
+    xerlang:trace({"TERMINATE", Sock}),
+    gen_tcp:close(Sock).
 
 terminate(Reason, #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses}) ->
-    [gen_tcp:close(Sock) || Sock <- dict:fetch_keys(Addresses)],
+    %[gen_tcp:close(Sock) || Sock <- dict:fetch_keys(Addresses)],
+    [trace_close(Sock) || Sock <- dict:fetch_keys(Addresses)],
     CallbackModule:terminate(Reason, ProxyState),
     ok.
 
