@@ -1,7 +1,7 @@
 
 -module(binencoder).
 
--export([buffer/2, varint/1, utf16_string/1, utf16_list/1, utf8/1]).
+-export([buffer/2, varint/1, utf16_string/1, utf16_list/1, utf8/1, json/1]).
 
 
 
@@ -63,4 +63,13 @@ encode_utf16_list([], Acc) ->
 encode_utf16_list([H | T], Acc) ->
     V = utf16_string(H),
     encode_utf16_list(T, <<Acc/binary, V/binary, 0:16>>).
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+json(Term) ->
+    true = jsx:is_term(Term),
+    buffer(varint, jsx:encode(Term)).
+
     

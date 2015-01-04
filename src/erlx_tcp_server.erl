@@ -25,7 +25,7 @@ behaviour_info(_) -> undefined.
 -define(ERLX_TCP_SERVER_SYSTEM, '$erlx_tcp_server').
 -define(PACKET_PROCESSOR_NONE, '$erlx_tcp_server$packet_none').
 -define(COPY_SOCK_OPTS, [active, nodelay, keepalive, delay_send, priority, tos, sndbuf]).
--define(REQUIRED_SOCK_OPTS, [binary, {packet, raw}]).
+-define(REQUIRED_SOCK_OPTS, [binary, {packet, raw}, {reuseaddr, true}, {nodelay, true}, {keepalive, true}]).
 
      
 %%%%% ------------------------------------------------------- %%%%%
@@ -97,7 +97,7 @@ start_link(CallbackModule, Name, InitParams, ListenerList)
 
 
 init([CallbackModule, InitParams, Listeners]) ->
-    %process_flag(trap_exit, true),
+    process_flag(trap_exit, true),
 
     InitState = #state{module = CallbackModule},
 
@@ -265,6 +265,7 @@ start_listener(IpAddr, Port, UserData, TcpOpts, #state{addrs = Addresses, socket
     ;   error   ->
             case gen_tcp:listen(Port, TcpOpts) of
                 {ok, NewListenSocket} ->
+                    xerlang:trace("Created new socket"),
                     State1 = State0#state{
                                       addrs   = dict:store(NewListenSocket, {IpAddr, Port, UserData}, Addresses)
                                     , sockets = dict:store({IpAddr, Port}, NewListenSocket, Sockets)
