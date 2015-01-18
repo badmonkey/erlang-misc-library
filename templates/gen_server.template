@@ -1,0 +1,2 @@
+{variables, [{srvid, "myserver"}]}.
+{template, "gen_server.erl", "src/{{srvid}}.erl"}.

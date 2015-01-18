@@ -8,3 +8,5 @@ ebin
 rel/example_project
 .concrete/DEV_MODE
 .rebar
+src/config_lexer.erl
+src/config_parser.erl

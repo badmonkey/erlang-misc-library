@@ -5,6 +5,7 @@
     {modules, [
               erlangx, xlists, xmaths, xmaps, xproplists, xerlang, anagram, bindecoder
             , erlx_server, erlx_tcp_server, erlx_packet_processor
+            , config_lexer
         ]},
     {registered, []},
     {applications, [

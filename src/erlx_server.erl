@@ -258,7 +258,7 @@ loop(Parent, Name, {SrvrState, ClntState} = State, Mod, Time, Debug, Hib) ->
             
     case Reply of
         idle ->
-			loop(Parent, Name, State, Mod, Time, Debug, Hib)
+            loop(Parent, Name, State, Mod, Time, Debug, Hib)
         
             %% gen_call
     ;   {reply, Reply, NState} when RFrom =/= undefined ->
@@ -275,10 +275,10 @@ loop(Parent, Name, {SrvrState, ClntState} = State, Mod, Time, Debug, Hib) ->
             
             %% common
     ;   {noreply, NState} ->
-			Debug1 = handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
+            Debug1 = handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
             loop(Parent, Name, {SrvrState, NState}, Mod, infinity, Debug1, Hib)
     ;   {noreply, NState, Time1} ->
-			Debug1 = handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
+            Debug1 = handle_debug(Debug, fun print_event/3, Name, {noreply, NState}),
             loop(Parent, Name, {SrvrState, NState}, Mod, Time1, Debug1, Hib)
             
             %% stopping/system
@@ -301,8 +301,8 @@ wake_hib(Parent, Name, State, Mod, Debug) ->
 
 handle_debug([], _Fun, _Name, _Msg) -> [];
 handle_debug(Debug, Fun, Name, Msg) ->
-	sys:handle_debug(Debug, Fun, Name, Msg).
-	
+    sys:handle_debug(Debug, Fun, Name, Msg).
+
     
 debug_reply(_Name, From, Reply, _State, []) ->
     reply(From, Reply),
