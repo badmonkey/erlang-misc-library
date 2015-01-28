@@ -2,16 +2,18 @@
 -module({{srvid}}),
 
 -behaviour(erlx_tcp_server).
+-define(SERVER, ?MODULE).
 
 
 -export([start_link/1]).
 
+-export([ handle_connection/1, handle_error/3]).
 -export([ init/1, handle_call/3, handle_cast/2, handle_info/2
         , terminate/2, code_change/3]).
--export([ handle_connection/1, handle_error/3]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
+% Server State
 
 
 -record(state, 
@@ -20,6 +22,7 @@
     
 
 %%%%% ------------------------------------------------------- %%%%%
+% Public API
 
 
 start_link(Port) ->
@@ -27,10 +30,27 @@ start_link(Port) ->
     
     
 %%%%% ------------------------------------------------------- %%%%%
+% Initialise Server
 
 
 init(_InitParams) ->
     {ok, #state{}}.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+% Handle Connection
+
+
+handle_connection({_Ipaddr, _Port, _Socket, _UserData}, State) ->
+    erlx_tcp_server:start_link(?MODULE, []).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+% Report Error
+
+
+handle_error({_Ipaddr, _Port, _UserData}, Reason, State) ->
+    {stop, Reason, State}.
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -57,40 +77,6 @@ handle_info(Info, State) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_connection({_Ipaddr, _Port, _Socket, _UserData}, State) ->
-    erlx_tcp_server:start_link(?MODULE, []).
-
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
-handle_error({_Ipaddr, _Port, _UserData}, Reason, State) ->
-    {stop, Reason, State}.
-
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
-handle_data({raw, _Bytes}, _Socket, State) ->
-    {ok, State};
-    
-    
-handle_data({packet, _Bytes}, _Socket, State) ->
-    {ok, State};
-
-
-handle_data({closed, _Bytes}, _Socket, State) ->
-    {ok, State};
-
-    
-handle_data({error, _Reason, _Bytes}, _Socket, State) ->
-    {ok, State}.
-
-
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
 terminate(Reason, #state}) ->
     ok.
 
@@ -100,5 +86,6 @@ code_change(_OldVsn, State, _Extra) ->
     
 
 %%%%% ------------------------------------------------------- %%%%%
+% Private Functions
 
 

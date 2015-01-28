@@ -6,7 +6,6 @@
 
 %% External API
 -export([start_link/2, start_link/3, start_link/4]).
--export([behaviour_info/1]).
 
 
 %% gen_server callbacks
@@ -14,16 +13,6 @@
         , terminate/2, code_change/3]).
 
 
-% Same behaviour as gen_server plus addition api functions
-behaviour_info(callbacks) ->
-    [ {handle_connection, 1}, {handle_error, 3}
-    , {init, 1}, {handle_call, 3}, {handle_cast, 2}, {handle_info, 2}
-    , {terminate, 2}, {code_change, 3} ];
-behaviour_info(_) -> undefined.
-
-
--define(ERLX_TCP_SERVER_SYSTEM, '$erlx_tcp_server').
--define(PACKET_PROCESSOR_NONE, '$erlx_tcp_server$packet_none').
 -define(COPY_SOCK_OPTS, [active, nodelay, keepalive, delay_send, priority, tos, sndbuf]).
 -define(REQUIRED_SOCK_OPTS, [binary, {packet, raw}, {reuseaddr, true}, {nodelay, true}, {keepalive, true}]).
 
@@ -42,9 +31,51 @@ behaviour_info(_) -> undefined.
 %%%%% ------------------------------------------------------- %%%%%
 
 
-%start_listener
-%stop_listener(IpAddr, Port)
-%stop_listener(Socket)
+-type connection_info() :: {IpAddr :: inet:ip_address(), Port :: inet:port_number(), Socket :: inet:socket(), UserData :: term()}.
+
+-callback handle_connection(Info :: connection_info()) ->
+      {ok, Pid :: pid()}
+    | ignore
+    | {error, Reason :: any()}.
+    
+-callback handle_error(Info :: connection_info(), Reason :: term(), State :: term()) ->
+      {stop, Reason1 :: term(), State1 :: term()}
+    | {noreply, State1 :: term()}.
+
+    
+% gen_server callbacks
+
+-callback init(Args :: term()) ->
+    {ok, State :: term()} | {ok, State :: term(), timeout() | hibernate} |
+    {stop, Reason :: term()} | ignore.
+    
+-callback handle_call(Request :: term(), From :: {pid(), Tag :: term()},
+                      State :: term()) ->
+    {reply, Reply :: term(), NewState :: term()} |
+    {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} |
+    {noreply, NewState :: term()} |
+    {noreply, NewState :: term(), timeout() | hibernate} |
+    {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
+    {stop, Reason :: term(), NewState :: term()}.
+    
+-callback handle_cast(Request :: term(), State :: term()) ->
+    {noreply, NewState :: term()} |
+    {noreply, NewState :: term(), timeout() | hibernate} |
+    {stop, Reason :: term(), NewState :: term()}.
+    
+-callback handle_info(Info :: timeout | term(), State :: term()) ->
+    {noreply, NewState :: term()} |
+    {noreply, NewState :: term(), timeout() | hibernate} |
+    {stop, Reason :: term(), NewState :: term()}.
+    
+-callback terminate(Reason :: (normal | shutdown | {shutdown, term()} |
+                               term()),
+                    State :: term()) ->
+    term().
+    
+-callback code_change(OldVsn :: (term() | {down, term()}), State :: term(),
+                      Extra :: term()) ->
+    {ok, NewState :: term()} | {error, Reason :: term()}.
 
 
 %%%%% ------------------------------------------------------- %%%%%
