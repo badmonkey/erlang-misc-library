@@ -12,23 +12,34 @@
         , terminate/2, code_change/3]).
 
      
+
 %%%%% ------------------------------------------------------- %%%%%
 
 
 -record(state, 
-    { module                        % callback module
-    , proxystate                    % state of callback module
-    , socket        = undefined
-    , packetmode    = raw
-    , buffer        = <<>>
-    , wait_size     = 0
+    { module                        :: atom()       % callback module
+    , proxystate                    :: term()       % state of callback module
+    , socket        = undefined     :: inet:socket()
+    , packetmode    = raw           :: packet_mode()
+    , buffer        = <<>>          :: binary()
+    , wait_size     = 0             :: non_neg_integer()
+    , compressor    = nil           :: zlib:zstream()
     }).
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
 
--type packet_mode() :: raw | 1 | 2 | 4 | varint | {chunk, N :: integer()}.
+-type fixed_size() :: 1 | 2 | 4.
+-type pkt_length() :: fixed_size() | varint.
+-type pkt_scheme() :: pkt_length()
+                    | {chunk, N :: pos_integer()}
+                    | {start_tag, Tag :: binary()}.
+
+-type packet_mode() :: raw
+                     | pkt_scheme()
+                     | {zlib, Pkt :: pkt_scheme(), FullSize :: pkt_length()}
+                     | {zstream, Mode :: raw | pkt_scheme()}.
 
 
 -callback init(Socket :: inet:socket(), Args :: term()) ->
@@ -57,33 +68,33 @@
     
 % gen_server callbacks (excluding init/1)    
     
--callback handle_call(Request :: term(), From :: {pid(), Tag :: term()},
-                      State :: term()) ->
-    {reply, Reply :: term(), NewState :: term()} |
-    {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} |
-    {noreply, NewState :: term()} |
-    {noreply, NewState :: term(), timeout() | hibernate} |
-    {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
-    {stop, Reason :: term(), NewState :: term()}.
+%-callback handle_call(Request :: term(), From :: {pid(), Tag :: term()},
+%                      State :: term()) ->
+%    {reply, Reply :: term(), NewState :: term()} |
+%    {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} |
+%    {noreply, NewState :: term()} |
+%    {noreply, NewState :: term(), timeout() | hibernate} |
+%    {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
+%    {stop, Reason :: term(), NewState :: term()}.
     
--callback handle_cast(Request :: term(), State :: term()) ->
-    {noreply, NewState :: term()} |
-    {noreply, NewState :: term(), timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: term()}.
+%-callback handle_cast(Request :: term(), State :: term()) ->
+%    {noreply, NewState :: term()} |
+%    {noreply, NewState :: term(), timeout() | hibernate} |
+%    {stop, Reason :: term(), NewState :: term()}.
     
--callback handle_info(Info :: timeout | term(), State :: term()) ->
-    {noreply, NewState :: term()} |
-    {noreply, NewState :: term(), timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: term()}.
+%-callback handle_info(Info :: timeout | term(), State :: term()) ->
+%    {noreply, NewState :: term()} |
+%    {noreply, NewState :: term(), timeout() | hibernate} |
+%    {stop, Reason :: term(), NewState :: term()}.
     
--callback terminate(Reason :: (normal | shutdown | {shutdown, term()} |
-                               term()),
-                    State :: term()) ->
-    term().
+%-callback terminate(Reason :: (normal | shutdown | {shutdown, term()} |
+%                               term()),
+%                    State :: term()) ->
+%    term().
     
--callback code_change(OldVsn :: (term() | {down, term()}), State :: term(),
-                      Extra :: term()) ->
-    {ok, NewState :: term()} | {error, Reason :: term()}.
+%-callback code_change(OldVsn :: (term() | {down, term()}), State :: term(),
+%                      Extra :: term()) ->
+%    {ok, NewState :: term()} | {error, Reason :: term()}.
 
 
 %%%%% ------------------------------------------------------- %%%%%

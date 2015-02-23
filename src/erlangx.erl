@@ -17,7 +17,7 @@ start(_StartType, _StartArgs) ->
     {ok, spawn(
             fun() ->
                 receive
-                    X -> ok
+                    _ -> ok
                 end
             end )}.
 
