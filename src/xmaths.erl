@@ -3,7 +3,7 @@
 -export([list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1,
          weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1,
          std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1,
-         std_spread/1, primes/1]).
+         std_spread/1, primes/1, as_list/1, as_list/2]).
 
          
 
@@ -176,3 +176,40 @@ primes(Prime, Max, Primes, Integers) ->
 primes(N) ->
     primes(2, round(math:sqrt(N)), [], lists:seq(3,N,2)). % skip odds
     
+
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+as_list(I) -> erlang:integer_to_list(I).
+
+
+-spec as_list( integer(), integer() ) -> string().
+
+as_list(I, 10) -> erlang:integer_to_list(I);
+as_list(I, Base)
+    when  is_integer(I)
+        , is_integer(Base)
+        , Base >= 2
+        , Base =< 1+$Z-$A+10+1+$z-$a  ->
+    if
+        I < 0   -> [$- | as_list(-I, Base, [])]
+    ;   true    -> as_list(I, Base, [])
+    end;
+as_list(I, Base) -> erlang:error(badarg, [I, Base]).
+
+
+-spec as_list( integer(), integer(), string() ) -> string().
+
+as_list(I0, Base, R0) ->
+    D  = I0 rem Base,
+    I1 = I0 div Base,
+    R1 =    if
+                D >= 36     -> [D-36+$a | R0]
+            ;   D >= 10     -> [D-10+$A | R0]
+            ;   true        -> [D+$0 | R0]
+            end,
+    if
+        I1 =:= 0    -> R1
+    ;   true        -> as_list(I1, Base, R1)
+    end.
+

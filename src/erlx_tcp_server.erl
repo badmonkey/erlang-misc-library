@@ -46,36 +46,40 @@
 % gen_server callbacks
 
 -callback init(Args :: term()) ->
-    {ok, State :: term()} | {ok, State :: term(), timeout() | hibernate} |
-    {stop, Reason :: term()} | ignore.
+      {ok, State :: term()}
+    | {ok, State :: term(), timeout()
+    | hibernate}
+    | {stop, Reason :: term()} | ignore.
     
--callback handle_call(Request :: term(), From :: {pid(), Tag :: term()},
-                      State :: term()) ->
-    {reply, Reply :: term(), NewState :: term()} |
-    {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} |
-    {noreply, NewState :: term()} |
-    {noreply, NewState :: term(), timeout() | hibernate} |
-    {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
-    {stop, Reason :: term(), NewState :: term()}.
+-callback handle_call( Request :: term()
+                     , From :: {pid(), Tag :: term()}
+                     , State :: term()) ->
+      {reply, Reply :: term(), NewState :: term()}
+    | {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} 
+    | {noreply, NewState :: term()}
+    | {noreply, NewState :: term(), timeout() | hibernate}
+    | {stop, Reason :: term(), Reply :: term(), NewState :: term()}
+    | {stop, Reason :: term(), NewState :: term()}.
     
 -callback handle_cast(Request :: term(), State :: term()) ->
-    {noreply, NewState :: term()} |
-    {noreply, NewState :: term(), timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: term()}.
+      {noreply, NewState :: term()}
+    | {noreply, NewState :: term(), timeout() | hibernate}
+    | {stop, Reason :: term(), NewState :: term()}.
     
 -callback handle_info(Info :: timeout | term(), State :: term()) ->
-    {noreply, NewState :: term()} |
-    {noreply, NewState :: term(), timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: term()}.
+      {noreply, NewState :: term()}
+    | {noreply, NewState :: term(), timeout() | hibernate}
+    | {stop, Reason :: term(), NewState :: term()}.
     
--callback terminate(Reason :: (normal | shutdown | {shutdown, term()} |
-                               term()),
-                    State :: term()) ->
+-callback terminate( Reason :: (normal | shutdown | {shutdown, term()} | term())
+                   , State :: term()) ->
     term().
     
--callback code_change(OldVsn :: (term() | {down, term()}), State :: term(),
-                      Extra :: term()) ->
-    {ok, NewState :: term()} | {error, Reason :: term()}.
+-callback code_change( OldVsn :: (term() | {down, term()})
+                     , State :: term()
+                     , Extra :: term()) ->
+      {ok, NewState :: term()}
+    | {error, Reason :: term()}.
 
 
 %%%%% ------------------------------------------------------- %%%%%
