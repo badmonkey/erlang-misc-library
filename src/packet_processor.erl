@@ -1,5 +1,5 @@
 
--module(erlx_packet_processor).
+-module(packet_processor).
 
 -behaviour(gen_server).
 
@@ -105,7 +105,7 @@
 
 
 start_link(CallbackModule, Socket, InitParams)
-        when is_atom(CallbackModule), is_list(InitParams) ->
+        when is_atom(CallbackModule), is_list(InitParams)  ->
     gen_server:start_link(?MODULE, [CallbackModule, Socket, InitParams], []).
 
 
@@ -180,12 +180,16 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 %%%%% ------------------------------------------------------- %%%%%
 
 
+%% handle data but wait_size and we haven't got that much data yet
 handle_info( {tcp, Socket, Data}
            , #state{buffer = Buffer, wait_size = WaitSize, socket = Socket} = State)
-                when WaitSize > 0, ( byte_size(Data) + byte_size(Buffer) ) < WaitSize ->    
+        when   WaitSize > 0
+            , ( byte_size(Data) + byte_size(Buffer) ) < WaitSize  ->
+
     {noreply, State#state{buffer = <<Buffer/binary, Data/binary>>}};
     
     
+%% handle data in raw mode    
 handle_info( {tcp, Socket, Data}
            , #state{packetmode = raw, module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
     try
@@ -233,6 +237,7 @@ handle_info( {tcp, Socket, Data}
     end;
 
     
+%% handle data in packet mode    
 handle_info( {tcp, Socket, Data}
            , #state{packetmode = Mode, module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
     try
@@ -365,7 +370,7 @@ get_packet(1, Bytes) -> bindecoder:packet_N(fun bindecoder:byte/1, Bytes);
 get_packet(2, Bytes) -> bindecoder:packet_N(fun bindecoder:ushort/1, Bytes);
 get_packet(4, Bytes) -> bindecoder:packet_N(fun bindecoder:ulong/1, Bytes);
 get_packet(varint, Bytes) -> bindecoder:packet_N(fun bindecoder:varint/1, Bytes);
-get_packet({chunk,N}, Bytes) when is_integer(N) -> bindecoder:nbytes(N, Bytes);
+get_packet({chunk, N}, Bytes) when is_integer(N) -> bindecoder:nbytes(N, Bytes);
 get_packet(Mode, _Bytes) -> {error, {invalid_mode,Mode}}.
     
     

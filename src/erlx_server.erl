@@ -1,5 +1,4 @@
 
-
 -module(erlx_server).
 
 
@@ -24,11 +23,16 @@
 -import(error_logger, [format/2]).
 
 
+%% This is an experiment with mixing selective receives and gen_servers.
+%% Mostly the code is just gen_server. The main difference is in loop().
+%% 
+
+
 %%%=========================================================================
 %%%  API
 %%%=========================================================================
 
--type server_cmd() :: {clear} | {reset, atom()} | {pop} | {push, atom()}.
+-type server_cmd() :: clear | {reset, atom()} | pop | {push, atom()}.
     
 -type noreply_type() ::
         {noreply, NewState :: term()} |

@@ -1,2 +1,0 @@
-{variables, [{srvid, "myserver"}]}.
-{template, "erlx_tcp_server.erl", "src/{{srvid}}.erl"}.

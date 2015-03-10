@@ -1,5 +1,5 @@
 
--module(erlx_tcp_server).
+-module(tcp_listener).
 
 -behaviour(gen_server).
 
@@ -86,33 +86,33 @@
 
 
 start_link(CallbackModule, Port)
-        when is_atom(CallbackModule), is_integer(Port) ->
+        when is_atom(CallbackModule), is_integer(Port)  ->
     start_link(CallbackModule, undefined, [], [{undefined, Port, undefined}]).
 
 
 start_link(CallbackModule, Port, InitParams)
-        when is_atom(CallbackModule), is_integer(Port), is_list(InitParams) ->
+        when is_atom(CallbackModule), is_integer(Port), is_list(InitParams)  ->
     start_link(CallbackModule, undefined, InitParams, [{undefined, Port, undefined}]);
     
 start_link(CallbackModule, Name, Port)
-        when is_atom(CallbackModule), is_integer(Port) ->
+        when is_atom(CallbackModule), is_integer(Port)  ->
     start_link(CallbackModule, Name, [], [{undefined, Port, undefined}]);
     
 start_link(CallbackModule, Port, UserData)
-        when is_atom(CallbackModule), is_integer(Port) ->
+        when is_atom(CallbackModule), is_integer(Port)  ->
     start_link(CallbackModule, undefined, [], [{undefined, Port, UserData}]);
     
 start_link(CallbackModule, IpAddr, Port)
-        when is_atom(CallbackModule), is_tuple(IpAddr), is_integer(Port) ->
+        when is_atom(CallbackModule), is_tuple(IpAddr), is_integer(Port)  ->
     start_link(CallbackModule, undefined, [], [{IpAddr, Port, undefined}]).
 
 
 start_link(CallbackModule, Name, Port, InitParams)
-        when is_atom(CallbackModule), is_integer(Port), is_list(InitParams) ->
+        when is_atom(CallbackModule), is_integer(Port), is_list(InitParams)  ->
     start_link(CallbackModule, Name, InitParams, [{undefined, Port, undefined}]);
     
 start_link(CallbackModule, IpAddr, Port, UserData)
-        when is_atom(CallbackModule), is_tuple(IpAddr), is_integer(Port) ->
+        when is_atom(CallbackModule), is_tuple(IpAddr), is_integer(Port)  ->
     start_link(CallbackModule, undefined, [], [{IpAddr, Port, UserData}]);
 
 
@@ -120,7 +120,7 @@ start_link(CallbackModule, IpAddr, Port, UserData)
 %% ListenerList = [{IpAddr, Port, Userdata}]
 %%
 start_link(CallbackModule, Name, InitParams, ListenerList)
-        when is_atom(CallbackModule), is_list(InitParams), is_list(ListenerList) ->
+        when is_atom(CallbackModule), is_list(InitParams), is_list(ListenerList)  ->
     case Name of
         undefined           -> gen_server:start_link(?MODULE, [CallbackModule, InitParams, ListenerList], [])
     ;   X when is_atom(X)   -> gen_server:start_link({local, Name}, ?MODULE, [CallbackModule, InitParams, ListenerList], [])

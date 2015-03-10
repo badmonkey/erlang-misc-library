@@ -1,16 +1,15 @@
 
 -module({{srvid}}),
 
--behaviour(erlx_tcp_server).
+-behaviour(packet_processor).
 -define(SERVER, ?MODULE).
 
+-export([start_link/0]).
 
--export([start_link/1]).
-
--export([ handle_connection/1, handle_error/3]).
--export([ init/1, handle_call/3, handle_cast/2, handle_info/2
+-export([init/2, handle_data/2]).
+-export([ handle_call/3, handle_cast/2, handle_info/2
         , terminate/2, code_change/3]).
-
+        
 
 %%%%% ------------------------------------------------------- %%%%%
 % Server State
@@ -25,67 +24,72 @@
 % Public API
 
 
-start_link(Port) ->
-    erlx_tcp_server:start_link(?MODULE, Port).
-    
+start_link(Socket, Args) ->
+    packet_processor:start_link(?MODULE, Socket, Args).
+
     
 %%%%% ------------------------------------------------------- %%%%%
 % Initialise Server
 
 
-init(_InitParams) ->
-    {ok, #state{}}.
+init(Socket, _InitParams) ->
+    {ok, #state{}, raw}.
 
 
 %%%%% ------------------------------------------------------- %%%%%
-% Handle Connection
+% Process data
 
 
-handle_connection({_Ipaddr, _Port, _Socket, _UserData}, State) ->
-    erlx_tcp_server:start_link(?MODULE, []).
+handle_data({raw, _Bytes}, State) ->
+    {ok, State};
+    
+    
+handle_data({packet, _Bytes}, State) ->
+    {ok, State};
 
 
-%%%%% ------------------------------------------------------- %%%%%
-% Report Error
+handle_data({closed, _Bytes}, State) ->
+    {ok, State};
 
+    
+handle_data({error, _Reason, _Bytes}, State) ->
+    {ok, State}.
 
-handle_error({_Ipaddr, _Port, _UserData}, Reason, State) ->
-    {stop, Reason, State}.
-
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
-handle_call(Request, From, State) ->
-    {stop, {invalid_call_request, Request, From}, State}.
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_cast(Msg, State) ->
-    {stop, {invalid_cast_request, Msg}, State}.
+handle_call(_Request, _From, State) ->
+    {stop, invalid_call_request, State}.
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
 
+    
+handle_cast(_Msg, State) ->
+    {stop, invalid_case_request, State}.
 
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+handle_info(_Info, State) ->
+    {stop, invalid_info_request, State}.
+
+    
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_info(Info, State) ->
-    {stop, {invalid_info_request, Info}, State}.
-
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
-terminate(Reason, #state}) ->
+terminate(_Reason, _State) ->
     ok.
-
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-    
 
+    
 %%%%% ------------------------------------------------------- %%%%%
 % Private Functions
+
 
 

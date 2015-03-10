@@ -1,5 +1,5 @@
 
--module(config_server).
+-module(sysconfig).
 
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
@@ -69,8 +69,11 @@ handle_call(_Request, _From, State) ->
 %%%%% ------------------------------------------------------- %%%%%
 
     
-handle_cast({load, Name, FileName}, State) ->
-    PrivPath = priv_dir(Name),
+handle_cast({load, Name, FileName}, State)
+        when  is_atom(Name)
+            , is_list(FileName)  ->
+
+    PrivPath = xcode:priv_dir(Name),
     
     FileNameExt =   case filename:extension(FileName) of
                         ?CONFIG_EXT -> FileName
@@ -116,21 +119,11 @@ code_change(_OldVsn, State, _Extra) ->
     
 %%%%% ------------------------------------------------------- %%%%%
 
-
-priv_dir(App) ->
-    case code:priv_dir(App) of
-        {error, bad_name}   ->
-            {ok, Cwd} = file:get_cwd(),
-            filename:join(Cwd, "priv")
-            
-    ;   Priv                -> Priv
-    end.
-
     
 parse(FileName) ->
     {ok, InFile} = file:open(FileName, [read]),
     
-    Acc = loop(InFile,[]),
+    Acc = loop(InFile, []),
     file:close(InFile),
     
     xerlang:trace(Acc),

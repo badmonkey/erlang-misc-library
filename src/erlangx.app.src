@@ -3,13 +3,15 @@
     {description, ""},
     {vsn, "1.0.0"},
     {modules, [
-              erlangx, xlists, xmaths, xmaps, xproplists, xerlang, anagram, bindecoder
-            , erlx_server, erlx_tcp_server, erlx_packet_processor
-            , config_lexer
+              erlangx, xlists, xmaths, xmaps, xproplists, xerlang
+            , xtime, xos, xrandom, xstring, xcode
+            , anagram, bindecoder, binencoder, uuid
+            , tcp_listener, packet_processor, snowflake, sysconfig
+            , config_lexer, config_parser
         ]},
     {registered, []},
     {applications, [
-            kernel, stdlib
+            kernel, stdlib, crypto
         ]},
     {mod, { erlangx, []}},
     {env, []}

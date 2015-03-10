@@ -1,11 +1,11 @@
 
--module(erlx_flake).
+-module(snowflake).
 
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 
 
--export([start_link/1, get_id/0]).
+-export([start_link/1, start_link/2, get_id/0]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -38,6 +38,10 @@ get_id() ->
     
 start_link(WorkerId) ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [WorkerId], []).
+
+    
+start_link(Name, WorkerId) when is_atom(Name) ->
+    gen_server:start_link({local, Name}, ?MODULE, [WorkerId], []).
 
     
 %%%%% ------------------------------------------------------- %%%%%
