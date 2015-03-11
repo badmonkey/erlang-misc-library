@@ -5,15 +5,20 @@
 #include "postmaster/postmaster.hpp"
 
 
+eixx::eterm handle_msg(const eixx::eterm& in)
+{
+    return in;
+} // handle_msg()
+
 
 int main()
 {
     try
     {
-
         boost::asio::io_service  io_service;
 
-        //posix_chat_client c(io_service, iterator);
+        post::master  master(io_service, &handle_msg);
+        
 
         io_service.run();
     }
