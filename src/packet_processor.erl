@@ -38,7 +38,7 @@
 
 -type packet_mode() :: raw
                      | pkt_scheme()
-                     | {zlib, Pkt :: pkt_scheme(), FullSize :: pkt_length()}
+                     | {zlib, CompressedPkt :: pkt_scheme(), FullSize :: pkt_length()}
                      | {zstream, Mode :: raw | pkt_scheme()}.
 
 -export_type([fixed_size/0, pkt_length/0, pkt_scheme/0, packet_mode/0]).
@@ -237,7 +237,7 @@ handle_info( {tcp, Socket, Data}
     end;
 
     
-%% handle data in packet mode    
+%% handle data in pkt_scheme mode    
 handle_info( {tcp, Socket, Data}
            , #state{packetmode = Mode, module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
     try

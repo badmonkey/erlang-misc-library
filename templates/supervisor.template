@@ -1,0 +1,2 @@
+{variables, [{supid, "myserver_sup"}]}.
+{template, "supervisor.erl", "src/{{supid}}.erl"}.
