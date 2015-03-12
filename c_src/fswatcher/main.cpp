@@ -19,13 +19,14 @@ int main()
 
         post::master  master(io_service, &handle_msg);
         
+        // other initialization
 
         io_service.run();
     }
     catch( std::exception& e )
     {
-        std::cerr << "Exception: " << e.what() << "\n";
-
     }
-    return 0;
+    
+        // We only get here if something went wrong
+    return -1;
 } // main()

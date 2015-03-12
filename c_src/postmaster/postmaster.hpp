@@ -48,23 +48,23 @@ public:
     void handle_read_header( const boost::system::error_code& error
                            , std::size_t bytes_transferred)
     {
-        if ( !error )
+        if ( error )
         {
-            int len = (size_buf_[0] << 8) | size_buf_[1];
-            
-            buffer_.resize(len);
-            
-            asio::async_read( input_
-                            , asio::buffer(buffer_)
-                            , bind( &master::handle_read_body
-                                  , this
-                                  , boost::asio::placeholders::error
-                                  , boost::asio::placeholders::bytes_transferred) );
+            close();
+            return;
         }
-        else
-        {
-            // handle error
-        }
+        
+        int len = (size_buf_[0] << 8) | size_buf_[1];
+        
+        buffer_.resize(len);
+        
+        asio::async_read( input_
+                        , asio::buffer(buffer_)
+                        , bind( &master::handle_read_body
+                              , this
+                              , boost::asio::placeholders::error
+                              , boost::asio::placeholders::bytes_transferred) );
+
     } // handle_read_header()
     
     
@@ -73,30 +73,49 @@ public:
     {
         if ( !error )
         {
-            // try
-            eixx::eterm  msg(buffer_.data(), buffer_.size());
-            
-            input_.get_io_service().post(
-                        bind( &master::process_msg
-                            , this
-                            , msg) );
+            try
+            {
+                eixx::eterm  msg(buffer_.data(), buffer_.size());
+                
+                input_.get_io_service().post(
+                            bind( &master::process_msg
+                                , this
+                                , msg) );
+                                
+                return;
+            }
+            catch(...)
+            {
+            }
         }
-        else
-        {
-            // handle error
-        }
+        
+            // we only reach here if something bad happened
+        close();
     } // handle_read_body()
     
     
     void process_msg(const eixx::eterm& msg)
     {
-        // try
-        eixx::eterm reply = dispatch_(msg);
+        try
+        {
+            eixx::eterm reply = dispatch_(msg);
         
-        // async_write
+            // async_write
+        }
+        catch(...)
+        {
+            // reply with error or crash?
+        }
         
         start_read_header();
     } // process_msg()
+    
+    
+    void close()
+    {
+        input_.close();
+        output_.close();
+    } // close()
 
     
 private:
