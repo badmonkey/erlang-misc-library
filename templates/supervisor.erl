@@ -45,6 +45,8 @@ start_link({{supid}}2) ->
 % Initialise Supervisor
     
 
+// supervisor:start_child({{supid}}_pool, [Args])
+
 init({{supid}}_pool) ->
     { ok, ?WORKER_POOL_SUP(replace_with_child_module, 2, 5) };
     
