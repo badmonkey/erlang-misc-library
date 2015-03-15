@@ -2,9 +2,12 @@
 #define POSTMASTER_POSTMASTER_
 
 #include "eixx/eterm.hpp"
+#include <boost/asio.hpp>
 #include <functional>
 #include <vector>
 #include <iostream>
+#include "system.hpp"
+
 
 namespace post
 {
@@ -15,11 +18,13 @@ namespace posix = boost::asio::posix;
 using boost::bind;
 
 
+constexpr size_t HEADER_SIZE = 2;
+
 
 class master
 {
 public:
-    typedef std::function<eixx::eterm (const eixx::eterm&)>  dispatch_type;
+    typedef std::function<void (post::master&, const eixx::eterm&)>  dispatch_type;
     typedef unsigned char  byte;
     
     
@@ -32,6 +37,37 @@ public:
     } // master()
     
     
+    void dispatch_to(dispatch_type f)
+    {
+        dispatch_ = f;
+    } // dispatch_to()
+    
+    
+    void close()
+    {
+        input_.close();
+        output_.close();
+    } // close()
+    
+    
+    void send_to_erlang(const eixx::eterm& msg)
+    {
+        size_t buflen = msg.encode_size(HEADER_SIZE);
+        char* data = new char[buflen];
+        
+        msg.encode(data, buflen, HEADER_SIZE);
+        
+        asio::async_write( output_
+                         , asio::buffer(data, buflen)
+                         , bind( &master::handle_write
+                               , this
+                               , boost::asio::placeholders::error
+                               , data) );
+    } // send_to_erlang()
+    
+    
+protected:
+    
     void start_read_header()
     {
         size_buf_[0] = size_buf_[1] = 0;
@@ -40,13 +76,11 @@ public:
                         , asio::buffer(size_buf_)
                         , bind( &master::handle_read_header
                               , this
-                              , boost::asio::placeholders::error
-                              , boost::asio::placeholders::bytes_transferred) );
+                              , asio::placeholders::error) );
     } // start_read_header()
     
     
-    void handle_read_header( const boost::system::error_code& error
-                           , std::size_t bytes_transferred)
+    void handle_read_header(const boost::system::error_code& error)
     {
         if ( error )
         {
@@ -54,6 +88,7 @@ public:
             return;
         }
         
+        assert(HEADER_SIZE == 2);
         int len = (size_buf_[0] << 8) | size_buf_[1];
         
         buffer_.resize(len);
@@ -62,14 +97,12 @@ public:
                         , asio::buffer(buffer_)
                         , bind( &master::handle_read_body
                               , this
-                              , boost::asio::placeholders::error
-                              , boost::asio::placeholders::bytes_transferred) );
+                              , asio::placeholders::error) );
 
     } // handle_read_header()
     
     
-    void handle_read_body( const boost::system::error_code& error
-                         , std::size_t bytes_transferred)
+    void handle_read_body(const boost::system::error_code& error)
     {
         if ( !error )
         {
@@ -82,11 +115,17 @@ public:
                                 , this
                                 , msg) );
                                 
+                start_read_header();
                 return;
             }
             catch(...)
             {
+                // error
             }
+        }
+        else
+        {
+            // an error
         }
         
             // we only reach here if something bad happened
@@ -98,31 +137,32 @@ public:
     {
         try
         {
-            eixx::eterm reply = dispatch_(msg);
-        
-            // async_write
+            dispatch_(*this, msg);
+        }
+        catch(const eixx::eterm& et)
+        {
+            send_to_erlang(et);
         }
         catch(...)
         {
             // reply with error or crash?
+            //post::make_error(0);
         }
-        
-        start_read_header();
     } // process_msg()
-    
-    
-    void close()
-    {
-        input_.close();
-        output_.close();
-    } // close()
 
+    
+    void handle_write( const boost::system::error_code& error, char* data)
+    {
+        delete[] data;
+    } // handle_write()
+    
+    
     
 private:
     posix::stream_descriptor    input_;
     posix::stream_descriptor    output_;
     dispatch_type               dispatch_;
-    byte                        size_buf_[2];
+    byte                        size_buf_[HEADER_SIZE];
     std::vector<char>           buffer_;
     
 }; // class master

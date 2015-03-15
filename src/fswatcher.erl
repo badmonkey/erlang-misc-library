@@ -1,12 +1,11 @@
 
 -module(fswatcher).
 
--behaviour(gen_server).
+-behaviour(port_server).
 -define(SERVER, ?MODULE).
 
 
--export([start_link/0]).
-
+-export([start_link/0, handle_port/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -17,7 +16,6 @@
 
 -record(state,
     {
-        port
     }).
 
          
@@ -26,7 +24,7 @@
 
 
 start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+    port_server:start_link(?SERVER, ?MODULE, "priv/fswatcher", []).
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -34,9 +32,7 @@ start_link() ->
 
 
 init(_Args) ->
-    process_flag(trap_exit, true),
-    Port = open_port({spawn, "priv/fswatcher"}, [{packet, 2}, binary, exit_status]),
-    {ok, #state{port = Port}}.
+    {ok, #state{}}.
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -59,6 +55,14 @@ handle_cast(_Msg, State) ->
 handle_info(_Info, State) ->
     {stop, invalid_info_request, State}.
 
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+handle_port(Msg, State) ->
+    erlang:display({from_port, Msg}),
+    {ok, State}.
+    
     
 %%%%% ------------------------------------------------------- %%%%%
 
