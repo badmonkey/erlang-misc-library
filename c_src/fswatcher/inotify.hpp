@@ -7,6 +7,7 @@
 #include <boost/array.hpp>
 #include <cerrno>
 #include <sys/inotify.h>
+#include <map>
 #include "postmaster/system.hpp"
 
 
@@ -17,7 +18,8 @@ namespace posix = boost::asio::posix;
 class inotify
 {
 public:
-    typedef std::function<void(const inotify_event&)> event_handler_type;
+    typedef std::function<void(const inotify_event&)>  event_handler_type;
+    typedef std::map<std::string, int>  map_type;
     
     enum event
     {
@@ -60,13 +62,30 @@ public:
     {
     } // inotify()
     
+    
+    int add_target(const std::string& path, int mask)
+    {
+        int wd = ::inotify_add_watch(fd_, path.c_str(), mask);
+        if ( wd == -1 )
+            throw post::make_error(errno);
+        return wd;
+    } // add_target()
+    
+    
+    void remove_target(int watch)
+    {
+        int e = ::inotify_rm_watch(fd_, watch);
+        if ( e == -1 )
+            throw post::make_error(errno);
+    } // remove_target()
+    
 
     
 protected:
 
     static int init_fd()
     {
-        int fd = inotify_init1( IN_NONBLOCK );
+        int fd = ::inotify_init1( IN_NONBLOCK );
         if ( fd == -1 )
             throw post::make_error(errno);
         return fd;
@@ -93,14 +112,14 @@ protected:
 
             while( buffer_str_.size() >= sizeof(inotify_event) )
             {
-                const inotify_event *iev = reinterpret_cast<const inotify_event *>( buffer_str_.data() );
+                const inotify_event& iev = *( reinterpret_cast<const inotify_event *>( buffer_str_.data() ) );
                 
                 master_.get_io_service().post(
-                                boost::bind( &inotify::process_notify
-                                           , this
-                                           , *iev) );
+                            boost::bind( &inotify::process_notify
+                                       , this
+                                       , iev) );
 
-                buffer_str_.erase( 0, sizeof(inotify_event) + iev->len );
+                buffer_str_.erase( 0, sizeof(inotify_event) + iev.len );
             }
             
             async_monitor();
@@ -138,6 +157,7 @@ private:
     boost::array<char, BUFFER_SIZE> buffer_;
     std::string                     buffer_str_;
     event_handler_type              handler_;
+    map_type                        map_;
     
     
 }; // class inotify

@@ -15,8 +15,6 @@ namespace post
 namespace asio = boost::asio;
 namespace posix = boost::asio::posix;
 
-using boost::bind;
-
 
 constexpr size_t HEADER_SIZE = 2;
 
@@ -59,10 +57,10 @@ public:
         
         asio::async_write( output_
                          , asio::buffer(data, buflen)
-                         , bind( &master::handle_write
-                               , this
-                               , boost::asio::placeholders::error
-                               , data) );
+                         , boost::bind( &master::handle_write
+                                      , this
+                                      , asio::placeholders::error
+                                      , data) );
     } // send_to_erlang()
     
     
@@ -74,9 +72,9 @@ protected:
         
         asio::async_read( input_
                         , asio::buffer(size_buf_)
-                        , bind( &master::handle_read_header
-                              , this
-                              , asio::placeholders::error) );
+                        , boost::bind( &master::handle_read_header
+                                     , this
+                                     , asio::placeholders::error) );
     } // start_read_header()
     
     
@@ -95,9 +93,9 @@ protected:
         
         asio::async_read( input_
                         , asio::buffer(buffer_)
-                        , bind( &master::handle_read_body
-                              , this
-                              , asio::placeholders::error) );
+                        , boost::bind( &master::handle_read_body
+                                     , this
+                                     , asio::placeholders::error) );
 
     } // handle_read_header()
     
@@ -111,9 +109,9 @@ protected:
                 eixx::eterm  msg(buffer_.data(), buffer_.size());
                 
                 input_.get_io_service().post(
-                            bind( &master::process_msg
-                                , this
-                                , msg) );
+                            boost::bind( &master::process_msg
+                                       , this
+                                       , msg) );
                                 
                 start_read_header();
                 return;
@@ -151,7 +149,8 @@ protected:
     } // process_msg()
 
     
-    void handle_write( const boost::system::error_code& error, char* data)
+    void handle_write( const boost::system::error_code& error
+                     , char* data)
     {
         delete[] data;
     } // handle_write()
