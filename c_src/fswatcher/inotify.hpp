@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <boost/array.hpp>
+#include <boost/bimap.hpp>
 #include <cerrno>
 #include <sys/inotify.h>
 #include <map>
@@ -18,9 +19,14 @@ namespace posix = boost::asio::posix;
 class inotify
 {
 public:
+	struct path {};
+	struct watch {};
+	
     typedef std::function<void(const inotify_event&)>  event_handler_type;
-    typedef std::map<std::string, int>  map_type;
-    
+    typedef boost::bimap< boost::bimaps::tagged<std::string, path>
+						, boost::bimaps::tagged<int, watch> >   bimap_type;
+
+
     enum event
     {
           access = IN_ACCESS
@@ -68,6 +74,9 @@ public:
         int wd = ::inotify_add_watch(fd_, path.c_str(), mask);
         if ( wd == -1 )
             throw post::make_error(errno);
+		
+		map_.insert( bimap_type::value_type(path, wd) );
+		
         return wd;
     } // add_target()
     
@@ -157,7 +166,7 @@ private:
     boost::array<char, BUFFER_SIZE> buffer_;
     std::string                     buffer_str_;
     event_handler_type              handler_;
-    map_type                        map_;
+    bimap_type                      map_;
     
     
 }; // class inotify

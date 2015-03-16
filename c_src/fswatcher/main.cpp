@@ -58,6 +58,7 @@ bool handle_add_msg( const eixx::eterm& a_pattern
                    , const eixx::varbind& a_varbind
                    , long a_opaque)
 {
+	get_inotify().add_target("/etc/", inotify::event::all | inotify::add_flags::dir_only);
     return true;
 } // handle_add_msg()
 
