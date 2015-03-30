@@ -43,7 +43,7 @@ rule_Value -> ipv4_address : {ipaddress, value_of('$1')}.
 rule_Value -> rule_String : {string, '$1'}.
 rule_Value -> '[' ']' : {list, []}.
 rule_Value -> '[' rule_ValueList ']' : {list, '$2'}.
-rule_Value -> '{' rule_ValueList '}' : {tuple, '$2'}.
+rule_Value -> '{' rule_ValueList '}' : {tuple, erlang:list_to_tuple('$2')}.
 rule_Value -> variable : {variable, value_of('$1')}.
 rule_Value -> rule_FilePath : {path, '$1'}.
 
