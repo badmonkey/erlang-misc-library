@@ -3,6 +3,7 @@
 #include "eixx/eixx.hpp"
 #include "boost/asio.hpp"
 #include "postmaster/postmaster.hpp"
+#include "postmaster/postoffice.hpp"
 #include "inotify.hpp"
 
 
@@ -20,9 +21,9 @@ asio::io_service&  get_io_service()
 } // get_io_service()
 
 
-post::master&  get_master()
+post::office&  get_master()
 {
-    static post::master  singleMaster( get_io_service(), &handle_msg );
+    static post::office  singleMaster( get_io_service() );
     return singleMaster;
 } // get_master()
 
@@ -34,24 +35,7 @@ inotify&  get_inotify()
 } // get_inotify()
 
 
-eixx::eterm_pattern_matcher& get_matcher()
-{
-    static eixx::eterm_pattern_matcher  singleMatcher;
-    return singleMatcher;
-} // get_matcher()
-
-
 ///// -------------------------------------------------------------------- /////
-
-
-void handle_msg( post::master& master
-               , const eixx::eterm& in)
-{
-    if ( !get_matcher().match(in) )
-    {
-        master.send_to_erlang( eixx::tuple::make( eixx::am_error, eixx::atom("unknown_msg") ) );
-    }
-} // handle_msg()
 
 
 bool handle_add_msg( const eixx::eterm& a_pattern
@@ -82,14 +66,6 @@ void handle_inotify(const inotify_event& evt)
 ///// -------------------------------------------------------------------- /////
 
 
-void add_pattern( const char* pat
-                , eixx::eterm_pattern_matcher::pattern_functor_t f
-                , long user)
-{
-    get_matcher().push_back(eixx::eterm::format(pat), f, user);
-} // add_pattern()
-
-
 int main()
 {
         // if we can't start the postmaster there's not point trying the rest
@@ -100,11 +76,10 @@ int main()
     {
         get_inotify();
         
-        add_pattern("{add, Path :: string(), Mask :: int()}", &handle_add_msg, 1);
-        add_pattern("{remove, Watch :: int()}", &handle_remove_msg, 2);
-        
-        
-        get_master().send_to_erlang( eixx::atom("ready") );
+        get_master()
+			.register_message("{add, Path :: string(), Mask :: int()}", &handle_add_msg)
+			.register_message("{remove, Watch :: int()}", &handle_remove_msg)
+			.send_to_erlang( eixx::atom("ready") );
 
         get_io_service().run();
     }

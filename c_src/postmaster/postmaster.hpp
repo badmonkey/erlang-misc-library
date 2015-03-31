@@ -33,12 +33,7 @@ public:
     {
         start_read_header();
     } // master()
-    
-    
-    void dispatch_to(dispatch_type f)
-    {
-        dispatch_ = f;
-    } // dispatch_to()
+
     
     
     void close()
@@ -64,7 +59,19 @@ public:
     } // send_to_erlang()
     
     
+    void send_error_to_erlang(const eixx::eterm& err)
+	{
+		send_to_erlang( eixx::tuple::make( eixx::am_error, err ) );
+	} // send_errot_to_erlang()
+    
+    
 protected:
+	
+	void set_dispatch(dispatch_type  f)
+	{
+		dispatch_ = f;
+	} // set_dispatch()
+	
     
     void start_read_header()
     {
