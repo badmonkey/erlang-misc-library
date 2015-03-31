@@ -5,7 +5,7 @@
 -define(SERVER, ?MODULE).
 
 
--export([start_link/0, handle_port/2]).
+-export([start_link/0, port_info/0, handle_port/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -24,7 +24,7 @@
 
 
 start_link() ->
-    port_server:start_link(?SERVER, ?MODULE, "priv/fswatcher", []).
+    port_server:start_link(?SERVER, ?MODULE, []).
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -35,6 +35,13 @@ init(_Args) ->
     {ok, #state{}}.
 
     
+%%%%% ------------------------------------------------------- %%%%%
+
+
+port_info() ->
+	[{exefile, "priv/fswatcher"}].
+	
+
 %%%%% ------------------------------------------------------- %%%%%
 
 

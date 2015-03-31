@@ -5,7 +5,7 @@
 
 
 %% External API
--export([start_link/3, start_link/4]).
+-export([start_link/2, start_link/3]).
  
 %% gen_server callbacks 
 -export([ init/1, handle_call/3, handle_cast/2, handle_info/2
@@ -26,13 +26,18 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-callback port_info() -> [proplists:property()].
+
+
 -callback handle_port(Msg :: term(), State :: term()) ->
       {ok, NewState :: term()}
     | {ok, Cmd :: term(), NewState :: term()}
     | {stop, Reason :: term(), NewState :: term()}.
 
     
-% similiar to gen_server callbacks (same params but with additional return values)   
+% similiar to gen_server callbacks (same params but with additional return values)
+% reply and noreply have new alternatives reply_send and noreply_send  which in addition
+% to reply'in and noreply'in send a cmd to the port
 
 -callback init(Args :: term()) ->
       {ok, State :: term()}
@@ -82,22 +87,25 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
-start_link(CallbackModule, ExeFile, InitParams)
-        when is_atom(CallbackModule), is_list(ExeFile), is_list(InitParams)  ->
-    gen_server:start_link(?MODULE, [CallbackModule, ExeFile, InitParams], []).
+start_link(CallbackModule, InitParams)
+        when is_atom(CallbackModule), is_list(InitParams)  ->
+    gen_server:start_link(?MODULE, [CallbackModule, InitParams], []).
     
     
-start_link(Name, CallbackModule, ExeFile, InitParams)
-        when is_atom(Name), is_atom(CallbackModule), is_list(ExeFile), is_list(InitParams)  ->
-    gen_server:start_link({local, Name}, ?MODULE, [CallbackModule, ExeFile, InitParams], []).    
+start_link(Name, CallbackModule, InitParams)
+        when is_atom(Name), is_atom(CallbackModule), is_list(InitParams)  ->
+    gen_server:start_link({local, Name}, ?MODULE, [CallbackModule, InitParams], []).    
     
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-init([CallbackModule, ExeFile, InitParams]) ->
+init([CallbackModule, InitParams]) ->
     process_flag(trap_exit, true),
 
+    Props = CallbackModule:port_info(),
+    ExeFile = proplists:get_value(exefile, Props),
+    
     Port = erlang:open_port({spawn, ExeFile}, [{packet, 2}, binary, exit_status]),
 
     InitState = #state{module = CallbackModule, port = Port},
@@ -164,6 +172,7 @@ handle_info( {Port, {data, Data}}
     
       
 handle_info( {Port, {exit_status, Status}}, #state{port = Port} = State) ->
+	% handle_exit() -> terminate | restart
     {stop, {port_terminated, Status}, State};
 
 

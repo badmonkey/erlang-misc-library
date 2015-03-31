@@ -89,7 +89,7 @@ handle_cast({load, Name, FileName}, State)
     
     FileNameExt =   case filename:extension(FileName) of
                         ?CONFIG_EXT -> FileName
-                    ;   _           -> FileName ++ ?CONFIG_EXT)
+                    ;   _           -> FileName ++ ?CONFIG_EXT
                     end,
                     
     FilePath =  case filename:pathtype(FileNameExt) of
@@ -133,7 +133,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 
 load_app_config(BaseDir, App)
-		where is_atom(App)  ->
+		when is_atom(App)  ->
 	AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
 	FirstFile = filename:join(BaseDir, AppConfig),
 	
@@ -141,8 +141,8 @@ load_app_config(BaseDir, App)
 		true -> parse(FirstFile)
 		
 	;	_	->
-			AppPath = xcode:priv_dir(Name),
-			SecondFile = filename:join(BaseDir, AppConfig),
+			AppPath = xcode:priv_dir(App),
+			SecondFile = filename:join(AppPath, AppConfig),
 			
 			case filelib:is_regular(SecondFile) of
 				true -> parse(SecondFile)

@@ -72,6 +72,10 @@ rule_PathItem -> pathfrag : value_of('$1').
 Erlang code.
 
 
+-define(CFG_FORMAT_VER, 1.0).
+-define(TYPE_VALUE(T,V), {T, V}).
+
+
 value_of(Token) when is_tuple(Token) ->
   element(3, Token);
 value_of(Token) ->

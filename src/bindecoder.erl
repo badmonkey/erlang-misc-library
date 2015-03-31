@@ -51,7 +51,9 @@ decode_varint(<<0:1, I:7, Rest/binary>>, Acc) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-nbytes(N, Bytes) when is_integer(N), is_binary(Bytes) ->
+nbytes(N, Bytes)
+		when  is_integer(N)
+			, is_binary(Bytes)  ->
     Len = byte_size(Bytes),
     if
         N =:= Len   -> {ok, Bytes, <<>>}
@@ -72,7 +74,9 @@ match_nbytes(N) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-packet_N(LenFun, Bytes) when is_function(LenFun, 1), is_binary(Bytes) ->
+packet_N(LenFun, Bytes)
+		when  is_function(LenFun, 1)
+			, is_binary(Bytes)  ->
     Header = LenFun(Bytes),
     case Header of
         {ok, Value, Rest}   -> nbytes(Value, Rest)
@@ -99,7 +103,9 @@ match_utf16_string() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-sequence(List, Bytes) when is_list(List), is_binary(Bytes) ->
+sequence(List, Bytes)
+		when  is_list(List)
+			, is_binary(Bytes)  ->
     {OutBytes, OutValues} =
         lists:foldl(
             fun
