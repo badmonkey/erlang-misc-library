@@ -172,7 +172,7 @@ handle_info( {Port, {data, Data}}
     
       
 handle_info( {Port, {exit_status, Status}}, #state{port = Port} = State) ->
-	% handle_exit() -> terminate | restart
+    % handle_exit() -> terminate | restart
     {stop, {port_terminated, Status}, State};
 
 

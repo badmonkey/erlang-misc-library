@@ -44,8 +44,8 @@ load_once(Name) when is_atom(Name) ->
     
 -spec load_once(atom(), [atom()]) -> ok | {error,any()}.
 load_once(Name, Requires)
-		when  is_atom(Name)
-			, is_list(Requires)  ->
+        when  is_atom(Name)
+            , is_list(Requires)  ->
     gen_server:call(?SERVER, {load, Name, Requires}).
     
     
@@ -71,11 +71,10 @@ init([MasterApp]) ->
     process_flag(trap_exit, true),
     
     { ok
-    , #state{
-			  config_path = xcode:priv(MasterApp)
-			, modules = dict:new()
-		}
-	}.
+    , #state{ config_path = xcode:priv(MasterApp)
+            , modules = dict:new()
+            }
+    }.
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -118,23 +117,23 @@ code_change(_OldVsn, State, _Extra) ->
 
 
 parse_app_config(BaseDir, App)
-		when is_atom(App)  ->
-	AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
-	FirstFile = filename:join(BaseDir, AppConfig),
-	
-	case filelib:is_regular(FirstFile) of
-		true -> parse(FirstFile)
-		
-	;	_	->
-			AppPath = xcode:priv_dir(App),
-			SecondFile = filename:join(AppPath, AppConfig),
-			
-			case filelib:is_regular(SecondFile) of
-				true -> parse(SecondFile)
-			;	_	-> throw({error, App, "Can't find config file"})
-			end
-	end.
-	
+        when is_atom(App)  ->
+    AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
+    FirstFile = filename:join(BaseDir, AppConfig),
+    
+    case filelib:is_regular(FirstFile) of
+        true    -> parse(FirstFile)
+        
+    ;   _       ->
+            AppPath = xcode:priv_dir(App),
+            SecondFile = filename:join(AppPath, AppConfig),
+            
+            case filelib:is_regular(SecondFile) of
+                true    -> parse(SecondFile)
+            ;   _       -> throw({error, App, "Can't find config file"})
+            end
+    end.
+    
     
 parse(FileName) ->
     {ok, InFile} = file:open(FileName, [read]),
@@ -155,4 +154,4 @@ loop(InFile, Acc) ->
 
     
 get_value_expand(NameList, Tree) ->    
-	ok.
+    ok.

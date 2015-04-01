@@ -60,19 +60,19 @@ public:
     
     
     void send_error_to_erlang(const eixx::eterm& err)
-	{
-		send_to_erlang( eixx::tuple::make( eixx::am_error, err ) );
-	} // send_errot_to_erlang()
+    {
+        send_to_erlang( eixx::tuple::make( eixx::am_error, err ) );
+    } // send_errot_to_erlang()
     
     
 
 protected:
-	
-	void set_dispatch(dispatch_type  f)
-	{
-		dispatch_ = f;
-	} // set_dispatch()
-	
+
+    void set_dispatch(dispatch_type  f)
+    {
+        dispatch_ = f;
+    } // set_dispatch()
+
     
     void start_read_header()
     {

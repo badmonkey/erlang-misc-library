@@ -42,7 +42,7 @@ bool handle_add_msg( const eixx::eterm& a_pattern
                    , const eixx::varbind& a_varbind
                    , long a_opaque)
 {
-	get_inotify().add_target("/etc/", inotify::event::all | inotify::add_flags::dir_only);
+    get_inotify().add_target("/etc/", inotify::event::all | inotify::add_flags::dir_only);
     return true;
 } // handle_add_msg()
 
@@ -77,9 +77,9 @@ int main()
         get_inotify();
         
         get_master()
-			.register_message("{add, Path :: string(), Mask :: int()}", &handle_add_msg)
-			.register_message("{remove, Watch :: int()}", &handle_remove_msg)
-			.send_to_erlang( eixx::atom("ready") );
+            .register_message("{add, Path :: string(), Mask :: int()}", &handle_add_msg)
+            .register_message("{remove, Watch :: int()}", &handle_remove_msg)
+            .send_to_erlang( eixx::atom("ready") );
 
         get_io_service().run();
     }

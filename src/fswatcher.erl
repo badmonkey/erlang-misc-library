@@ -39,8 +39,8 @@ init(_Args) ->
 
 
 port_info() ->
-	[{exefile, "priv/fswatcher"}].
-	
+    [{exefile, "priv/fswatcher"}].
+
 
 %%%%% ------------------------------------------------------- %%%%%
 
