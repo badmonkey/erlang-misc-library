@@ -38,13 +38,15 @@ start_link() ->
     
     
 -spec load_once(atom()) -> ok | {error,any()}.
-load_once(Name) ->
-    load_once(Name, atom_to_list(Name)).
+load_once(Name) when is_atom(Name) ->
+    load_once(Name, []).
 
     
--spec load_once(atom(), string()) -> ok | {error,any()}.
-load_once(Name, FileName) ->
-    gen_server:call(?SERVER, {load, Name, FileName}).
+-spec load_once(atom(), [atom()]) -> ok | {error,any()}.
+load_once(Name, Requires)
+		when  is_atom(Name)
+			, is_list(Requires)  ->
+    gen_server:call(?SERVER, {load, Name, Requires}).
     
     
 
@@ -65,14 +67,24 @@ load_once(Name, FileName) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-init(_Args) ->
+init([MasterApp]) ->
     process_flag(trap_exit, true),
     
-    {ok, #state{ modules = dict:new() }}.
+    { ok
+    , #state{
+			  config_path = xcode:priv(MasterApp)
+			, modules = dict:new()
+		}
+	}.
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
+
+handle_call({load, Name, Requires}, _From, State) ->
+
+    {reply, {error, Name}, State};
+    
 
 handle_call(_Request, _From, State) ->
     {stop, invalid_call_request, State}.
@@ -80,33 +92,6 @@ handle_call(_Request, _From, State) ->
     
 %%%%% ------------------------------------------------------- %%%%%
 
-    
-handle_cast({load, Name, FileName}, State)
-        when  is_atom(Name)
-            , is_list(FileName)  ->
-
-    PrivPath = xcode:priv_dir(Name),
-    
-    FileNameExt =   case filename:extension(FileName) of
-                        ?CONFIG_EXT -> FileName
-                    ;   _           -> FileName ++ ?CONFIG_EXT
-                    end,
-                    
-    FilePath =  case filename:pathtype(FileNameExt) of
-                    relative    -> filename:join(PrivPath, FileNameExt)
-                ;   _           -> FileNameExt
-                end,
-    
-    case filelib:is_regular(FilePath) of
-        true    ->
-            Parsed = parse(FilePath),
-            xerlang:trace(parsed),
-            {reply, ok, State#state{ modules = dict:store(Name, Parsed, State#state.modules) }}
-            
-    ;   _       ->
-            {reply, {error, FilePath}, State}
-    end;
-    
     
 handle_cast(_Msg, State) ->
     {stop, invalid_case_request, State}.
@@ -132,7 +117,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-load_app_config(BaseDir, App)
+parse_app_config(BaseDir, App)
 		when is_atom(App)  ->
 	AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
 	FirstFile = filename:join(BaseDir, AppConfig),
@@ -168,3 +153,6 @@ loop(InFile, Acc) ->
     ;   {eof, _}                -> Acc
     end.
 
+    
+get_value_expand(NameList, Tree) ->    
+	ok.

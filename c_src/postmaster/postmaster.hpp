@@ -65,6 +65,7 @@ public:
 	} // send_errot_to_erlang()
     
     
+
 protected:
 	
 	void set_dispatch(dispatch_type  f)
