@@ -47,7 +47,7 @@ handle_call(_Request, _From, State) ->
 
     
 handle_cast(_Msg, State) ->
-    {stop, invalid_case_request, State}.
+    {stop, invalid_cast_request, State}.
 
     
 %%%%% ------------------------------------------------------- %%%%%
