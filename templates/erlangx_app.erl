@@ -1,6 +1,7 @@
 
 -module({{applicationid}}).
 -vsn("{{version}}").
+
 -behaviour(application).
 
 -export([start/0, start/2, stop/1]).

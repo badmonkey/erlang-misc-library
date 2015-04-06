@@ -1,6 +1,7 @@
 
 -module({{supervisorid}}).
 -vsn("{{version}}").
+
 -behaviour(supervisor).
 
 -export([start_link/0, start_link/1, init/1]).

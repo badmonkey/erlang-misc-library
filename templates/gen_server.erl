@@ -1,6 +1,7 @@
 
 -module({{serverid}}).
 -vsn("{{version}}").
+
 -behaviour(gen_server).
 
 -define(SERVER, ?MODULE).

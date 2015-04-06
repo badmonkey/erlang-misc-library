@@ -21,8 +21,9 @@
 {file, "project_gitignore",     ".gitignore"}.
 
 {template, "project_README.md", "README.md"}.
-{template, "project_shell",     "shell"}.
 {template, "project_priv.config", "priv/{{name}}.config"}.
+{template, "project_shell",     "shell"}.
+{chmod, 8#744, "shell"}.
 
 {template, "erlangx.app.src",   "src/{{name}}.app.src"}.    
 {template, "erlangx_app.erl",   "src/{{applicationid}}.erl"}.
