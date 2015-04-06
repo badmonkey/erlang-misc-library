@@ -1,0 +1,29 @@
+{variables,
+    [ {name, "myapp"}
+    , {version, "1.0.0"}
+    , {applicationid, "{{name}}_app"}
+    , {supervisorid, "{{name}}_sup"}
+    , {serverid, "{{name}}"}
+    , {main_is_gen_server, "true"}
+    ]
+}.
+
+
+{dir, "apps/{{name}}/src"}.
+{dir, "apps/{{name}}/ebin"}.
+{dir, "apps/{{name}}/include"}.
+{dir, "apps/{{name}}/test"}.
+{dir, "apps/{{name}}/priv"}.
+
+
+{template, "erlangx.app.src",       "apps/{{name}}/src/{{name}}.app.src"}.    
+{template, "erlangx_app.erl",       "apps/{{name}}/src/{{applicationid}}.erl"}.
+{template, "erlangx_sup.erl",       "apps/{{name}}/src/{{supervisorid}}.erl"}.
+{template, "project_priv.config",   "apps/{{name}}/priv/{{name}}.config"}.
+{template, "project_README.md",     "apps/{{name}}/README.md"}.
+
+{'if', main_is_gen_server
+     , [ {template, "gen_server.erl",     "apps/{{name}}/src/{{serverid}}.erl"} ]
+     , [ {template, "erlangx_module.erl", "apps/{{name}}/src/{{serverid}}.erl"} ]
+}.
+

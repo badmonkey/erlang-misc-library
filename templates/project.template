@@ -1,0 +1,35 @@
+{variables,
+    [ {name, "myproject"}
+    , {version, "1.0.0"}
+    , {applicationid, "{{name}}_app"}
+    , {supervisorid, "{{name}}_sup"}
+    , {serverid, "{{name}}"}
+    , {main_is_gen_server, "true"}    
+    ]
+}.
+
+{dir, "apps"}.
+{dir, "deps"}.
+{dir, "src"}.
+{dir, "c_src"}.
+{dir, "ebin"}.
+{dir, "include"}.
+{dir, "test"}.
+{dir, "priv"}.
+
+{file, "project_rebar.config",  "rebar.config"}.
+{file, "project_gitignore",     ".gitignore"}.
+
+{template, "project_README.md", "README.md"}.
+{template, "project_shell",     "shell"}.
+{template, "project_priv.config", "priv/{{name}}.config"}.
+
+{template, "erlangx.app.src",   "src/{{name}}.app.src"}.    
+{template, "erlangx_app.erl",   "src/{{applicationid}}.erl"}.
+{template, "erlangx_sup.erl",   "src/{{supervisorid}}.erl"}.
+
+
+{'if', main_is_gen_server
+     , [ {template, "gen_server.erl",     "src/{{serverid}}.erl"} ]
+     , [ {template, "erlangx_module.erl", "src/{{serverid}}.erl"} ]
+}.

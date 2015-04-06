@@ -2,17 +2,20 @@
 [
     {description, ""},
     {vsn, "1.0.0"},
-    {modules, [
-              erlangx, xlists, xmaths, xmaps, xproplists, xerlang
-            , xtime, xos, xrandom, xstring, xcode
-            , anagram, bindecoder, binencoder, uuid
-            , tcp_listener, packet_processor, snowflake, sysconfig
-            , config_lexer, config_parser
-        ]},
-    {registered, []},
-    {applications, [
-            kernel, stdlib, crypto
-        ]},
+    {modules,
+        [ erlangx, xlists, xmaths, xmaps, xproplists, xerlang
+        , xtime, xos, xrandom, xstring, xcode
+        , anagram, bindecoder, binencoder, uuid
+        , tcp_listener, packet_processor, port_server
+        , config_lexer, config_parser, fswatcher, snowflake, sysconfig
+        ] },
+    {registered,
+        [ snowflake, sysconfig, fswatcher
+        ] },
+    {applications,
+        [ kernel, stdlib
+        , crypto
+        ] },
     {mod, { erlangx, []}},
     {env, []}
 ]}.

@@ -1,0 +1,3 @@
+
+-module({{serverid}}).
+-vsn("{{version}}").

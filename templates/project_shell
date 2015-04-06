@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec erl -pz ebin/ deps/*/ebin apps/*/ebin  -s {{applicationid}}

@@ -1,7 +1,8 @@
 
--module({{srvid}}),
-
+-module({{listenerid}}),
+-vsn("{{version}}").
 -behaviour(tcp_listener).
+
 -define(SERVER, ?MODULE).
 
 

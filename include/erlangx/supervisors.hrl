@@ -1,7 +1,7 @@
 
 
 %%%%% ------------------------------------------------------- %%%%%
-% Helper macro for declaring children of supervisor
+% Helper macro for declaring supervisors and the children of supervisors
 
 
 -define(SERVICE(Id, Mod, Args), {Id, {Mod, start_link, Args}, permanent, 5000, worker, [Mod]}).

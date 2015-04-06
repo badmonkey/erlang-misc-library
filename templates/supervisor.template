@@ -1,2 +1,9 @@
-{variables, [{supid, "myserver_sup"}]}.
-{template, "supervisor.erl", "src/{{supid}}.erl"}.
+{variables
+    [ {name, "mysupervisor"}
+    , {version, "1.0.0"}
+    , {supervisorid, "{{name}}_sup"}
+    , {groupid, "{{name}}_group"}
+    ]
+}.
+
+{template, "supervisor.erl", "src/{{supervisorid}}.erl"}.

@@ -1,2 +1,8 @@
-{variables, [{srvid, "myserver"}]}.
-{template, "packet_processor.erl", "src/{{srvid}}.erl"}.
+{variables
+    [ {name, "myprocessor"}
+    , {version, "1.0.0"}
+    , {processorid, "{{name}}_pktproc"}
+    ]
+}.
+
+{template, "packet_processor.erl", "src/{{processorid}}.erl"}.

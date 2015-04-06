@@ -1,0 +1,19 @@
+{application, {{name}},
+[
+    {description, "{{name}}"},
+    {vsn, "{{version}}"},
+    {modules,
+        [ {{serverid}}
+        , {{applicationid}}, {{supervisorid}}
+        ] },
+    {registered,
+        [ {{serverid}}
+        ] },
+    {applications,
+        [ kernel, stdlib
+        , crypto, erlangx
+        ] },
+    {mod, { {{applicationid}}, []}},
+    {env, []}
+]}.
+

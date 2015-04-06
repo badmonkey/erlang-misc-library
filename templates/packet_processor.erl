@@ -1,8 +1,8 @@
 
--module({{srvid}}),
-
+-module({{processorid}}),
+-vsn("{{version}}").
 -behaviour(packet_processor).
--define(SERVER, ?MODULE).
+
 
 -export([start_link/0]).
 

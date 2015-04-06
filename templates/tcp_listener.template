@@ -1,2 +1,8 @@
-{variables, [{srvid, "myserver"}]}.
-{template, "tcp_listener.erl", "src/{{srvid}}.erl"}.
+{variables
+    [ {name, "mylistener"}
+    , {version, "1.0.0"}
+    , {listenerid, "{{name}}_tcplistener"}
+    ]
+}.
+
+{template, "tcp_listener.erl", "src/{{listenerid}}.erl"}.

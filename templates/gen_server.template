@@ -1,2 +1,8 @@
-{variables, [{srvid, "myserver"}]}.
-{template, "gen_server.erl", "src/{{srvid}}.erl"}.
+{variables
+    [ {name, "myserver"}
+    , {version, "1.0.0"}
+    , {serverid, "{{name}}"}
+    ]
+}.
+
+{template, "gen_server.erl", "src/{{serverid}}.erl"}.
