@@ -6,7 +6,7 @@
 
 -export([start_link/0, init/1]).
 
--include("erlangx/supervisors.hrl").
+-include_lib("erlangx/include/supervisors.hrl").
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -24,8 +24,8 @@ start_link() ->
 init({{supervisorid}}) ->
     { ok
     , { {one_for_one, 2, 5}
-      , [ ?SERVICE({{serverid}})
-        , ?CHILDVISOR(another_local_supervisor)
+      , [ ?SERVICE_SPEC({{serverid}})
+        , ?CHILDVISOR_SPEC(another_local_supervisor)
         ]
       }
     }.
