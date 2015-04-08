@@ -217,6 +217,7 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 %%%%% ------------------------------------------------------- %%%%%
 
+% 	{ok, {ForeignAddress, ForeignPort}} = inet:peername(Socket),
 
 handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
            , #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses} = State) ->
