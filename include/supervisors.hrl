@@ -25,10 +25,12 @@
 -define(SUPERVISOR_SPEC(I), ?SUPERVISOR_SPEC(I, I, [])).
 
 -define(CHILDVISOR_SPEC(Id, Args), SUPERVISOR_SPEC(Id, ?MODULE, Args)).
--define(CHILDVISOR_SPEC(Id), SUPERVISOR_SPEC(Id, ?MODULE, [])).
+-define(CHILDVISOR_SPEC(Id), ?SUPERVISOR_SPEC(Id, ?MODULE, [])).
 
 
--define(MODULE_SPEC(MODULE), MODULE:child_spec()).
+-define(MODULE_SPEC(Mod, Id, Args), Mod:child_spec(Id, Args)).
+-define(MODULE_SPEC(Mod, Id), ?MODULE_SPEC(Mod, Id, [])).
+-define(MODULE_SPEC(Mod), ?MODULE_SPEC(Mod, Mod, [])).
 
 
 
