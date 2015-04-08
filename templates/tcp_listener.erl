@@ -9,7 +9,7 @@
 
 -export([start_link/1]).
 
--export([ handle_connection/1, handle_error/3]).
+-export([ handle_connection/3, handle_error/3]).
 -export([ init/1, handle_call/3, handle_cast/2, handle_info/2
         , terminate/2, code_change/3]).
 
@@ -43,15 +43,20 @@ init(_InitParams) ->
 % Handle Connection
 
 
-handle_connection({_Ipaddr, _Port, _Socket, _UserData}, State) ->
+handle_connection({_Local, _Remote, _Socket}, _UserData, _State) ->
     packet_processor:start_link(REPLACE, []).
 
 
 %%%%% ------------------------------------------------------- %%%%%
-% Report Error
+% Process Error
 
 
-handle_error({_Ipaddr, _Port, _UserData}, Reason, State) ->
+%handle_error({Endpoint, UserData}, {start_listener, Reason}, State)
+%handle_error({Endpoint, UserData}, {copy_sockopts, Reason}, State)
+%handle_error({Endpoint, UserData}, {async_accept, Reason}, ProxyState)
+%handle_error({Endpoint, Remote, ClientSocket}, {handle_connection, Reason}, State)
+
+handle_error(_Who, Reason, State) ->
     {stop, Reason, State}.
 
 

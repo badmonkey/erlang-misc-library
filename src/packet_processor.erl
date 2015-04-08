@@ -33,6 +33,7 @@
 -type fixed_size() :: 1 | 2 | 4.
 -type pkt_length() :: fixed_size() | varint.
 -type pkt_scheme() :: pkt_length()
+                    | line
                     | {chunk, N :: pos_integer()}
                     | {start_tag, Tag :: binary()}.
 

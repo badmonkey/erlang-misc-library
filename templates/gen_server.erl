@@ -3,11 +3,13 @@
 -vsn("{{version}}").
 
 -behaviour(gen_server).
+-behaviour(supervisor_child).
 
 -define(SERVER, ?MODULE).
+-include_lib("erlangx/include/supervisors.hrl").
 
 
--export([start_link/0]).
+-export([start_link/0, child_spec/2]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -28,6 +30,10 @@
 
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+    
+child_spec({{serverid}}, _Args) -> ?SERVICE_SPEC({{serverid}}).
+
 
     
 %%%%% ------------------------------------------------------- %%%%%

@@ -23,22 +23,24 @@
 -record(state, 
     { module                        % callback module
     , proxystate                    % state of callback module
-    , addrs         = dict:new()    % socket -> {ipaddr, port, userdata}
-    , sockets       = dict:new()    % {ipaddr, port} -> socket
+    , addrs         = dict:new()    % socket -> {endpoint, userdata}
+    , sockets       = dict:new()    % endpoint -> socket
     }).
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
 
--type connection_info() :: {IpAddr :: inet:ip_address(), Port :: inet:port_number(), Socket :: inet:socket(), UserData :: term()}.
+-type listener_type() :: {Endpt :: type:endpoint(), UserData :: term()}.
+-type connection_type() :: {Local :: type:endpoint(), Remote :: type:endpoint(), Socket :: inet:socket()}.
 
--callback handle_connection(Info :: connection_info()) ->
-      {ok, Pid :: pid()}
-    | ignore
-    | {error, Reason :: any()}.
+-callback handle_connection(Connection :: connection_type(), UserData :: term(), State :: term()) ->
+      type:start_result()
+    | {ok, Pid :: pid(), State1 :: term()}
+    | {ignore, State1 :: term()}
+    | {stop, Reason :: term(), State1 :: term()}.
     
--callback handle_error(Info :: connection_info(), Reason :: term(), State :: term()) ->
+-callback handle_error(Info :: listener_type() | connection_type(), Reason :: term(), State :: term()) ->
       {stop, Reason1 :: term(), State1 :: term()}
     | {noreply, State1 :: term()}.
 
@@ -47,9 +49,9 @@
 
 -callback init(Args :: term()) ->
       {ok, State :: term()}
-    | {ok, State :: term(), timeout()
-    | hibernate}
-    | {stop, Reason :: term()} | ignore.
+    | {ok, State :: term(), timeout()}
+    | hibernate | ignore
+    | {stop, Reason :: term()}.
     
 -callback handle_call( Request :: term()
                      , From :: {pid(), Tag :: term()}
@@ -169,9 +171,11 @@ start_all_listeners(ListenerList, State0, Arg) ->
 
                         case NextState of
                             {error, Reason}     ->
-                                case CallbackModule:handle_error({IpAddr, Port, UserData}, {start_listener, Reason}, ProxyState) of
+                                Endpoint = {IpAddr, Port},
+                                case catch CallbackModule:handle_error({Endpoint, UserData}, {start_listener, Reason}, ProxyState) of
                                     {stop, ReasonHE, _}     -> {error, ReasonHE}
                                 ;   {noreply, NewPState}    -> State#state{proxystate = NewPState}
+                                ;   Err                     -> {error, Err}
                                 end
                             
                         ;   _                   -> NextState
@@ -217,16 +221,17 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 %%%%% ------------------------------------------------------- %%%%%
 
-% 	{ok, {ForeignAddress, ForeignPort}} = inet:peername(Socket),
 
 handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
            , #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses} = State) ->
     try
-        {ok, {IpAddr, Port, UserData}} = dict:find(ListenSock, Addresses),
+        {ok, {Endpoint, UserData}} = dict:find(ListenSock, Addresses),
+        {ok, Remote} = inet:peername(ClientSocket),
         
         case transfer_sockopt(ListenSock, ClientSocket) of
             ok                  ->
-                case CallbackModule:handle_connection({IpAddr, Port, ClientSocket, UserData}) of
+                % TODO handle exception
+                case CallbackModule:handle_connection({Endpoint, Remote, ClientSocket}, UserData, ProxyState) of
                     {ok, Pid}           ->
                         gen_tcp:controlling_process(ClientSocket, Pid),
                         {noreply, create_async_acceptor(ListenSock, State)}
@@ -235,13 +240,29 @@ handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
                         gen_tcp:close(ClientSocket),
                         {noreply, State}
                         
-                ;   {error, ReasonHC}   -> {stop, ReasonHC, State}
+                ;   {error, ReasonHC}   ->
+                        case CallbackModule:handle_error({Endpoint, Remote, ClientSocket}, {handle_connection, ReasonHC}, ProxyState) of
+                            {stop, ReasonHE, NewState}  -> {stop, ReasonHE, State#state{proxystate = NewState}}
+                        ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
+                        end
+                
+                ;   {ok, Pid, NewState} ->
+                        gen_tcp:controlling_process(ClientSocket, Pid),
+                        {noreply, create_async_acceptor(ListenSock, State#state{proxystate = NewState})}
+                        
+                ;   {ignore, NewState}  ->
+                        gen_tcp:close(ClientSocket),
+                        {noreply, State#state{proxystate = NewState}}
+                
+                ;   {stop, Reason, NewState}  ->
+                        {stop, Reason, State#state{proxystate = NewState}}
                 end
                 
         ;   {error, ReasonSO}   ->
-                case CallbackModule:handle_error({IpAddr, Port, UserData}, {copy_sockopts, ReasonSO}, ProxyState) of
+                case catch CallbackModule:handle_error({Endpoint, UserData}, {copy_sockopts, ReasonSO}, ProxyState) of
                     {stop, ReasonHE, NewState}  -> {stop, ReasonHE, State#state{proxystate = NewState}}
                 ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
+                ;   Err                         -> {stop, Err, State}
                 end
                 
         end
@@ -254,11 +275,12 @@ handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
 handle_info( {inet_async, ListenSock, _Ref, Error}
            , #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses} = State) ->
    
-    {ok, {IpAddr, Port, UserData}} = dict:find(ListenSock, Addresses),
+    {ok, {Endpoint, UserData}} = dict:find(ListenSock, Addresses),
     
-    case CallbackModule:handle_error({IpAddr, Port, UserData}, {async_accept, Error}, ProxyState) of
+    case catch CallbackModule:handle_error({Endpoint, UserData}, {async_accept, Error}, ProxyState) of
         {stop, ReasonHE, NewState}  -> {stop, ReasonHE, State#state{proxystate = NewState}}
     ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
+    ;   Err                         -> {stop, Err, State}
     end;
 
 
@@ -296,15 +318,16 @@ code_change(_OldVsn, State, _Extra) ->
 
 % return :: #state{} | {error, Reason}
 start_listener(IpAddr, Port, UserData, TcpOpts, #state{addrs = Addresses, sockets = Sockets} = State0) ->
-    case dict:find({IpAddr, Port}, Sockets) of
-        {ok, _} -> State0
+    Endpoint = {IpAddr, Port},
+    case dict:find(Endpoint, Sockets) of
+        {ok, _} -> State0 % should be an error?
     ;   error   ->
             case gen_tcp:listen(Port, TcpOpts) of
                 {ok, NewListenSocket} ->
                     xerlang:trace("Created new socket"),
                     State1 = State0#state{
-                                      addrs   = dict:store(NewListenSocket, {IpAddr, Port, UserData}, Addresses)
-                                    , sockets = dict:store({IpAddr, Port}, NewListenSocket, Sockets)
+                                      addrs   = dict:store(NewListenSocket, {Endpoint, UserData}, Addresses)
+                                    , sockets = dict:store(Endpoint, NewListenSocket, Sockets)
                                 },
                     create_async_acceptor(NewListenSocket, State1)
                     

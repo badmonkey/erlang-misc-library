@@ -3,9 +3,12 @@
 %%%%% ------------------------------------------------------- %%%%%
 % Helper macro for declaring supervisors and the children of supervisors
 
+-ifndef(SHUTDOWN_TIMEOUT).
+-define(SHUTDOWN_TIMEOUT, 5000).
+-endif.
 
 
--define(SERVICE_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, permanent, 5000, worker, [Mod]}).
+-define(SERVICE_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, permanent, ?SHUTDOWN_TIMEOUT, worker, [Mod]}).
 -define(SERVICE_SPEC(I, Args), ?SERVICE_SPEC(I, I, Args)).
 -define(SERVICE_SPEC(I), ?SERVICE_SPEC(I, I, [])).
 
@@ -15,12 +18,12 @@
 -define(WORKER_SPEC(I), ?WORKER_SPEC(I, I, [])).
 
 
--define(CHILD_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, transient, 5000, worker, [Mod]}).
+-define(CHILD_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, transient, ?SHUTDOWN_TIMEOUT, worker, [Mod]}).
 -define(CHILD_SPEC(I, Args), ?CHILD_SPEC(I, I, Args)).
 -define(CHILD_SPEC(I), ?CHILD_SPEC(I, I, [])).
 
 
--define(SUPERVISOR_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, permanent, 5000, supervisor, [Mod]}).
+-define(SUPERVISOR_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, permanent, ?SHUTDOWN_TIMEOUT, supervisor, [Mod]}).
 -define(SUPERVISOR_SPEC(I, Args), ?SUPERVISOR_SPEC(I, I, Args)).
 -define(SUPERVISOR_SPEC(I), ?SUPERVISOR_SPEC(I, I, [])).
 
