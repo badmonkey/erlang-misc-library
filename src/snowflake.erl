@@ -102,14 +102,16 @@ get(Time, Time, WorkerId, Seq0, State) ->
     , <<Time:64/integer, WorkerId:48/integer, Sequence:16/integer>>
     , State#state{sequence=Sequence} };
     
-%% clock has progressed, reset sequence
+    
+% clock has progressed, reset sequence
 get(CurrTime, MaxTime, WorkerId, _, State)
         when CurrTime > MaxTime  ->
     { ok
     , <<CurrTime:64/integer, WorkerId:48/integer, 0:16/integer>>
     , State#state{max_time=CurrTime, sequence=0} };
-  
-%% clock is running backwards
+
+    
+% clock is running backwards
 get(CurrTime, MaxTime, _WorkerId, _Sequence, State)
         when MaxTime > CurrTime  ->
     { error

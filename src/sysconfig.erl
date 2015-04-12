@@ -4,8 +4,10 @@
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 
+-define(SYSBOOT_CONFIG, "sysconfig.boot").
 
--export([start_link/0]).
+
+-export([start_link/1]).
 -export([load_once/1, load_once/2]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -33,8 +35,9 @@
 % AnchorMap( [A-Z]+  ->  path )
 %
 
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(MasterApp)
+        when is_atom(MasterApp)  ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [MasterApp], []).
     
     
 -spec load_once(atom()) -> ok | {error,any()}.
@@ -68,8 +71,13 @@ load_once(Name, Requires)
 init([MasterApp]) ->
     process_flag(trap_exit, true),
     
+    % only used to start sysconfig (not stored) hence different name
+    BootFile = xcode:search_for_file(?SYSBOOT_CONFIG, [config], [MasterApp, erlangx]),
+    
+    %AppConfigFile = xcode:search_for_file(AppConfig, [config], [App, MasterApp, erlangx]),
+    
     { ok
-    , #state{ config_path = xcode:priv(MasterApp)
+    , #state{ config_path = ConfigPath
             , modules = dict:new()
             }
     }.
