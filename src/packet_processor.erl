@@ -124,19 +124,16 @@ init([CallbackModule, Socket, InitParams]) ->
 
     
 init_callback(CallbackModule, Socket, InitParams, State) ->
-    try
-        case CallbackModule:init(Socket, InitParams) of
-            {ok, ProxyState}        -> {ok, State#state{proxystate = ProxyState}}
-        ;   {ok, ProxyState, {packet, Mode}} ->
-                validate_mode(Mode),
-                {ok, State#state{proxystate = ProxyState, packetmode = Mode}}
-        ;   {ok, ProxyState, Arg}   -> {ok, State#state{proxystate = ProxyState}, Arg}
-        ;   {stop, _} = Stop        -> Stop
-        ;   ignore                  -> ignore
-        ;   Err                     -> {stop, {unknown_reply, Err}}
-        end
-    catch
-        exit:Why                    -> {stop, Why}
+    case catch CallbackModule:init(Socket, InitParams) of
+        {ok, ProxyState}        -> {ok, State#state{proxystate = ProxyState}}
+    ;   {ok, ProxyState, {packet, Mode}} ->
+            validate_mode(Mode),
+            {ok, State#state{proxystate = ProxyState, packetmode = Mode}}
+    ;   {ok, ProxyState, Arg}   -> {ok, State#state{proxystate = ProxyState}, Arg}
+    ;   {stop, _} = Stop        -> Stop
+    ;   ignore                  -> ignore
+    ;   {'EXIT', Reason}        -> {stop, {error, Reason}}
+    ;   Else                    -> {stop, {bad_return_value, Else}}
     end.
     
     
@@ -157,13 +154,15 @@ init_replace_callback(CallbackModule, Socket, InitParams, Bytes, State0) ->
 
 
 handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_call(Request, From, ProxyState) of
+    case catch CallbackModule:handle_call(Request, From, ProxyState) of
         {reply, Reply, NewServerState}          -> {reply, Reply, State#state{proxystate = NewServerState}}
     ;   {reply, Reply, NewServerState, Arg}     -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
     ;   {noreply, NewServerState}               -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}          -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}          -> {stop, Reason, State#state{proxystate = NewServerState}}
     ;   {stop, Reason, Reply, NewServerState}   -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+    ;   Else                                    -> {stop, {bad_return_value, Else}, State}
     end.
 
 
@@ -171,10 +170,12 @@ handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxySta
 
     
 handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_cast(Msg, ProxyState) of
+    case catch CallbackModule:handle_cast(Msg, ProxyState) of
         {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
     end.
     
 
@@ -197,7 +198,7 @@ handle_info( {tcp, Socket, Data}
         FullData = <<Buffer/binary, Data/binary>>,
         ResetState = State#state{buffer = <<>>, wait_size = 0},
         
-        case CallbackModule:handle_data({raw, FullData}, ProxyState) of
+        case catch CallbackModule:handle_data({raw, FullData}, ProxyState) of
             {ok, NewState}                          ->
                 {noreply, ResetState#state{proxystate = NewState}}
                 
@@ -232,6 +233,9 @@ handle_info( {tcp, Socket, Data}
         ;   {replace_callback, Bytes, Module, InitParams}
                     when is_binary(Bytes), is_atom(Module), is_list(InitParams) ->
                 init_replace_callback(Module, Socket, InitParams, Bytes, ResetState)
+                
+        ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+        ;   Else                                    -> {stop, {bad_return_value, Else}, State}
         end
     catch exit:Why ->
         xerlang:trace({stop, Why, State})
@@ -247,7 +251,7 @@ handle_info( {tcp, Socket, Data}
         
         case get_packet(Mode, FullData) of
             {ok, Value, Rest} when is_binary(Rest) ->
-                case CallbackModule:handle_data({packet, Value}, ProxyState) of
+                case catch CallbackModule:handle_data({packet, Value}, ProxyState) of
                     {ok, NewState}                          ->
                         % check for more packets
                         handle_info( {tcp, Socket, Rest}, ResetState#state{proxystate = NewState} )
@@ -283,6 +287,9 @@ handle_info( {tcp, Socket, Data}
                 ;   {replace_callback, Bytes, Module, InitParams}
                             when is_binary(Bytes), is_atom(Module), is_list(InitParams) ->
                         init_replace_callback(Module, Socket, InitParams, <<Bytes/binary, Rest/binary>>, ResetState)
+                        
+                ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+                ;   Else                                    -> {stop, {bad_return_value, Else}, State}                        
                 end
                 
         ;   {more, Length} when is_integer(Length), Length > 0 ->
@@ -299,47 +306,37 @@ handle_info( {tcp, Socket, Data}
            
 handle_info( {tcp_closed, Socket}
            , #state{module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
-    try
-        case CallbackModule:handle_data({closed, Buffer}, ProxyState) of
-            {ok, NewState}              ->
-                {stop, normal, State#state{proxystate = NewState}}
-                
-        ;   {stop, Reason, NewState}    ->
-                {stop, Reason, State#state{proxystate = NewState}}
-                
-        ;   _                           ->
-                {stop, tcp_closed, State}
-        end
-
-    catch exit:Why ->
-        {stop, Why, State}
+    case catch CallbackModule:handle_data({closed, Buffer}, ProxyState) of
+        {ok, NewState}              ->
+            {stop, normal, State#state{proxystate = NewState}}
+            
+    ;   {stop, Reason, NewState}    ->
+            {stop, Reason, State#state{proxystate = NewState}}
+        
+    ;   {'EXIT', Reason}            -> {stop, {error, Reason}, State}
+    ;   Else                        -> {stop, {bad_return_value, Else}, State}
     end;
 
 
 handle_info( {tcp_error, Socket, Reason}
            , #state{module = CallbackModule, proxystate = ProxyState, buffer = Buffer, socket = Socket} = State) ->
-    try
-        case CallbackModule:handle_data({error, Reason, Buffer}, ProxyState) of
-            {ok, NewState}              ->
-                {stop, normal, State#state{proxystate = NewState}}
-                
-        ;   {stop, Reason2, NewState}    ->
-                {stop, Reason2, State#state{proxystate = NewState}}
-                
-        ;   {reply, Reply, NewState}    ->
-                gen_tcp:send(Socket, Reply),
-                {stop, Reason, State#state{proxystate = NewState}}
+    case catch CallbackModule:handle_data({error, Reason, Buffer}, ProxyState) of
+        {ok, NewState}              ->
+            {stop, normal, State#state{proxystate = NewState}}
+            
+    ;   {stop, Reason2, NewState}    ->
+            {stop, Reason2, State#state{proxystate = NewState}}
+            
+    ;   {reply, Reply, NewState}    ->
+            gen_tcp:send(Socket, Reply),
+            {stop, Reason, State#state{proxystate = NewState}}
 
-        ;   {close, Reply, NewState}    ->
-                gen_tcp:send(Socket, Reply),
-                {stop, Reason, State#state{proxystate = NewState}}
-                
-        ;   _                           ->
-                {stop, {tcp_error, Reason}, State}
-        end
-
-    catch exit:Why ->
-        {stop, Why, State}
+    ;   {close, Reply, NewState}    ->
+            gen_tcp:send(Socket, Reply),
+            {stop, Reason, State#state{proxystate = NewState}}
+            
+    ;   {'EXIT', Reason}            -> {stop, {error, Reason}, State}
+    ;   Else                        -> {stop, {bad_return_value, Else}, State}
     end;
 
 
@@ -348,10 +345,12 @@ handle_info( {tcp_error, Socket, Reason}
 %
 
 handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_info(Info, ProxyState) of
+    case catch CallbackModule:handle_info(Info, ProxyState) of
         {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
     end.
 
 

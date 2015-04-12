@@ -138,18 +138,15 @@ init([CallbackModule, InitParams, Listeners]) ->
 
     InitState = #state{module = CallbackModule},
 
-    try
-        case CallbackModule:init(InitParams) of
-            {ok, ProxyState}        ->
-                start_all_listeners(Listeners, InitState#state{proxystate = ProxyState}, undefined)
-        ;   {ok, ProxyState, Arg}   ->
-                start_all_listeners(Listeners, InitState#state{proxystate = ProxyState}, Arg)
-        ;   {stop, _} = Stop        -> Stop
-        ;   ignore                  -> ignore
-        ;   Err                     -> {stop, {unknown_reply, Err}}
-        end
-    catch
-        exit:Why                    -> {stop, Why}
+    case catch CallbackModule:init(InitParams) of
+        {ok, ProxyState}        ->
+            start_all_listeners(Listeners, InitState#state{proxystate = ProxyState}, undefined)
+    ;   {ok, ProxyState, Arg}   ->
+            start_all_listeners(Listeners, InitState#state{proxystate = ProxyState}, Arg)
+    ;   {stop, _} = Stop        -> Stop
+    ;   ignore                  -> ignore
+    ;   {'EXIT', Reason}        -> {stop, {error, Reason}}
+    ;   Else                    -> {stop, {bad_return_value, Else}}
     end.
    
    
@@ -158,7 +155,7 @@ start_all_listeners(ListenerList, State0, Arg) ->
                 fun
                     (_Listener, {error, _} = Err)   -> Err
                     
-                ;   ({IpAddr, Port, UserData}, #state{module = CallbackModule, proxystate = ProxyState} = State)   ->
+                ;   ({IpAddr, Port, UserData}, #state{} = State)    ->
                         {NIpAddr, NSockOpts} =  case IpAddr of
                                                     undefined           -> { {0,0,0,0}, ?REQUIRED_SOCK_OPTS }
                                                 ;   {0,0,0,0}           -> { IpAddr, ?REQUIRED_SOCK_OPTS }
@@ -172,10 +169,9 @@ start_all_listeners(ListenerList, State0, Arg) ->
                         case NextState of
                             {error, Reason}     ->
                                 Endpoint = {IpAddr, Port},
-                                case catch CallbackModule:handle_error({Endpoint, UserData}, {start_listener, Reason}, ProxyState) of
-                                    {stop, ReasonHE, _}     -> {error, ReasonHE}
-                                ;   {noreply, NewPState}    -> State#state{proxystate = NewPState}
-                                ;   Err                     -> {error, Err}
+                                case process_error({Endpoint, UserData}, {start_listener, Reason}, State) of
+                                    {noreply, NewPState}    -> State#state{proxystate = NewPState}
+                                ;   {stop, ReasonHE, _}     -> {error, ReasonHE}
                                 end
                             
                         ;   _                   -> NextState
@@ -195,13 +191,15 @@ start_all_listeners(ListenerList, State0, Arg) ->
 
 
 handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_call(Request, From, ProxyState) of
+    case catch CallbackModule:handle_call(Request, From, ProxyState) of
         {reply, Reply, NewServerState}          -> {reply, Reply, State#state{proxystate = NewServerState}}
     ;   {reply, Reply, NewServerState, Arg}     -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
     ;   {noreply, NewServerState}               -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}          -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}          -> {stop, Reason, State#state{proxystate = NewServerState}}
     ;   {stop, Reason, Reply, NewServerState}   -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+    ;   Else                                    -> {stop, {bad_return_value, Else}, State}
     end.
 
 
@@ -212,10 +210,12 @@ handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxySta
 %    gen_server:terminate({shutdown, Reason}, State).
     
 handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_cast(Msg, ProxyState) of
+    case catch CallbackModule:handle_cast(Msg, ProxyState) of
         {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
     end.
     
 
@@ -231,7 +231,7 @@ handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
         case transfer_sockopt(ListenSock, ClientSocket) of
             ok                  ->
                 % TODO handle exception
-                case CallbackModule:handle_connection({Endpoint, Remote, ClientSocket}, UserData, ProxyState) of
+                case catch CallbackModule:handle_connection({Endpoint, Remote, ClientSocket}, UserData, ProxyState) of
                     {ok, Pid}           ->
                         gen_tcp:controlling_process(ClientSocket, Pid),
                         {noreply, create_async_acceptor(ListenSock, State)}
@@ -241,10 +241,7 @@ handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
                         {noreply, State}
                         
                 ;   {error, ReasonHC}   ->
-                        case CallbackModule:handle_error({Endpoint, Remote, ClientSocket}, {handle_connection, ReasonHC}, ProxyState) of
-                            {stop, ReasonHE, NewState}  -> {stop, ReasonHE, State#state{proxystate = NewState}}
-                        ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
-                        end
+                        process_error({Endpoint, Remote, ClientSocket}, {handle_connection, ReasonHC}, State)
                 
                 ;   {ok, Pid, NewState} ->
                         gen_tcp:controlling_process(ClientSocket, Pid),
@@ -256,15 +253,16 @@ handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
                 
                 ;   {stop, Reason, NewState}  ->
                         {stop, Reason, State#state{proxystate = NewState}}
+                
+                ;   {'EXIT', Reason}    ->
+                        {stop, {error, Reason}, State}
+                        
+                ;   Else                ->
+                        {stop, {bad_return_value, Else}, State}
                 end
                 
         ;   {error, ReasonSO}   ->
-                case catch CallbackModule:handle_error({Endpoint, UserData}, {copy_sockopts, ReasonSO}, ProxyState) of
-                    {stop, ReasonHE, NewState}  -> {stop, ReasonHE, State#state{proxystate = NewState}}
-                ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
-                ;   Err                         -> {stop, Err, State}
-                end
-                
+                process_error({Endpoint, UserData}, {copy_sockopts, ReasonSO}, State)                
         end
 
     catch exit:Why ->
@@ -273,15 +271,11 @@ handle_info( {inet_async, ListenSock, _Ref, {ok, ClientSocket}}
 
     
 handle_info( {inet_async, ListenSock, _Ref, Error}
-           , #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses} = State) ->
+           , #state{addrs = Addresses} = State)  ->
    
     {ok, {Endpoint, UserData}} = dict:find(ListenSock, Addresses),
     
-    case catch CallbackModule:handle_error({Endpoint, UserData}, {async_accept, Error}, ProxyState) of
-        {stop, ReasonHE, NewState}  -> {stop, ReasonHE, State#state{proxystate = NewState}}
-    ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
-    ;   Err                         -> {stop, Err, State}
-    end;
+    process_error({Endpoint, UserData}, {async_accept, Error}, State);
 
 
 %
@@ -289,10 +283,12 @@ handle_info( {inet_async, ListenSock, _Ref, Error}
 %
 
 handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_info(Info, ProxyState) of
+    case catch CallbackModule:handle_info(Info, ProxyState) of
         {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
     end.
 
 
@@ -305,7 +301,7 @@ trace_close(Sock) ->
 terminate(Reason, #state{module = CallbackModule, proxystate = ProxyState, addrs = Addresses}) ->
     %[gen_tcp:close(Sock) || Sock <- dict:fetch_keys(Addresses)],
     [trace_close(Sock) || Sock <- dict:fetch_keys(Addresses)],
-    CallbackModule:terminate(Reason, ProxyState),
+    catch CallbackModule:terminate(Reason, ProxyState),
     ok.
 
 
@@ -359,3 +355,15 @@ transfer_sockopt(ListenSocket, ClientSocket) ->
             Error
     end.
 
+    
+process_error( ConnInfo, Error
+             , #state{module = CallbackModule, proxystate = ProxyState} = State)  ->
+             
+    case catch CallbackModule:handle_error(ConnInfo, Error, ProxyState) of
+        {stop, Reason, NewState}    -> {stop, Reason, State#state{proxystate = NewState}}
+    ;   {noreply, NewState}         -> {noreply, State#state{proxystate = NewState}}
+    ;   {'EXIT', Reason}            -> {stop, {error, Reason}, State}
+    ;   Else                        -> {stop, {bad_return_value, Else}, State}
+    end.
+
+    

@@ -103,32 +103,35 @@ start_link(Name, CallbackModule, InitParams)
 init([CallbackModule, InitParams]) ->
     process_flag(trap_exit, true),
 
-    Props = CallbackModule:port_info(),
-    ExeFile = proplists:get_value(exefile, Props),
-    
-    Port = erlang:open_port({spawn, ExeFile}, [{packet, 2}, binary, exit_status]),
+    case catch CallbackModule:port_info() of 
+        {'EXIT', Reason}    -> {stop, {error, Reason}}
+        
+    ;   X when is_list(X)   ->
+            ExeFile = proplists:get_value(exefile, X),
+            
+            Port = erlang:open_port({spawn, ExeFile}, [{packet, 2}, binary, exit_status]),
 
-    InitState = #state{module = CallbackModule, port = Port},
+            InitState = #state{module = CallbackModule, port = Port},
 
-    try
-        case CallbackModule:init(InitParams) of
-            {ok, ProxyState}        -> {ok, InitState#state{proxystate = ProxyState}}
-        ;   {ok, ProxyState, Arg}   -> {ok, InitState#state{proxystate = ProxyState}, Arg}
-        ;   {stop, _} = Stop        -> Stop
-        ;   ignore                  -> ignore
-        ;   Err                     -> {stop, {unknown_reply, Err}}
-        end
-    catch
-        exit:Why                    -> {stop, Why}
+            case catch CallbackModule:init(InitParams) of
+                {ok, ProxyState}        -> {ok, InitState#state{proxystate = ProxyState}}
+            ;   {ok, ProxyState, Arg}   -> {ok, InitState#state{proxystate = ProxyState}, Arg}
+            ;   {stop, _} = Stop        -> Stop
+            ;   ignore                  -> ignore
+            ;   {'EXIT', Reason}        -> {stop, {error, Reason}}
+            ;   Else                    -> {stop, {bad_return_value, Else}}
+            end
+            
+    ;   Else                ->
+            {stop, {bad_return_value, Else}}
     end.
-
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
 handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_call(Request, From, ProxyState) of
+    case catch CallbackModule:handle_call(Request, From, ProxyState) of
         {reply, Reply, NewServerState}                  -> {reply, Reply, State#state{proxystate = NewServerState}}
     ;   {reply, Reply, NewServerState, Arg}             -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
     ;   {reply_send, Reply, Cmd, NewServerState}        -> port_send(Cmd, State), {reply, Reply, State#state{proxystate = NewServerState}}
@@ -139,6 +142,8 @@ handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxySta
     ;   {noreply_send, Cmd, NewServerState, Arg}        -> port_send(Cmd, State), {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}                  -> {stop, Reason, State#state{proxystate = NewServerState}}
     ;   {stop, Reason, Reply, NewServerState}           -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                                -> {stop, {error, Reason}, State}
+    ;   Else                                            -> {stop, {bad_return_value, Else}, State}
     end.
 
 
@@ -146,28 +151,28 @@ handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxySta
 
     
 handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_cast(Msg, ProxyState) of
+    case catch CallbackModule:handle_cast(Msg, ProxyState) of
         {noreply, NewServerState}                   -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}              -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {noreply_send, Cmd, NewServerState}         -> port_send(Cmd, State), {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply_send, Cmd, NewServerState, Arg}    -> port_send(Cmd, State), {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}              -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                            -> {stop, {error, Reason}, State}
+    ;   Else                                        -> {stop, {bad_return_value, Else}, State}
     end.
-    
+
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
 handle_info( {Port, {data, Data}}
            , #state{module = CallbackModule, proxystate = ProxyState, port = Port} = State) ->
-    try
-        case CallbackModule:handle_port(binary_to_term(Data), ProxyState) of
-            {ok, NewState}              -> {noreply, State#state{proxystate = NewState}}
-        ;   {ok, Cmd, NewState}         -> port_send(Cmd, State), {noreply, State#state{proxystate = NewState}}
-        ;   {stop, Reason, NewState}    -> {stop, Reason, State#state{proxystate = NewState}}
-        end
-    catch exit:Why ->
-        {stop, Why, State}
+    case catch CallbackModule:handle_port(binary_to_term(Data), ProxyState) of
+        {ok, NewState}              -> {noreply, State#state{proxystate = NewState}}
+    ;   {ok, Cmd, NewState}         -> port_send(Cmd, State), {noreply, State#state{proxystate = NewState}}
+    ;   {stop, Reason, NewState}    -> {stop, Reason, State#state{proxystate = NewState}}
+    ;   {'EXIT', Reason}            -> {stop, {error, Reason}, State}
+    ;   Else                        -> {stop, {bad_return_value, Else}, State}
     end;
     
       
@@ -185,12 +190,14 @@ handle_info( {'EXIT', Port, Reason}, #state{port = Port} = State) ->
 %
 
 handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
-    case CallbackModule:handle_info(Info, ProxyState) of
+    case catch CallbackModule:handle_info(Info, ProxyState) of
         {noreply, NewServerState}                   -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}              -> {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {noreply_send, Cmd, NewServerState}         -> port_send(Cmd, State), {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply_send, Cmd, NewServerState, Arg}    -> port_send(Cmd, State), {noreply, State#state{proxystate = NewServerState}, Arg}
     ;   {stop, Reason, NewServerState}              -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                            -> {stop, {error, Reason}, State}
+    ;   Else                                        -> {stop, {bad_return_value, Else}, State}
     end.
 
 
