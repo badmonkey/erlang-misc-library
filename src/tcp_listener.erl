@@ -135,6 +135,8 @@ start_link(CallbackModule, Name, InitParams, ListenerList)
 
 init([CallbackModule, InitParams, Listeners]) ->
     process_flag(trap_exit, true),
+    
+    behaviour:assert(CallbackModule, tcp_listener),
 
     InitState = #state{module = CallbackModule},
 

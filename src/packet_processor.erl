@@ -116,6 +116,8 @@ start_link(CallbackModule, Socket, InitParams)
 init([CallbackModule, Socket, InitParams]) ->
     process_flag(trap_exit, true),
 
+    behaviour:assert(CallbackModule, packet_processor),
+    
     InitState = #state{
                       module = CallbackModule
                     , socket = Socket },

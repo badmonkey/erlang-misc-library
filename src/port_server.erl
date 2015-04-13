@@ -103,6 +103,8 @@ start_link(Name, CallbackModule, InitParams)
 init([CallbackModule, InitParams]) ->
     process_flag(trap_exit, true),
 
+    behaviour:assert(CallbackModule, port_server),
+    
     case catch CallbackModule:port_info() of 
         {'EXIT', Reason}    -> {stop, {error, Reason}}
         

@@ -4,6 +4,9 @@
 -export_type([error/0, ok_or_error/0, endpoint/0, start_result/0]).
 
 
+%%%%% ------------------------------------------------------- %%%%%
+
+
 -type error() :: {error, _}.
 -type ok_or_error() :: ok | error().
 
