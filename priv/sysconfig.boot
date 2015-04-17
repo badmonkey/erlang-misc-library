@@ -2,5 +2,6 @@
 
 anchors
 {
-    PRIV = "~priv~"
+    PRIV = priv
+    CONFIG = priv.config
 }

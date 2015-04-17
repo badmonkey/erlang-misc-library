@@ -9,6 +9,7 @@
 -type filelist_type() :: atom() | file:filename() | [atom() | file:filename()].
 
 
+
 %%%%% ------------------------------------------------------- %%%%%
 
 
@@ -28,7 +29,7 @@ app_base_dir(App)
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec app_subdir( atom(), applist_type() ) -> file:filename().
+-spec app_subdir( atom(), filelist_type() ) -> file:filename().
     
 app_subdir(App, Subdir) ->
         when is_atom(Subdir)  ->
@@ -42,7 +43,7 @@ app_subdir(App, Subdirs) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec app_subdir( atom(), filelist_type() ) -> non_existing | file:filename().
+-spec is_app_file( atom(), filelist_type() ) -> non_existing | file:filename().
 
 is_app_file(App, Subparts)
         when is_list(Subparts)  ->    
@@ -59,12 +60,14 @@ is_app_file(App, Name) ->
 %%%%% ------------------------------------------------------- %%%%%
     
 
+%
 % App/
 %  |-- priv/
 %        |-- config/
 %        |-- data/
 %              |-- Type1/
 %              |-- TypeN/
+%
 
 
 priv_dir(App)   -> app_base_dir(App).
@@ -106,5 +109,4 @@ search_for_file(Name, [Hd | Rest], App)
 search_for_file(Name, Subdir, Apps)
         when  is_atom(Subdir)  ->
     search_for_file(Name, [Subdir], Apps).
-    
-    
+

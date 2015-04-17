@@ -3,6 +3,7 @@
 
 -export([check_for/2, assert/2]).
 
+
 -ifndef(STRICT_BEHAVIOUR).
 -define(STRICT_BEHAVIOUR, true).
 -endif.
