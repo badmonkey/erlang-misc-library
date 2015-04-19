@@ -2,14 +2,22 @@
 -module(fswatcher).
 
 -behaviour(port_server).
+-behaviour(supervisor_child).
 -define(SERVER, ?MODULE).
 
 
--export([start_link/0, port_info/0, handle_port/2]).
+-export([start_link/0, port_info/0, handle_port/2, child_spec/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 
+%%%%% ------------------------------------------------------- %%%%%
+
+
+child_spec(Id, _Args) ->
+    {Id, {fswatcher, start_link, []}, permanent, 5000, worker, [fswatcher]}.
+
+         
 %%%%% ------------------------------------------------------- %%%%%
 % Server State
 

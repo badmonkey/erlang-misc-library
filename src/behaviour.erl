@@ -1,12 +1,8 @@
 
 -module(behaviour).
 
--export([check_for/2, assert/2]).
+-export([assert/2, check_for/2, is_any_of/2, gather_behaviours/1]).
 
-
--ifndef(STRICT_BEHAVIOUR).
--define(STRICT_BEHAVIOUR, true).
--endif.
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -27,28 +23,38 @@ assert(Module, Behave) ->
 check_for(Module, Behave)
         when  is_atom(Module)
             , is_atom(Behave)  ->
-    Attrs = Module:module_info(attributes),
-    case { ?STRICT_BEHAVIOUR, search_for_behaviour(Behave, Attrs, undefined) } of
-        {true, undefined}   -> false
-    ;   {false, undefined}  -> true
-    ;   {_, What}           -> What
-    end.
+    Behaviours = gather_behaviours(Module),
+    lists:member(Behave, Behaviours).
+
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec is_any_of( atom(), [atom()] ) -> [atom()].
+
+is_any_of(Module, Behaviours)
+        when  is_atom(Module)
+            , is_list(Behaviours)  ->
+    Behave = gather_behaviours(Module),
+    Intersect = sets:intersection( sets:from_list(Behaviours), sets:from_list(Behave) ),
+    sets:to_list(Intersect).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+gather_behaviours(Module) when is_atom(Module) ->
+    gather_behaviours( Module:module_info(attributes), [] ).
     
 
-search_for_behaviour(Behave, [], What) ->
-    What;
-    
-search_for_behaviour(Behave, [Hd | Rest], What) ->
+gather_behaviours([], Acc) ->
+    Acc;
+
+gather_behaviours([Hd | Rest], Acc) ->
     case Hd of
-        {behaviour, Entries}    ->
-            case lists:member(Behave, Entries) of
-                true    -> true
-            ;   false   -> search_for_behaviour(Behave, Rest, false)
-            end
-            
-    ;   _                       ->
-            search_for_behaviour(Behave, Rest, What)
+        {behaviour, Entries}    -> gather_behaviours(Rest, Acc ++ Entries)
+    ;   _                       -> gather_behaviours(Rest, Acc)
     end.
 
-    
+
 %%%%% ------------------------------------------------------- %%%%%
