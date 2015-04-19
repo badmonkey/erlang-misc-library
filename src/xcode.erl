@@ -31,11 +31,11 @@ app_base_dir(App)
 
 -spec app_subdir( atom(), filelist_type() ) -> file:filename().
     
-app_subdir(App, Subdir) ->
+app_subdir(App, Subdir)
         when is_atom(Subdir)  ->
-    filename:join( app_base_dir(App), Subdir ).
+    filename:join( app_base_dir(App), Subdir );
 
-app_subdir(App, Subdirs) ->
+app_subdir(App, Subdirs)
         when is_list(Subdirs)  ->
     filename:join([app_base_dir(App) | Subdirs]).
 
@@ -85,7 +85,7 @@ data_dir(App, Type)
 
 -spec search_for_file( file:filename(), applist_type(), applist_type() ) -> non_existing | file:filename().
 
-search_for_file(Name, _, []) ->
+search_for_file(_, _, []) ->
     non_existing;
     
 search_for_file(Name, Subdirs, [Hd | Rest])

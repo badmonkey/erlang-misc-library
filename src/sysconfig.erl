@@ -8,7 +8,7 @@
 
 
 -export([start_link/1]).
--export([load_once/1, load_once/2]).
+-export([load_once/1]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -24,7 +24,9 @@
 -record(state,
     {
         config_path
-    ,   modules :: dict()
+    ,   master  :: atom()
+    ,   modules :: sets:set(atom())
+    ,   config  :: typed_property:property()
     }).
 
          
@@ -40,18 +42,12 @@ start_link(MasterApp)
     gen_server:start_link({local, ?SERVER}, ?MODULE, [MasterApp], []).
     
     
--spec load_once(atom()) -> ok | {error,any()}.
-load_once(Name) when is_atom(Name) ->
-    load_once(Name, []).
+-spec load_once( atom() ) -> type:ok_or_error().
 
-    
--spec load_once(atom(), [atom()]) -> ok | {error,any()}.
-load_once(Name, Requires)
-        when  is_atom(Name)
-            , is_list(Requires)  ->
-    gen_server:call(?SERVER, {load, Name, Requires}).
-    
-    
+load_once(App)
+        when is_atom(App)  ->
+    gen_server:call(?SERVER, {load, App}).
+      
 
 %Type = bool | integer | string | float | atom | list | tuple | ipaddress | path
 % get_value(atom|string, Type)
@@ -74,11 +70,11 @@ init([MasterApp]) ->
     % only used to start sysconfig (not stored) hence different name
     BootFile = xcode:search_for_file(?SYSBOOT_CONFIG, [config], [MasterApp, erlangx]),
     
-    %AppConfigFile = xcode:search_for_file(AppConfig, [config], [App, MasterApp, erlangx]),
-    
     { ok
-    , #state{ config_path = ConfigPath
-            , modules = dict:new()
+    , #state{ config_path = BootFile
+            , master = MasterApp
+            , modules = set:new()
+            , config = type_property:new()
             }
     }.
 
@@ -86,9 +82,30 @@ init([MasterApp]) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_call({load, Name, Requires}, _From, State) ->
-
-    {reply, {error, Name}, State};
+handle_call( {load, App}, _From
+           , #state{modules = Loaded, config = Config, master = MasterApp} = State) ->
+    
+    case sets:is_element(App, Loaded) of
+        true    -> {reply, ok, State}
+        
+    ;   false   ->
+            AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
+            AppConfigFile = xcode:search_for_file(AppConfig, [config], [App, MasterApp]),
+            Props = parse(AppConfigFile),
+            
+            Merged = typed_property:merge(Config, Props),
+            Expanded = typed_property:expand(Merged),
+            
+            { reply, ok
+            , State#state{
+                      modules = sets:add_element(App, Loaded)
+                    , config = Expanded
+                    } }
+    end;
+    
+    
+handle_call( {reload, App}, From, State) ->
+    handle_call( {load, App}, From, State#state{ modules = sets:del_element(App, State#state.modules) } );
     
 
 handle_call(_Request, _From, State) ->
@@ -122,42 +139,20 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-parse_app_config(BaseDir, App)
-        when is_atom(App)  ->
-    AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
-    FirstFile = filename:join(BaseDir, AppConfig),
-    
-    case filelib:is_regular(FirstFile) of
-        true    -> parse(FirstFile)
-        
-    ;   _       ->
-            AppPath = xcode:priv_dir(App),
-            SecondFile = filename:join(AppPath, AppConfig),
-            
-            case filelib:is_regular(SecondFile) of
-                true    -> parse(SecondFile)
-            ;   _       -> throw({error, App, "Can't find config file"})
-            end
-    end.
-    
+parse(non_existing) -> undefined;
     
 parse(FileName) ->
     {ok, InFile} = file:open(FileName, [read]),
     Acc = loop(InFile, []),
     file:close(InFile),
-    
-    xerlang:trace(Acc),
-    
+
     config_parser:parse(Acc).
 
     
 loop(InFile, Acc) ->
     case io:request(InFile, {get_until, latin1, prompt, config_lexer, token, [1]}) of
         {ok, Token, _EndLine}   -> loop(InFile, Acc ++ [Token])
-    ;   {error, token}          -> exit(scanning_error)
+    ;   {error, token}          -> {error, scanning_error}
     ;   {eof, _}                -> Acc
     end.
 
-    
-get_value_expand(NameList, Tree) ->    
-    ok.

@@ -25,7 +25,7 @@ Rootsymbol rule_Config.
 Right 100 '='.
 
 
-rule_Config -> rule_DeclList            : ?NAMETYPEVALUE("ROOT", group, '$1').
+rule_Config -> rule_DeclList            : '$1'.
 
 rule_DeclList -> rule_Decl rule_DeclList        : ['$1' | '$2'].
 rule_DeclList -> '$empty'               : [].
