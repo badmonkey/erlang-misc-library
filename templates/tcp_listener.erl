@@ -3,11 +3,14 @@
 -vsn("{{version}}").
 
 -behaviour(tcp_listener).
+-behaviour(supervisor_child).
 
 -define(SERVER, ?MODULE).
 
+-include_lib("erlangx/include/supervisors.hrl").
 
--export([start_link/1]).
+
+-export([start_link/1, child_spec/2]).
 
 -export([ handle_connection/3, handle_error/3]).
 -export([ init/1, handle_call/3, handle_cast/2, handle_info/2
@@ -30,6 +33,9 @@
 start_link(Port) ->
     tcp_listener:start_link(?MODULE, Port).
     
+    
+child_spec(Id, Args) -> ?SERVICE_SPEC(Id, ?MODULE, Args).
+
     
 %%%%% ------------------------------------------------------- %%%%%
 % Initialise Server

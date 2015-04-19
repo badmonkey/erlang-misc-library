@@ -1,9 +1,9 @@
 {variables
     [ {name, "mysupervisor"}
     , {version, "1.0.0"}
-    , {supervisorid, "{{name}}_sup"}
+    , {supervisorid, "{{name}}_group"}
     , {serverid, "{{name}}"}
     ]
 }.
 
-{template, "supervisor.erl", "src/{{supervisorid}}.erl"}.
+{template, "workersup.erl", "src/{{supervisorid}}.erl"}.

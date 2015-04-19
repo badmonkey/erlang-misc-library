@@ -8,6 +8,9 @@
 -endif.
 
 
+-define(GENERIC_SPEC(Id, Mod, Args, Restart, Type), {Id, {Mod, start_link, Args}, Restart, ?SHUTDOWN_TIMEOUT, Type, [Mod]}).
+
+
 -define(SERVICE_SPEC(Id, Mod, Args), {Id, {Mod, start_link, Args}, permanent, ?SHUTDOWN_TIMEOUT, worker, [Mod]}).
 -define(SERVICE_SPEC(I, Args), ?SERVICE_SPEC(I, I, Args)).
 -define(SERVICE_SPEC(I), ?SERVICE_SPEC(I, I, [])).
@@ -38,9 +41,10 @@
 
 
 -define(WORKER_SUPERVISOR(Id, Mod, Args, R, P), { {simple_one_for_one, R, P}, [?WORKER_SPEC(Id, Mod, Args)] }).
+-define(WORKER_SUPERVISOR(I, Args, R, P), ?WORKER_SUPERVISOR(I, I, Args, R, P)).
 -define(WORKER_SUPERVISOR(I, R, P), ?WORKER_SUPERVISOR(I, I, [], R, P)).
 
 
--define(START_SUPERVISOR(Id), supervisor:start_link({local, Id }, ?MODULE, Id) ).
+-define(START_SUPERVISOR(Id), supervisor:start_link({local, Id}, ?MODULE, Id) ).
 
 
