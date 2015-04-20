@@ -40,12 +40,12 @@ rule_Value -> bool                      : ?TYPEDVALUE(bool, ?TOKEN('$1')).
 rule_Value -> integer                   : ?TYPEDVALUE(integer, ?TOKEN('$1')).
 rule_Value -> float                     : ?TYPEDVALUE(float, ?TOKEN('$1')).
 rule_Value -> ipv4_address              : ?TYPEDVALUE(ipaddress, ?TOKEN('$1')).
-rule_Value -> rule_String               : ?TYPEDVALUE(string, '$1').
+rule_Value -> rule_String               : ?TYPEDVALUE(string_raw, '$1').
 rule_Value -> '[' ']'                   : ?TYPEDVALUE(list, []).
-rule_Value -> '[' rule_ValueList ']'    : ?TYPEDVALUE(list, '$2').
-rule_Value -> '{' rule_ValueList '}'    : ?TYPEDVALUE(tuple, erlang:list_to_tuple('$2')).
+rule_Value -> '[' rule_ValueList ']'    : ?TYPEDVALUE(list_raw, '$2').
+rule_Value -> '{' rule_ValueList '}'    : ?TYPEDVALUE(tuple, '$2').
 rule_Value -> variable                  : ?VARIABLE('$1').
-rule_Value -> rule_FilePath             : ?TYPEDVALUE(path, '$1').
+rule_Value -> rule_FilePath             : ?TYPEDVALUE(path_raw, '$1').
 
 rule_ValueList -> rule_Value ',' rule_ValueList : ['$1' | '$3'].
 rule_ValueList -> rule_Value                    : ['$1' | []].
@@ -78,8 +78,8 @@ Erlang code.
 
 -define(TYPEDVALUE(T,V), {T, V}).
 
--define(NAMETYPEVALUE(N,X),{value_of(N), X}).
--define(NAMETYPEVALUE(N,T,V),{value_of(N), ?TYPEDVALUE(T,V)}).
+-define(NAMETYPEVALUE(N,X),make_prop(value_of(N), X)).
+-define(NAMETYPEVALUE(N,T,V),{value_of(N), T, V}).
 
 -define(VARIABLE(N), ?TYPEDVALUE(variable, value_of(N))).
 
@@ -92,4 +92,7 @@ value_of(List) when is_list(List)  ->
     
 value_of(Token) ->
     return_error(0, io_lib:format("Bad token ~p", [Token])).
-   
+    
+make_prop(N, {T, V}) -> {N, T, V}.
+
+

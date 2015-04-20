@@ -4,16 +4,17 @@
 
 -export([new/0, get_value/3, get_value/4, merge/2, merge/3, expand/1]).
 
--export_type([property_type/0]).
+-export_type([property_type/0, property_name/0, property/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
+
 
 -type property_name() :: atom() | string().
 -type property_type() :: atom | bool | integer | float | ipaddress | string | list | tuple | path.
 
 -type property() :: [{ atom(), internal_type(), term()}].
--type internal_type() :: property_type() | group | variable.
+-type internal_type() :: property_type() | group | variable | string_raw | list_raw | path_raw.
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -55,7 +56,7 @@ get_value(Prop, Name, Type, Default) ->
 merge(First, Second) -> merge(First, Second, keepgroups).
 
 
--spec merge( property(), property(), strict | keepgroups ) -> property().
+-spec merge( property(), property(), override | keepgroups ) -> property().
 
 merge(First, Second, Mode) ->
     SortedFirst = lists:keysort(1, First),
@@ -80,7 +81,7 @@ merge( [FHd | FRest] = First
     ;   {{Name, _, _}, {Name, group, _}, _}             ->
             merge(FRest, SRest, Acc ++ [SHd], Mode)
     
-    ;   {{Name, group, _}, {Name, _, _}, strict}        ->
+    ;   {{Name, group, _}, {Name, _, _}, override}      ->
             merge(FRest, SRest, Acc ++ [SHd], Mode)
             
     ;   {{Name, group, _}, {Name, _, _}, keepgroups}    ->
@@ -89,10 +90,10 @@ merge( [FHd | FRest] = First
     ;   {{Name, _, _}, {Name, _, _}, _}                 ->
             merge(FRest, SRest, Acc ++ [SHd], Mode)
         
-    ;   {{Nm1, _, _}, {Nm2, _, _}, _} when Nm1 < Nm2    ->
+    ;   {{Nm1, _, _}, {Nm2, _, _}, _}  when Nm1 < Nm2   ->
             merge(FRest, Second, Acc ++ [FHd], Mode)
             
-    ;   {{Nm1, _, _}, {Nm2, _, _}, _} when Nm2 < Nm1    ->
+    ;   {{Nm1, _, _}, {Nm2, _, _}, _}  when Nm2 < Nm1   ->
             merge(First, SRest, Acc ++ [SHd], Mode)
     
     end.
@@ -104,10 +105,84 @@ merge( [FHd | FRest] = First
 -spec expand( property() ) -> property() | {error, {unknown, atom()}}.
 
 expand(Prop) ->
-    Prop.
+    [ expand_property(Prop, Prop, X) || X <- Prop ].
     
+
+expand_property(TopProp, _, {Name, group, Value}) ->
+	{Name, group, [ expand_property(TopProp, Value, X) || X <- Value ]};
+
+	
+expand_property(TopProp, Prop, {Name, variable, Value}) ->
+	get_raw_value(TopProp, Value),
+	get_raw_value(Prop, Value),
+	undefined;
+
+
+expand_property(TopProp, Prop, {Name, string_raw, Value}) ->
+	NewVList = expand_string_list(TopProp, Prop, Value),
+	{Name, string, lists:concat(NewVList)};
+
+
+expand_property(TopProp, Prop, {Name, list_raw, Value}) ->
+	NewVList = expand_value_list(TopProp, Prop, Value),
+	{Name, list, NewVList};
+
+	
+expand_property(TopProp, Prop, {Name, path_raw, Value}) ->
+	NewVList = expand_path_list(TopProp, Prop, Value),
+	{Name, path, lists:concat(NewVList)};
+	
+
+expand_property(TopProp, Prop, {Name, tuple, Value} = P) ->
+	case is_tuple(Value) of
+		true	-> P
+	;	false	->
+			NewVList = expand_value_list(TopProp, Prop, Value),
+			{Name, tuple, erlang:list_to_tuple(NewVList)}
+	end;
+
+	
+expand_property(_TopProp, _Prop, P) ->
+	P.
+    
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+expand_value_list(TopProp, Prop, VList) ->
+	[ naked_value(expand_property(TopProp, Prop, {nil, T, V})) || {T, V} <- VList ].
+	
+
+expand_path_list(TopProp, Prop, PList) ->
+	[ expand_path_item(TopProp, Prop, P) || P <- PList ].	
+
+	
+expand_path_item(TopProp, Prop, {anchor, N}) ->
+	AnchorName = lists:concat(["'sy$tem'.", N]),
+	naked_value(expand_property(TopProp, Prop, {nil, variable, AnchorName}));
+	
+expand_path_item(TopProp, Prop, {variable, N}) ->
+	naked_value(expand_property(TopProp, Prop, {nil, variable, N}));
+	
+expand_path_item(_, _, P) -> P.
+
+
+expand_string_list(TopProp, Prop, SList) ->
+	[ expand_string_item(TopProp, Prop, S) || S <- SList ].	
+
+	
+expand_string_item(TopProp, Prop, {variable, N}) ->
+	naked_value(expand_property(TopProp, Prop, {nil, variable, N}));
+	
+expand_string_item(_, _, S) -> S.	
+
+
+naked_value({_Name, group, _Value}) -> undefined;
+naked_value({_Name, _Type, Value}) -> Value.
+
     
 %%%%% ------------------------------------------------------- %%%%%
+
 
 -spec get_raw_value( property(), property_name() ) -> { internal_type(), term() } | undefined.
 

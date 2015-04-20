@@ -29,7 +29,7 @@ false|no                                        : ?TOKEN(bool, TokenLine, false)
 {DIGIT}+                                        : ?TOKEN(integer, TokenLine, fun erlang:list_to_integer/1, TokenChars).
 {FLOAT}                                         : ?TOKEN(float, TokenLine, fun erlang:list_to_float/1, TokenChars).
 {DEC256}\.{DEC256}\.{DEC256}\.{DEC256}          : ?TOKEN(ipv4_address, TokenLine, TokenChars).
-{ATOM}                                          : ?TOKEN(atom, TokenLine, TokenChars).
+{ATOM}                                          : ?TOKEN(atom, TokenLine, fun erlang:list_to_atom/1, TokenChars).
 {VAR_BEGIN}{ATOM}(\.{ATOM})*{VAR_END}           : ?TOKEN(variable, TokenLine, strip_var(TokenChars)).
 {SPECIAL}                                       : ?FORWARD_TOKEN(TokenLine, TokenChars).
 
