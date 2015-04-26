@@ -13,18 +13,15 @@
         , terminate/2, code_change/3]).
 
 
--define(COPY_SOCK_OPTS, [active, nodelay, keepalive, delay_send, priority, tos, sndbuf]).
--define(REQUIRED_SOCK_OPTS, [binary, {packet, raw}, {reuseaddr, true}, {nodelay, true}, {keepalive, true}]).
-
      
 %%%%% ------------------------------------------------------- %%%%%
 
 
 -record(state, 
-    { module                        % callback module
-    , proxystate                    % state of callback module
-    , addrs         = dict:new()    % socket -> {endpoint, userdata}
-    , sockets       = dict:new()    % endpoint -> socket
+    { module                        :: atom()       % callback module
+    , proxystate                    :: term()       % state of callback module
+    , addrs         = dict:new()    :: dict:dict(inet:socket(), {type:endpoint(), term()})
+    , sockets       = dict:new()    :: dict:dict(type:endpoint(), inet:socket())
     }).
 
     
@@ -151,6 +148,8 @@ init([CallbackModule, InitParams, Listeners]) ->
     ;   Else                    -> {stop, {bad_return_value, Else}}
     end.
    
+   
+-define(REQUIRED_SOCK_OPTS, [binary, {packet, raw}, {reuseaddr, true}, {nodelay, true}, {keepalive, true}]).   
    
 start_all_listeners(ListenerList, State0, Arg) ->
     StateN = lists:foldl(
@@ -341,6 +340,8 @@ create_async_acceptor(ListenSocket, #state{} = State) ->
     end.
     
 
+-define(COPY_SOCK_OPTS, [active, nodelay, keepalive, delay_send, priority, tos, sndbuf]).
+    
 transfer_sockopt(ListenSocket, ClientSocket) ->
     true = inet_db:register_socket(ClientSocket, inet_tcp),
     case prim_inet:getopts(ListenSocket, ?COPY_SOCK_OPTS) of

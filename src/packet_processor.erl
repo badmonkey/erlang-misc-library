@@ -24,6 +24,7 @@
     , buffer        = <<>>          :: binary()
     , wait_size     = 0             :: non_neg_integer()
     , compressor    = nil           :: zlib:zstream()
+    , udpdetails    = undefined     :: type:endpoint()
     }).
 
     
@@ -37,7 +38,7 @@
                     | {chunk, N :: pos_integer()}
                     | {start_tag, Tag :: binary()}.
 
--type packet_mode() :: raw
+-type packet_mode() :: raw | udp
                      | pkt_scheme()
                      | {zlib, CompressedPkt :: pkt_scheme(), FullSize :: pkt_length()}
                      | {zstream, Mode :: raw | pkt_scheme()}.
@@ -183,6 +184,38 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+handle_info( {udp, Socket, Ip, Port, Packet}
+           , #state{packetmode = udp, module = CallbackModule, proxystate = ProxyState, socket = Socket} = State) ->
+    ResetState = State#state{buffer = <<>>, wait_size = 0},
+    case catch CallbackModule:handle_data({packet, Packet}, ProxyState) of
+        {ok, NewState}                          ->
+            {noreply, ResetState#state{proxystate = NewState}}
+
+    ;   {reply, Reply, NewState}                ->
+            gen_udp:send(Socket, Ip, Port, Reply),
+            {noreply, ResetState#state{proxystate = NewState}}
+
+    ;   {stop, Reason, NewState}                ->
+            {stop, Reason, ResetState#state{proxystate = NewState}}
+            
+    ;   {close, Reply, NewState}                ->
+            gen_udp:send(Socket, Ip, Port, Reply),
+            {stop, normal, ResetState#state{proxystate = NewState}}
+            
+    ;   {replace_callback, Module, InitParams}
+                when is_atom(Module), is_list(InitParams) ->
+            init_replace_callback(Module, Socket, InitParams, Packet, ResetState)
+            
+    ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+    ;   Else                                    -> {stop, {bad_return_value, Else}, State}                        
+    end;
+    
+    
+handle_info( {udp, Socket, _, _, _}
+           , #state{packetmode = Mode, socket = Socket} = State) ->
+    {stop, {error, udp_invalid_in_this_mode, Mode}, State#state{}};
+    
 
 %% handle data but wait_size and we haven't got that much data yet
 handle_info( {tcp, Socket, Data}
