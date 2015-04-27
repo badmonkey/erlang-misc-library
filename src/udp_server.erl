@@ -18,9 +18,10 @@
 
 
 -record(client_handler,
-    { pid
-    , monitorref
+    { pid								:: pid()
+    , monitorref						:: reference()
     }).
+    
 
 -record(state, 
     { module                            :: atom()           % callback module
@@ -28,7 +29,8 @@
     , heartbeatMS                       :: pos_integer()    % in milliseconds
     , timer         = nil               :: timer:tref()
     , socket        = undefined         :: inet:socket()
-    , handlers      = gb_tree:empty()   :: gb_tree:tree( type:endpoint(), rejected | #client_handler{} )
+    , handlers      = gb_tree:empty()   :: gb_tree:tree( type:endpoint(), rejected | undefined | #client_handler{} )
+    , references	= gb_tree:empty()	:: gb_tree:tree( reference(), type:endpoint() )
     }).
 
     
@@ -115,12 +117,12 @@ start_link(CallbackModule, Name, IpAddr, Port, InitParams, HeartbeatSecs)
 %%%%% ------------------------------------------------------- %%%%%
 
 
-init([CallbackModule, InitParams, Endpoint, Heartbeat]) ->
+init([CallbackModule, InitParams, Endpoint, HeartbeatSecs]) ->
     process_flag(trap_exit, true),
     
     behaviour:assert(CallbackModule, udp_server),
 
-    InitState = #state{module = CallbackModule, heartbeatMS = Heartbeat * 1000},
+    InitState = #state{module = CallbackModule, heartbeatMS = HeartbeatSecs * 1000},
 
     case catch CallbackModule:init(InitParams) of
         {ok, ProxyState}        -> {ok, start_listener(Endpoint, InitState#state{ proxystate = ProxyState })}
@@ -178,7 +180,7 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 
 handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
-           , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers} = State) ->
+           , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers, references = References} = State) ->
     Endpoint = {Ip, Port},
     case gb_trees:lookup(Endpoint, Handlers) of
         none ->
@@ -186,8 +188,9 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
                 {ok, Pid}           ->
                     MRef = erlang:monitor(process, Pid),
                     NewHandlers = gb_trees:insert(Endpoint, #client_handler{pid = Pid, monitorref = MRef}, Handlers),
+                    NewReferences = gb_tree:insert(MRef, Endpoint, References),
                     Pid ! UdpPacket,
-                    {noreply, State#state{handlers = NewHandlers}}
+                    {noreply, State#state{handlers = NewHandlers, references = NewReferences}}
                 
             ;   ignore              ->
                     NewHandlers = gb_trees:insert(Endpoint, rejected, Handlers),
@@ -199,8 +202,9 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
             ;   {ok, Pid, NewState} ->
                     MRef = erlang:monitor(process, Pid),
                     NewHandlers = gb_trees:insert(Endpoint, #client_handler{pid = Pid, monitorref = MRef}, Handlers),
+                    NewReferences = gb_tree:insert(MRef, Endpoint, References),
                     Pid ! UdpPacket,
-                    {noreply, State#state{proxystate = NewState, handlers = NewHandlers}}
+                    {noreply, State#state{proxystate = NewState, handlers = NewHandlers, references = NewReferences}}
                     
             ;   {ignore, NewState}  ->
                     NewHandlers = gb_trees:insert(Endpoint, rejected, Handlers),
@@ -228,8 +232,29 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
     end;
     
             
-% handle_info({'DOWN', MonitorRef, process, Object, Info}, State)
-% handle_info({'udp$server', heartbeat}, State)
+handle_info({'DOWN', MonitorRef, process, Object, Info}, State) ->
+	{noreply, State};
+	
+	
+handle_info( {'udp$server', heartbeat}
+		   , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers} = State) ->
+	
+	NewHandlers1 = gb_tree:map(
+						fun	(Endpoint, rejected) ->
+								undefined
+						
+						;	(_, Value) ->
+								Value
+						end
+					, Handlers),
+					
+	NewHandlers2 = xtree:delete_if(
+							fun	(_, undefined)	-> true
+							;	(_, _)			-> false
+							end
+						, NewHandlers1),
+		
+	{noreply, State#state{ handlers = NewHandlers2 }};
 
 
 %
@@ -251,8 +276,7 @@ handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = Sta
 
 terminate(Reason, #state{module = CallbackModule, proxystate = ProxyState, socket = Socket}) ->
     gen_udp:close(Socket),
-    catch CallbackModule:terminate(Reason, ProxyState),
-    ok.
+    catch CallbackModule:terminate(Reason, ProxyState).
 
 
 code_change(_OldVsn, State, _Extra) ->
