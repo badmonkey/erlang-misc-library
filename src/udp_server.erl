@@ -18,8 +18,8 @@
 
 
 -record(client_handler,
-    { pid								:: pid()
-    , monitorref						:: reference()
+    { pid                               :: pid()
+    , monitorref                        :: reference()
     }).
     
 
@@ -30,7 +30,7 @@
     , timer         = nil               :: timer:tref()
     , socket        = undefined         :: inet:socket()
     , handlers      = gb_tree:empty()   :: gb_tree:tree( type:endpoint(), rejected | undefined | #client_handler{} )
-    , references	= gb_tree:empty()	:: gb_tree:tree( reference(), type:endpoint() )
+    , references    = gb_tree:empty()   :: gb_tree:tree( reference(), type:endpoint() )
     }).
 
     
@@ -233,28 +233,28 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
     
             
 handle_info({'DOWN', MonitorRef, process, Object, Info}, State) ->
-	{noreply, State};
-	
-	
+    {noreply, State};
+    
+    
 handle_info( {'udp$server', heartbeat}
-		   , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers} = State) ->
-	
-	NewHandlers1 = gb_tree:map(
-						fun	(Endpoint, rejected) ->
-								undefined
-						
-						;	(_, Value) ->
-								Value
-						end
-					, Handlers),
-					
-	NewHandlers2 = xtree:delete_if(
-							fun	(_, undefined)	-> true
-							;	(_, _)			-> false
-							end
-						, NewHandlers1),
-		
-	{noreply, State#state{ handlers = NewHandlers2 }};
+           , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers} = State) ->
+    
+    NewHandlers1 = gb_tree:map(
+                        fun (Endpoint, rejected) ->
+                                undefined
+                        
+                        ;   (_, Value) ->
+                                Value
+                        end
+                    , Handlers),
+                    
+    NewHandlers2 = xtree:delete_if(
+                            fun (_, undefined)  -> true
+                            ;   (_, _)          -> false
+                            end
+                        , NewHandlers1),
+        
+    {noreply, State#state{ handlers = NewHandlers2 }};
 
 
 %
