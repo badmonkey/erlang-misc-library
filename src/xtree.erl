@@ -1,7 +1,7 @@
 
 -module(xtree).
 
--export([delete_all/2, foreach/2, filter/2, delete_if/2]).
+-export([delete_all/2, foreach/2, fold/3, filter/2, delete_if/2]).
 
 
 
@@ -21,10 +21,19 @@ delete_all(Keys, Tree) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec foreach( fun((K, V) -> term()), gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
+-spec foreach( fun((K, V) -> V), gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
 
 foreach(Pred, Tree) ->
     Tree.
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec fold( fun(({K, V}, Acc) -> Acc), Acc, gb_tree:tree(K, V) ) -> Acc.
+
+fold(Fun, Acc, Tree) ->
+	lists:foldl(Fun, Acc, gb_tree:to_list(Tree) ).
 
 
 %%%%% ------------------------------------------------------- %%%%%
