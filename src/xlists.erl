@@ -1,6 +1,6 @@
 -module(xlists).
 
--export([sorted_member/2, subsets/2, unique/1, drop/2, take/2, foldl/2, foldr/2, filter_fold/3]).
+-export([sorted_member/2, subsets/2, unique/1, drop/2, take/2, foldl/2, foldr/2, filter_fold/2, filter_fold/3]).
 
 
 
@@ -54,14 +54,20 @@ foldr(F, [Hd | Tl]) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), Acc, [V] ) -> {[V], Acc}.
+-spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), {Acc, [V]} ) -> {Acc, [V]}.
+
+filter_fold(F, {Acc, List}) when is_list(List) ->
+	filter_fold(F, Acc, [], List).
+
+
+-spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), Acc, [V] ) -> {Acc, [V]}.
 
 filter_fold(F, Acc, List) when is_list(List) ->
 	filter_fold(F, Acc, [], List).
 	
 
 filter_fold(F, Acc, Result, []) ->
-	{lists:reverse(Result), Acc};
+	{Acc, lists:reverse(Result)};
 
 filter_fold(F, Acc, Result, [Hd | Tl]) ->
 	case F(Hd, Acc) of
