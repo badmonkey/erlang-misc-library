@@ -59,7 +59,7 @@ handle_connection({_Local, _Remote, _Socket}, _UserData, _State) ->
 
 %handle_error({Endpoint, UserData}, {start_listener, Reason}, State)
 %handle_error({Endpoint, UserData}, {copy_sockopts, Reason}, State)
-%handle_error({Endpoint, UserData}, {async_accept, Reason}, ProxyState)
+%handle_error({Endpoint, UserData}, {async_accept, Reason}, State)
 %handle_error({Local, Remote, ClientSocket}, {handle_connection, Reason}, State)
 
 handle_error(_Who, Reason, State) ->

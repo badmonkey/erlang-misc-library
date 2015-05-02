@@ -7,15 +7,15 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 trace(Bin) when is_binary(Bin) ->
-    erlang:display({"TRACE", bin_to_hex(Bin)}),
+    lager:debug("TRACE binary ~p", [bin_to_hex(Bin)]),
     Bin;
     
 trace(Term) ->
-    erlang:display({"TRACE", Term}),
+    lager:debug("TRACE ~p", [Term]),
     Term.
     
 trace(Msg, Term) ->
-    erlang:display({"TRACE", Msg, Term}),
+    lager:debug("TRACE ~p ~p", [Msg, Term]),
     Term.
 
 

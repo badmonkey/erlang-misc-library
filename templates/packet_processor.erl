@@ -34,7 +34,7 @@ start_link(Socket, Args) ->
 
 
 init(Socket, _InitParams) ->
-    {ok, #state{}, raw}.
+    {ok, #state{}, {packet, raw}}.
 
 
 %%%%% ------------------------------------------------------- %%%%%

@@ -239,30 +239,30 @@ handle_info({'DOWN', MonitorRef, process, Object, Info}, State) ->
 handle_info( {'udp$server', heartbeat}
            , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers} = State) ->
     
-    Proc =	fun
-				(_, {{stop, _} = Err, AccState}) ->
-					{true, {Err, AccState}}
-					
-			;	({Endpoint, rejected}, {_, AccState}) ->
-					case process_handler(rejected, Endpoint, AccState) of
-						{delete, NewState}			-> {false, {ok, NewState}}
-					;	{keep, NewState}			-> {true, {ok, NewState}}
-					;	{stop, Reason, NewState}	-> {{stop, Reason}, NewState}
-					end
-					
-			;	(_, Acc)	-> {true, Acc}
-			end,
-			
+    Proc =  fun
+                (_, {{stop, _} = Err, AccState}) ->
+                    {true, {Err, AccState}}
+                    
+            ;   ({Endpoint, rejected}, {_, AccState}) ->
+                    case process_handler(rejected, Endpoint, AccState) of
+                        {delete, NewState}          -> {false, {ok, NewState}}
+                    ;   {keep, NewState}            -> {true, {ok, NewState}}
+                    ;   {stop, Reason, NewState}    -> {true, {{stop, Reason}, NewState}}
+                    end
+                    
+            ;   (_, Acc)    -> {true, Acc}
+            end,
+            
     {NewTree, Result} = xlists:filter_fold(Proc, {ok, State}, gb_tree:to_list(Handlers) ),
     NewHandlers = gb_tree:from_orddict(NewTree),
     
     case Result of
-		{ok, AState} ->
-			{noreply, AState#state{ handlers = NewHandlers }}
-			
-	;	{{stop, Reason}, AState} ->
-			{stop, Reason, AState#state{ handlers = NewHandlers }}
-	end;
+        {ok, AState} ->
+            {noreply, AState#state{ handlers = NewHandlers }}
+            
+    ;   {{stop, Reason}, AState} ->
+            {stop, Reason, AState#state{ handlers = NewHandlers }}
+    end;
 
 
 %
@@ -297,23 +297,23 @@ code_change(_OldVsn, State, _Extra) ->
 -spec process_handler(rejected, type:endpoint(), #state{}) -> {keep, #state{}} | {delete, #state{}} | {stop, term(), #state{}}.
 
 process_handler( rejected, Endpoint
-			   , #state{module = CallbackModule, proxystate = ProxyState} = State)  ->
-			   
-	case catch CallbackModule:handle_heartbeat(rejected, Endpoint, ProxyState) of
-		{clear, NewState}  ->
-			{delete, State#state{proxystate = NewState}}
-			
-	;   {reject, NewState}  ->
-			{keep, State#state{proxystate = NewState}}
+               , #state{module = CallbackModule, proxystate = ProxyState} = State)  ->
+               
+    case catch CallbackModule:handle_heartbeat(rejected, Endpoint, ProxyState) of
+        {clear, NewState}  ->
+            {delete, State#state{proxystate = NewState}}
+            
+    ;   {reject, NewState}  ->
+            {keep, State#state{proxystate = NewState}}
 
-	;   {'EXIT', Reason}    ->
-			{stop, {error, Reason}, State}
-			
-	;   Else                ->
-			{stop, {bad_return_value, Else}, State}		
-	end;
+    ;   {'EXIT', Reason}    ->
+            {stop, {error, Reason}, State}
+            
+    ;   Else                ->
+            {stop, {bad_return_value, Else}, State}     
+    end;
 
-	
+    
 process_handler(_, _, State) ->
-	{keep, State}.
+    {keep, State}.
 

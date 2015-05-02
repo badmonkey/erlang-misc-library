@@ -57,21 +57,21 @@ foldr(F, [Hd | Tl]) ->
 -spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), {Acc, [V]} ) -> {Acc, [V]}.
 
 filter_fold(F, {Acc, List}) when is_list(List) ->
-	filter_fold(F, Acc, [], List).
+    filter_fold(F, Acc, [], List).
 
 
 -spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), Acc, [V] ) -> {Acc, [V]}.
 
 filter_fold(F, Acc, List) when is_list(List) ->
-	filter_fold(F, Acc, [], List).
-	
+    filter_fold(F, Acc, [], List).
+    
 
-filter_fold(F, Acc, Result, []) ->
-	{Acc, lists:reverse(Result)};
+filter_fold(_, Acc, Result, []) ->
+    {Acc, lists:reverse(Result)};
 
 filter_fold(F, Acc, Result, [Hd | Tl]) ->
-	case F(Hd, Acc) of
-		{true, Acc1}	-> filter_fold(F, Acc1, [Hd | Result], Tl)
-	;	{false, Acc1}	-> filter_fold(F, Acc1, Result, Tl)
-	end.
+    case F(Hd, Acc) of
+        {true, Acc1}    -> filter_fold(F, Acc1, [Hd | Result], Tl)
+    ;   {false, Acc1}   -> filter_fold(F, Acc1, Result, Tl)
+    end.
 

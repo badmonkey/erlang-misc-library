@@ -1,0 +1,23 @@
+{variables,
+    [ {name, "mylib"}
+    , {version, "1.0.0"}
+    , {applicationid, "{{name}}_app"}
+    , {moduleid, "{{name}}"}
+    ]
+}.
+
+
+{dir, "apps/{{name}}/src"}.
+{dir, "apps/{{name}}/ebin"}.
+{dir, "apps/{{name}}/include"}.
+{dir, "apps/{{name}}/test"}.
+{dir, "apps/{{name}}/priv"}.
+
+
+{template, "erlangx.app.src",       "apps/{{name}}/src/{{name}}.app.src"}.
+{template, "module.erl",            "apps/{{name}}/src/{{moduleid}}.erl"}.
+{template, "library_app.erl",       "apps/{{name}}/src/{{applicationid}}.erl"}.
+{template, "project_priv.config",   "apps/{{name}}/priv/{{name}}.config"}.
+{template, "project_README.md",     "apps/{{name}}/README.md"}.
+
+

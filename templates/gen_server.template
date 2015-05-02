@@ -1,4 +1,4 @@
-{variables
+{variables,
     [ {name, "myserver"}
     , {version, "1.0.0"}
     , {serverid, "{{name}}"}

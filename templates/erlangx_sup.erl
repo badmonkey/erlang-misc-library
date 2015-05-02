@@ -24,7 +24,7 @@ start_link() ->
 init({{supervisorid}}) ->
     { ok
     , { {one_for_one, 2, 5}
-      , [ supervisor_child:build_specs([{{serverid}}]) ]
+      , supervisor_child:build_specs([{{serverid}}])
       }
     }.
     

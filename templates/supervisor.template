@@ -1,4 +1,4 @@
-{variables
+{variables,
     [ {name, "mysupervisor"}
     , {version, "1.0.0"}
     , {supervisorid, "{{name}}_sup"}

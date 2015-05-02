@@ -3,12 +3,12 @@
 
 -behaviour(application).
 
-%% Application callbacks
 -export([start/2, start/0, stop/1]).
 
-%% ===================================================================
-%% Application callbacks
-%% ===================================================================
+
+%%%%% ------------------------------------------------------- %%%%%
+% Application callbacks
+
 
 start() ->
     application:load(erlangx).

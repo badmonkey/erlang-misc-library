@@ -8,7 +8,8 @@
 
 
 -export([start_link/1]).
--export([load_once/1]).
+-export([load_app_config/1]).
+-export([get_integer/1]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -23,10 +24,10 @@
 
 -record(state,
     {
-        config_path
-    ,   master  :: atom()
-    ,   modules :: sets:set(atom())
-    ,   config  :: typed_property:property()
+      config_path
+    , master  :: atom()
+    , modules :: sets:set(atom())
+    , config  :: typed_property:property()
     }).
 
          
@@ -42,9 +43,9 @@ start_link(MasterApp)
     gen_server:start_link({local, ?SERVER}, ?MODULE, [MasterApp], []).
     
     
--spec load_once( atom() ) -> type:ok_or_error().
+-spec load_app_config( atom() ) -> type:ok_or_error().
 
-load_once(App)
+load_app_config(App)
         when is_atom(App)  ->
     gen_server:call(?SERVER, {load, App}).
       
@@ -53,6 +54,8 @@ load_once(App)
 % get_value(atom|string, Type)
 % get_<Type>(atom|string)
 % get_as_<Type>(atom|string)
+
+get_integer(_S) -> 25565.
 
 
 %get_value(readonly, bool)
@@ -73,8 +76,8 @@ init([MasterApp]) ->
     { ok
     , #state{ config_path = BootFile
             , master = MasterApp
-            , modules = set:new()
-            , config = type_property:new()
+            , modules = sets:new()
+            , config = typed_property:new()
             }
     }.
 
@@ -91,7 +94,7 @@ handle_call( {load, App}, _From
     ;   false   ->
             AppConfig = atom_to_list(App) ++ ?CONFIG_EXT,
             AppConfigFile = xcode:search_for_file(AppConfig, [config], [App, MasterApp]),
-            Props = parse(AppConfigFile),
+            {ok, Props} = parse(AppConfigFile),
             
             Merged = typed_property:merge(Config, Props),
             Expanded = typed_property:expand(Merged),

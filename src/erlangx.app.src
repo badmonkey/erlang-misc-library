@@ -13,8 +13,7 @@
         [ snowflake, sysconfig, fswatcher
         ] },
     {applications,
-        [ kernel, stdlib
-        , crypto
+        [ kernel, stdlib, crypto, lager
         ] },
     {mod, { erlangx, []}},
     {env, []}

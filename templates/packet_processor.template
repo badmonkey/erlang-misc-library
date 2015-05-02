@@ -1,4 +1,4 @@
-{variables
+{variables,
     [ {name, "myprocessor"}
     , {version, "1.0.0"}
     , {processorid, "{{name}}_pktproc"}

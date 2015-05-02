@@ -11,6 +11,7 @@
 -spec delete_all( [K], gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
 
 delete_all(Keys, Tree) ->
+    % TODO iterate through tree once removing K's
     lists:foldl(
             fun(X, T) ->
                 gb_tree:delete_any(X, T)
@@ -23,7 +24,7 @@ delete_all(Keys, Tree) ->
 
 -spec foreach( fun((K, V) -> V), gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
 
-foreach(Pred, Tree) ->
+foreach(_Pred, Tree) ->
     Tree.
     
     
@@ -33,7 +34,7 @@ foreach(Pred, Tree) ->
 -spec fold( fun(({K, V}, Acc) -> Acc), Acc, gb_tree:tree(K, V) ) -> Acc.
 
 fold(Fun, Acc, Tree) ->
-	lists:foldl(Fun, Acc, gb_tree:to_list(Tree) ).
+    lists:foldl(Fun, Acc, gb_tree:to_list(Tree) ).
 
 
 %%%%% ------------------------------------------------------- %%%%%

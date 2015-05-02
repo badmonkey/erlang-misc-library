@@ -109,7 +109,11 @@ init([CallbackModule, InitParams]) ->
         {'EXIT', Reason}    -> {stop, {error, Reason}}
         
     ;   X when is_list(X)   ->
-            ExeFile = proplists:get_value(exefile, X),
+            ExeName = proplists:get_value(exename, X),
+            ExeFile =   case proplists:get_value(application, X) of
+                            undefined   -> ExeName
+                        ;   App         -> xcode:find_executable(App, ExeName)
+                        end,
             
             Port = erlang:open_port({spawn, ExeFile}, [{packet, 2}, binary, exit_status]),
 

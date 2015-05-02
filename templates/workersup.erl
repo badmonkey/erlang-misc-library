@@ -27,7 +27,7 @@ start_child(Args) ->
 
 init({{supervisorid}}) ->
     { ok
-    , ?WORKER_SUPERVISOR({{serverid}}, [], 2, 5)
+    , ?GROUP_SUPERVISOR({{serverid}}, [], 2, 5)
     }.
     
 

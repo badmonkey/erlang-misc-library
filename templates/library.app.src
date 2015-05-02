@@ -3,11 +3,11 @@
     {description, "{{name}}"},
     {vsn, "{{version}}"},
     {modules,
-        [ {{serverid}}
-        , {{applicationid}}, {{supervisorid}}
+        [ {{applicationid}}
+        , {{moduleid}}
         ] },
     {registered,
-        [ {{serverid}}
+        [
         ] },
     {applications,
         [ kernel, stdlib, crypto

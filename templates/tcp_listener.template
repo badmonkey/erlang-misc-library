@@ -1,4 +1,4 @@
-{variables
+{variables,
     [ {name, "mylistener"}
     , {version, "1.0.0"}
     , {listenerid, "{{name}}_tcplistener"}

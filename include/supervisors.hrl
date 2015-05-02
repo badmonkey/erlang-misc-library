@@ -30,8 +30,7 @@
 -define(SUPERVISOR_SPEC(I, Args), ?SUPERVISOR_SPEC(I, I, Args)).
 -define(SUPERVISOR_SPEC(I), ?SUPERVISOR_SPEC(I, I, [])).
 
--define(CHILDVISOR_SPEC(Id, Args), SUPERVISOR_SPEC(Id, ?MODULE, Args)).
--define(CHILDVISOR_SPEC(Id), ?SUPERVISOR_SPEC(Id, ?MODULE, [])).
+-define(CHILDVISOR_SPEC(Id), {Id, {supervisor, start_link, [{local, Id}, ?MODULE, Id]}, permanent, ?SHUTDOWN_TIMEOUT, supervisor, [?MODULE]}).
 
 
 -define(MODULE_SPEC(Mod, Id, Args), Mod:child_spec(Id, Args)).
@@ -40,9 +39,9 @@
 
 
 
--define(WORKER_SUPERVISOR(Id, Mod, Args, R, P), { {simple_one_for_one, R, P}, [?WORKER_SPEC(Id, Mod, Args)] }).
--define(WORKER_SUPERVISOR(I, Args, R, P), ?WORKER_SUPERVISOR(I, I, Args, R, P)).
--define(WORKER_SUPERVISOR(I, R, P), ?WORKER_SUPERVISOR(I, I, [], R, P)).
+-define(GROUP_SUPERVISOR(Id, Mod, Args, R, P), { {simple_one_for_one, R, P}, [?WORKER_SPEC(Id, Mod, Args)] }).
+-define(GROUP_SUPERVISOR(I, Args, R, P), ?GROUP_SUPERVISOR(I, I, Args, R, P)).
+-define(GROUP_SUPERVISOR(I, R, P), ?GROUP_SUPERVISOR(I, I, [], R, P)).
 
 
 -define(START_SUPERVISOR(Id), supervisor:start_link({local, Id}, ?MODULE, Id) ).

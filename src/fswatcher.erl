@@ -47,7 +47,7 @@ init(_Args) ->
 
 
 port_info() ->
-    [{exefile, "priv/fswatcher"}].
+    [{application, erlangx}, {exename, "fswatcher"}].
 
 
 %%%%% ------------------------------------------------------- %%%%%

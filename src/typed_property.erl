@@ -109,72 +109,72 @@ expand(Prop) ->
     
 
 expand_property(TopProp, _, {Name, group, Value}) ->
-	{Name, group, [ expand_property(TopProp, Value, X) || X <- Value ]};
+    {Name, group, [ expand_property(TopProp, Value, X) || X <- Value ]};
 
-	
-expand_property(TopProp, Prop, {Name, variable, Value}) ->
-	get_raw_value(TopProp, Value),
-	get_raw_value(Prop, Value),
-	undefined;
+    
+expand_property(TopProp, Prop, {_Name, variable, Value}) ->
+    get_raw_value(TopProp, Value),
+    get_raw_value(Prop, Value),
+    undefined;
 
 
 expand_property(TopProp, Prop, {Name, string_raw, Value}) ->
-	NewVList = expand_string_list(TopProp, Prop, Value),
-	{Name, string, lists:concat(NewVList)};
+    NewVList = expand_string_list(TopProp, Prop, Value),
+    {Name, string, lists:concat(NewVList)};
 
 
 expand_property(TopProp, Prop, {Name, list_raw, Value}) ->
-	NewVList = expand_value_list(TopProp, Prop, Value),
-	{Name, list, NewVList};
+    NewVList = expand_value_list(TopProp, Prop, Value),
+    {Name, list, NewVList};
 
-	
+    
 expand_property(TopProp, Prop, {Name, path_raw, Value}) ->
-	NewVList = expand_path_list(TopProp, Prop, Value),
-	{Name, path, lists:concat(NewVList)};
-	
+    NewVList = expand_path_list(TopProp, Prop, Value),
+    {Name, path, lists:concat(NewVList)};
+    
 
 expand_property(TopProp, Prop, {Name, tuple, Value} = P) ->
-	case is_tuple(Value) of
-		true	-> P
-	;	false	->
-			NewVList = expand_value_list(TopProp, Prop, Value),
-			{Name, tuple, erlang:list_to_tuple(NewVList)}
-	end;
+    case is_tuple(Value) of
+        true    -> P
+    ;   false   ->
+            NewVList = expand_value_list(TopProp, Prop, Value),
+            {Name, tuple, erlang:list_to_tuple(NewVList)}
+    end;
 
-	
+    
 expand_property(_TopProp, _Prop, P) ->
-	P.
+    P.
     
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
 expand_value_list(TopProp, Prop, VList) ->
-	[ naked_value(expand_property(TopProp, Prop, {nil, T, V})) || {T, V} <- VList ].
-	
+    [ naked_value(expand_property(TopProp, Prop, {nil, T, V})) || {T, V} <- VList ].
+    
 
 expand_path_list(TopProp, Prop, PList) ->
-	[ expand_path_item(TopProp, Prop, P) || P <- PList ].	
+    [ expand_path_item(TopProp, Prop, P) || P <- PList ].   
 
-	
+    
 expand_path_item(TopProp, Prop, {anchor, N}) ->
-	AnchorName = lists:concat(["'sy$tem'.", N]),
-	naked_value(expand_property(TopProp, Prop, {nil, variable, AnchorName}));
-	
+    AnchorName = lists:concat(["'sy$tem'.", N]),
+    naked_value(expand_property(TopProp, Prop, {nil, variable, AnchorName}));
+    
 expand_path_item(TopProp, Prop, {variable, N}) ->
-	naked_value(expand_property(TopProp, Prop, {nil, variable, N}));
-	
+    naked_value(expand_property(TopProp, Prop, {nil, variable, N}));
+    
 expand_path_item(_, _, P) -> P.
 
 
 expand_string_list(TopProp, Prop, SList) ->
-	[ expand_string_item(TopProp, Prop, S) || S <- SList ].	
+    [ expand_string_item(TopProp, Prop, S) || S <- SList ]. 
 
-	
+    
 expand_string_item(TopProp, Prop, {variable, N}) ->
-	naked_value(expand_property(TopProp, Prop, {nil, variable, N}));
-	
-expand_string_item(_, _, S) -> S.	
+    naked_value(expand_property(TopProp, Prop, {nil, variable, N}));
+    
+expand_string_item(_, _, S) -> S.   
 
 
 naked_value({_Name, group, _Value}) -> undefined;
