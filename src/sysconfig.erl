@@ -8,8 +8,10 @@
 
 
 -export([start_link/1]).
--export([load_app_config/1]).
--export([get_integer/1]).
+-export([load_app_config/1, get_value/2, get_value/3]).
+-export([get_bool/1, get_integer/1, get_string/1, get_float/1, get_atom/1, get_list/1, get_tuple/1, get_ipaddress/1, get_path/1]).
+-export([get_as_bool/1, get_as_integer/1, get_as_string/1, get_as_float/1, get_as_atom/1, get_as_list/1, get_as_tuple/1, get_as_ipaddress/1, get_as_path/1]).
+
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -42,26 +44,59 @@ start_link(MasterApp)
         when is_atom(MasterApp)  ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [MasterApp], []).
     
+
+%%%%% ------------------------------------------------------- %%%%%
+
     
 -spec load_app_config( atom() ) -> type:ok_or_error().
 
 load_app_config(App)
         when is_atom(App)  ->
     gen_server:call(?SERVER, {load, App}).
-      
 
-%Type = bool | integer | string | float | atom | list | tuple | ipaddress | path
-% get_value(atom|string, Type)
-% get_<Type>(atom|string)
-% get_as_<Type>(atom|string)
+    
+%%%%% ------------------------------------------------------- %%%%%
+    
 
-get_integer(_S) -> 25565.
+get_bool(Name)      -> get_value(Name, bool).
+get_integer(Name)   -> get_value(Name, integer).
+get_string(Name)    -> get_value(Name, string).
+get_float(Name)     -> get_value(Name, float).
+get_atom(Name)      -> get_value(Name, atom).
+get_list(Name)      -> get_value(Name, list).
+get_tuple(Name)     -> get_value(Name, tuple).
+get_ipaddress(Name) -> get_value(Name, ipaddress).
+get_path(Name)      -> get_value(Name, path).
 
 
-%get_value(readonly, bool)
-%get_value("bedrock.server.readonly", bool)
+%%%%% ------------------------------------------------------- %%%%%
 
 
+get_as_bool(Name)       -> get_value(Name, bool).
+get_as_integer(Name)    -> get_value(Name, integer).
+get_as_string(Name)     -> get_value(Name, string).
+get_as_float(Name)      -> get_value(Name, float).
+get_as_atom(Name)       -> get_value(Name, atom).
+get_as_list(Name)       -> get_value(Name, list).
+get_as_tuple(Name)      -> get_value(Name, tuple).
+get_as_ipaddress(Name)  -> get_value(Name, ipaddress).
+get_as_path(Name)       -> get_value(Name, path).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+get_value(Name, Type) -> get_value(Name, Type, undefined).
+
+get_value(Name, Type, Default) ->
+    case get_raw_value(Name) of
+        {Type, Value}   -> Value
+    ;   Else            -> Default
+    end.
+    
+
+get_raw_value(Name) ->
+    {integer, 25565}.
 
     
 %%%%% ------------------------------------------------------- %%%%%
