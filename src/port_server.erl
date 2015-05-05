@@ -100,8 +100,9 @@ start_link(Name, CallbackModule, InitParams)
 %%%%% ------------------------------------------------------- %%%%%
 
 %
-% {system, "some_cmd --params"}			-- [stream, binary]
-% {driver, {erlangx, "command", []}}	-- [{packet, 2}, binary]
+% {system, "some_cmd --params"}         -- [stream]
+% {driver, {"command", Args}}           -- [{packet, 2}, {args, Args}]
+% {driver, {appname, "command", Args}}  -- [{packet, 2}, {args, Args}]
 % {packet, 1 | 2 | 4 | raw}
 %
 
@@ -115,13 +116,34 @@ init([CallbackModule, InitParams]) ->
         {'EXIT', Reason}    -> {stop, {error, Reason}}
         
     ;   X when is_list(X)   ->
-            ExeName = proplists:get_value(exename, X),
-            ExeFile =   case proplists:get_value(application, X) of
-                            undefined   -> xos:find_executable(ExeName)
-                        ;   App         -> xos:find_executable(App, ExeName)
-                        end,
+            {StartCmd, BaseOpts} = 
+                case proplists:get_value(system, X, undefined) of
+                    undefined   ->
+                        case proplists:get_value(driver, X, undefined) of
+                            undefined                   ->
+                                { undefined, [] }
+                            
+                        ;   {Cmd, Args}
+                                    when is_list(Args)  ->
+                                { {spawn_executable, xos:find_executable(Cmd)}, [{packet, 2}, {args, Args}] }
+                        
+                        ;   {App, Cmd, Args}
+                                    when  is_atom(App)
+                                        , is_list(Args) ->
+                                { {spawn_executable, xos:find_executable(App, Cmd)}, [{packet, 2}, {args, Args}] }
+                        end
+                        
+                ;   Cmd         -> { {spawn, Cmd}, [stream] }
+                end,
+                
+            Opts =  case proplists:get_value(packet, X, undefined) of
+                        undefined   -> BaseOpts
+                    ;   raw         -> ( BaseOpts -- [stream, {packet, 2}] ) ++ [stream]
+                    ;   N when  N =:= 1 orelse N =:= 2 orelse N =:= 4  ->
+                            ( BaseOpts -- [stream, {packet, 2}] ) ++ [{packet, N}]
+                    end,
             
-            Port = erlang:open_port({spawn_executable, ExeFile}, [{packet, 2}, binary, exit_status]),
+            Port = erlang:open_port(StartCmd, xproplists:merge(Opts, [binary, exit_status])),
 
             InitState = #state{module = CallbackModule, port = Port},
 

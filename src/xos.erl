@@ -67,7 +67,7 @@ find_executable(Name) ->
     
 
     
--spec find_executable( applist_type(), file:filename() ) -> non_existing | file:filename().
+-spec find_executable( type:atomlist(), file:filename() ) -> non_existing | file:filename().
 
 % test for
 %  App/ebin/Name

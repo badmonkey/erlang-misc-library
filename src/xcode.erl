@@ -2,10 +2,11 @@
 -module(xcode).
 
 -export([is_app_file/2, search_for_file/3]).
--export([priv_dir/1, config_dir/1, data_dir/1, data_dir/2]).
+-export([ ebin_dir/0, ebin_dir/1, priv_dir/0, priv_dir/1
+        , config_dir/0, config_dir/1, data_dir/0, data_dir/1
+        , data_dir_for/1]).
 
 
--type applist_type() :: atom() | [atom()].
 -type filelist_type() :: atom() | file:filename() | [atom() | file:filename()].
 
 
@@ -69,6 +70,7 @@ is_app_file(App, Name) ->
 % App/
 %  |-- ebin/
 %  |-- priv/
+%        |-- bin/
 %        |-- config/
 %        |-- data/
 %              |-- Type1/
@@ -76,21 +78,27 @@ is_app_file(App, Name) ->
 %
 
 
+ebin_dir()      -> app_dir(application:get_application(), ebin).
 ebin_dir(App)   -> app_dir(App, ebin).
+
+priv_dir()      -> app_base_dir(application:get_application()).
 priv_dir(App)   -> app_base_dir(App).
 
+config_dir()    -> app_subdir(application:get_application(), config).
 config_dir(App) -> app_subdir(App, config).
+
+data_dir()      -> app_subdir(application:get_application(), data).
 data_dir(App)   -> app_subdir(App, data).
 
-data_dir(App, Type)
+data_dir_for(Type)
         when is_atom(Type)  ->
-    app_subdir(App, [data, Type]).
+    app_subdir(application:get_application(), [data, Type]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
     
 
--spec search_for_file( file:filename(), applist_type(), applist_type() ) -> non_existing | file:filename().
+-spec search_for_file( file:filename(), type:atomlist(), type:atomlist() ) -> non_existing | file:filename().
 
 search_for_file(_, _, []) ->
     non_existing;
