@@ -47,8 +47,8 @@ init(_Args) ->
 
 
 port_info() ->
-    [{application, erlangx}, {exename, "fswatcher"}].
-
+    [{driver, {erlangx, "fswatcher", []}}].
+    
 
 %%%%% ------------------------------------------------------- %%%%%
 

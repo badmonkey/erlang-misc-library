@@ -99,6 +99,12 @@ start_link(Name, CallbackModule, InitParams)
 
 %%%%% ------------------------------------------------------- %%%%%
 
+%
+% {system, "some_cmd --params"}			-- [stream, binary]
+% {driver, {erlangx, "command", []}}	-- [{packet, 2}, binary]
+% {packet, 1 | 2 | 4 | raw}
+%
+
 
 init([CallbackModule, InitParams]) ->
     process_flag(trap_exit, true),
@@ -111,11 +117,11 @@ init([CallbackModule, InitParams]) ->
     ;   X when is_list(X)   ->
             ExeName = proplists:get_value(exename, X),
             ExeFile =   case proplists:get_value(application, X) of
-                            undefined   -> ExeName
-                        ;   App         -> xcode:find_executable(App, ExeName)
+                            undefined   -> xos:find_executable(ExeName)
+                        ;   App         -> xos:find_executable(App, ExeName)
                         end,
             
-            Port = erlang:open_port({spawn, ExeFile}, [{packet, 2}, binary, exit_status]),
+            Port = erlang:open_port({spawn_executable, ExeFile}, [{packet, 2}, binary, exit_status]),
 
             InitState = #state{module = CallbackModule, port = Port},
 

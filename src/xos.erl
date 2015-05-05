@@ -1,7 +1,7 @@
 
 -module(xos).
 
--export([get_if_hwaddr/1, get_first_hwaddr/0]).
+-export([get_if_hwaddr/1, get_first_hwaddr/0, find_executable/1, find_executable/2]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -54,4 +54,41 @@ find_hwaddr(_) ->
     {error, no_hwaddr_available}.
     
 
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec find_executable( file:filename() ) -> non_existing | file:filename().
+
+find_executable(Name) ->
+    case os:find_executable(Name) of
+        false   -> find_executable(application:get_application(), Name)
+    ;   Else    -> Else
+    end.
     
+
+    
+-spec find_executable( applist_type(), file:filename() ) -> non_existing | file:filename().
+
+% test for
+%  App/ebin/Name
+%  App/priv/bin/Name
+%  App/priv/Name
+find_executable(App, Name) when is_atom(App) ->
+    FilePath = filename:join( xcode:ebin_dir(App), Name ),
+    case filelib:is_regular(FilePath) of
+        true    -> FilePath
+    ;   _       -> xcode:search_for_file(Name, [bin], App)
+    end;
+
+    
+find_executable([], _Name) ->    
+    non_existing;
+    
+find_executable([Hd | Rest], Name) ->
+    case find_executable(Hd, Name) of
+        non_existing    -> find_executable(Rest, Name)
+    ;   Else            -> Else
+    end;
+
+find_executable(_, _) -> non_existing.
+
