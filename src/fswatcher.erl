@@ -9,6 +9,7 @@
 -export([start_link/0, port_info/0, handle_port/2, child_spec/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
+-export([test/0]).         
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -30,6 +31,9 @@ child_spec(Id, _Args) ->
 %%%%% ------------------------------------------------------- %%%%%
 % Public API
 
+test() ->
+	port_server:call(?SERVER, {test}).
+	
 
 start_link() ->
     port_server:start_link(?SERVER, ?MODULE, []).
