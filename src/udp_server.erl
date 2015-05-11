@@ -1,5 +1,6 @@
 
 -module(udp_server).
+-extends(gen_server_base).
 
 -behaviour(gen_server).
 

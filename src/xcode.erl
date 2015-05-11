@@ -18,8 +18,8 @@
 
 app_base_dir(App) ->
     app_dir(App, priv).
-    
-    
+
+
 app_dir(App, Subdir)
         when  is_atom(App)
             , is_atom(Subdir)  ->

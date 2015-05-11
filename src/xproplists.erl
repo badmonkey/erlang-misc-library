@@ -1,6 +1,6 @@
 -module(xproplists).
 
--export([merge/2]).
+-export([merge/2, sort/1]).
 
 
 
@@ -31,6 +31,14 @@ merge(PropsIn, Atom)
     OutProps = lists:keymerge(1, PropsIn2, [{Atom, true}]),
     proplists:compact(OutProps).
     
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+sort(Props)
+        when is_list(Props)  ->
+    proplists:compact(lists:keysort(1, proplists:unfold(Props))).
+
 
 %%%%% ------------------------------------------------------- %%%%%
 

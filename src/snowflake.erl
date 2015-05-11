@@ -21,10 +21,9 @@
 
 
 -record(state,
-    {
-          max_time      :: pos_integer()
-        , worker_id     :: integer()
-        , sequence      :: non_neg_integer()
+    { max_time      :: pos_integer()
+    , worker_id     :: integer()
+    , sequence      :: non_neg_integer()
     }).
 
          

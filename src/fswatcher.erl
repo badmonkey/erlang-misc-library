@@ -32,8 +32,8 @@ child_spec(Id, _Args) ->
 % Public API
 
 test() ->
-	port_server:call(?SERVER, {test}).
-	
+    port_server:call(?SERVER, {test}).
+
 
 start_link() ->
     port_server:start_link(?SERVER, ?MODULE, []).

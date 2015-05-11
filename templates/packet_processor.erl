@@ -1,5 +1,5 @@
 
--module({{processorid}}),
+-module({{processorid}}).
 -vsn("{{version}}").
 
 -behaviour(packet_processor).
