@@ -1,4 +1,6 @@
+
 -module(xmaps).
+-extends(maps).
 
 -export([get/3]).
 

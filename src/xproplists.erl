@@ -1,4 +1,6 @@
+
 -module(xproplists).
+-extends(proplists).
 
 -export([merge/2, sort/1]).
 

@@ -1,5 +1,6 @@
 
 -module(xstring).
+-extends(string).
 
 -export([hex_to_int/1, format/2, token_map/3]).
 

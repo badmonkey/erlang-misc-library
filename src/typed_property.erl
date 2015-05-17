@@ -2,7 +2,7 @@
 -module(typed_property).
 
 
--export([new/0, get_value/3, get_value/4, merge/2, merge/3, expand/1]).
+-export([new/0, get_raw_value/2, get_value/3, get_value/4, merge/2, merge/3, expand/1]).
 
 -export_type([property_type/0, property_name/0, property/0]).
 
@@ -49,7 +49,24 @@ get_value(Prop, Name, Type, Default) ->
     ;   {_, _}              -> Default
     end.
     
+    
+%%%%% ------------------------------------------------------- %%%%%
 
+
+-spec get_raw_value( property(), property_name() ) -> { internal_type(), term() } | undefined.
+
+get_raw_value(Prop, Name)
+        when is_atom(Name)  ->
+    case lists:keyfind(Name, 1, Prop) of
+        false               -> undefined
+    ;   {Name, Type, Value} -> {Type, Value}
+    end;
+    
+get_raw_value(Prop, Name) ->
+    KeyList = make_key_list(Name),
+    find_key(Prop, KeyList).
+
+    
 %%%%% ------------------------------------------------------- %%%%%
 
 
@@ -158,7 +175,7 @@ expand_path_list(TopProp, Prop, PList) ->
 
     
 expand_path_item(TopProp, Prop, {anchor, N}) ->
-    AnchorName = lists:concat(["'sy$tem'.", N]),
+    AnchorName = lists:concat(["'$ystem'.", N]),
     naked_value(expand_property(TopProp, Prop, {nil, variable, AnchorName}));
     
 expand_path_item(TopProp, Prop, {variable, N}) ->
@@ -179,23 +196,6 @@ expand_string_item(_, _, S) -> S.
 
 naked_value({_Name, group, _Value}) -> undefined;
 naked_value({_Name, _Type, Value}) -> Value.
-
-    
-%%%%% ------------------------------------------------------- %%%%%
-
-
--spec get_raw_value( property(), property_name() ) -> { internal_type(), term() } | undefined.
-
-get_raw_value(Prop, Name)
-        when is_atom(Name)  ->
-    case lists:keyfind(Name, 1, Prop) of
-        false               -> undefined
-    ;   {Name, Type, Value} -> {Type, Value}
-    end;
-    
-get_raw_value(Prop, Name) ->
-    KeyList = make_key_list(Name),
-    find_key(Prop, KeyList).
 
 
 %%%%% ------------------------------------------------------- %%%%%

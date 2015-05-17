@@ -1,7 +1,7 @@
 
 -module(xtime).
 
--export([in_milliseconds/0, now_in_milliseconds/0, unix_epoch/0, gregorian_epoch/0]).
+-export([in_seconds/0, in_milliseconds/0, now_in_milliseconds/0, unix_epoch/0, gregorian_epoch/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -14,6 +14,11 @@
 in_milliseconds() ->
     {MegaSec, Sec, MicroSec} = os:timestamp(),
     1000000000 * MegaSec + 1000 * Sec + erlang:trunc(MicroSec/1000).
+    
+    
+in_seconds() ->
+    {MegaSec, Sec, _} = os:timestamp(),
+    1000000 * MegaSec + Sec.    
     
 
 %%%%% ------------------------------------------------------- %%%%%

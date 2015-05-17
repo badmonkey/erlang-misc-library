@@ -1,9 +1,10 @@
+
 -module(xmaths).
 
 -export([list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1,
          weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1,
          std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1,
-         std_spread/1, primes/1, as_list/1, as_list/2]).
+         std_spread/1, primes/1, as_list/1, as_list/2, round/2]).
 
          
 
@@ -213,3 +214,17 @@ as_list(I0, Base, R0) ->
     ;   true        -> as_list(I1, Base, R1)
     end.
 
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec round( number(), non_neg_integer() ) -> type:number().    
+
+round(Number, 0) ->    
+    erlang:trunc(Number);
+    
+round(Number, Precision) ->
+    P = math:pow(10, Precision),
+    erlang:round(Number * P) / P. 
+    
+    

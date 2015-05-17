@@ -1,5 +1,6 @@
 
 -module(xcode).
+-extends(code).
 
 -export([is_app_file/2, search_for_file/3]).
 -export([ ebin_dir/0, ebin_dir/1, priv_dir/0, priv_dir/1

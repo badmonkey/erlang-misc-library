@@ -1,5 +1,6 @@
 
 -module(xerlang).
+-extends(erlang).
 
 -export([trace/1, trace/2, bin_to_hex/1, term_sha1/1]).
 

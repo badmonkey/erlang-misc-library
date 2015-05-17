@@ -1,4 +1,6 @@
+
 -module(xlists).
+-extends(lists).
 
 -export([sorted_member/2, subsets/2, unique/1, drop/2, take/2, foldl/2, foldr/2, filter_fold/2, filter_fold/3]).
 
@@ -75,3 +77,39 @@ filter_fold(F, Acc, Result, [Hd | Tl]) ->
     ;   {false, Acc1}   -> filter_fold(F, Acc1, Result, Tl)
     end.
 
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec map(fun(), list(), list()) -> list().
+map(Fun, Args, [Head | Tail]) ->
+    [apply(Fun, [Head | Args])| map(Fun, Args, Tail)];
+map(Fun, _, []) when is_function(Fun) ->
+    [].
+    
+
+%%%%% ------------------------------------------------------- %%%%%
+
+% filter_first?
+
+-type rope(T) :: list(T | rope(T)).
+
+-spec delete_first(fun((term()) -> boolean()), list()) -> list().
+delete_first(Fun, List) ->
+    delete_first(Fun, List, []).
+
+delete_first(Fun, [], Acc) when is_function(Fun, 1) ->
+    lists:reverse(Acc);
+delete_first(Fun, [Head | Tail], Acc) ->
+    case Fun(Head) of
+        false ->
+            delete_first(Fun, Tail, [Head | Acc]);
+        true ->
+            lists:concat([lists:reverse(Acc), Tail])
+    end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+    
