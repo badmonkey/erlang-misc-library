@@ -23,7 +23,7 @@
 -record(state, 
     { module                        :: atom()       % callback module
     , proxystate                    :: term()       % state of callback module
-    , tables        = []            ::[atom()]
+    , tables        = []            :: [atom()]
     }).
 
     
@@ -163,7 +163,7 @@ create_tables( [Table | Rest], Created, CurrentTables
                 exists      -> create_tables(Rest, Created, CurrentTables, State)
             ;   mismatch    -> {{error, {mismatch_table_definition, Table}}, [], State}
             ;   undefined   ->
-                    case mnesia:create_table(Table, TDef -- [subscribe]) of
+                    case mnesia:create_table(Table, proplists:delete(subscribe, TDef)) of
                         {atomic, ok}      ->
                             create_tables(Rest, [Table | Created], CurrentTables, State)
                             
@@ -171,6 +171,7 @@ create_tables( [Table | Rest], Created, CurrentTables
                             {{error, {table_creation_failed, Table, Reason}}, [], State}
 
                     end
+			;	error		-> {{error, bad_table_info}, [], State}
             end
             
     ;   Else                    ->
@@ -220,11 +221,15 @@ handle_info({?TABLE_SERVER, unsubscribe, Table}, #state{} = State) ->
     {noreply, State};
     
     
-%{write, Table, NewRecord, [OldRecords], ActivityId}
+%{mnesia_table_event, {write, Table, NewRecord, [OldRecords], ActivityId}}
 %handle_write(Table, NewRecord, OldRecord, State)
 
-%{delete, Table, What, [OldRecords], ActivityId}
+%{mnesia_table_event, {delete, Table, What, [OldRecords], ActivityId}}
 %handle_delete(Table, What, OldRecord, State).
+
+%{write, NewRecord, ActivityId}
+%{delete_object, OldRecord, ActivityId}
+%{delete, {Tab, Key}, ActivityId}
     
     
 handle_info(Info, State) ->
