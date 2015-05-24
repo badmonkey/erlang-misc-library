@@ -2,7 +2,7 @@
 -module(xcode).
 -extends(code).
 
--export([is_app_file/2, search_for_file/3]).
+-export([is_app_file/2, search_for_file/3, find_all_files/3]).
 -export([ ebin_dir/0, ebin_dir/1, priv_dir/0, priv_dir/1
         , config_dir/0, config_dir/1, data_dir/0, data_dir/1
         , data_dir_for/1]).
@@ -129,4 +129,34 @@ search_for_file(Name, Subdir, Apps)
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+-spec find_all_files( file:filename(), type:atomlist(), type:atomlist() ) -> [file:filename()].
+
+find_all_files(_, _, []) ->
+    [];
+    
+find_all_files(Name, Subdirs, [Hd | Rest])
+        when  is_list(Subdirs)  ->
+    case find_all_files(Name, Subdirs, Hd) of
+        non_existing    -> find_all_files(Name, Subdirs, Rest)
+    ;   X               -> X ++ find_all_files(Name, Subdirs, Rest)
+    end;
+
+find_all_files(Name, [], App)
+        when  is_atom(App)  ->
+    case is_app_file(App, [Name]) of
+        non_existing    -> []
+    ;   X               -> [X]
+    end;
+    
+find_all_files(Name, [Hd | Rest], App)
+        when  is_atom(App)  ->
+    case is_app_file(App, [Hd, Name]) of
+        non_existing    -> find_all_files(Name, Rest, App)
+    ;   X               -> [X | find_all_files(Name, Rest, App)]
+    end;
+
+find_all_files(Name, Subdir, Apps)
+        when  is_atom(Subdir)  ->
+    find_all_files(Name, [Subdir], Apps).
 

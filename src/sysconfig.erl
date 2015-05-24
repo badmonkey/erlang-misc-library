@@ -96,7 +96,7 @@ get_value(Name, Type, Default) ->
     
 
 get_raw_value(Name) ->
-    {integer, 25565}.
+    gen_server:call(?SERVER, {get_raw_value, Name}).
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -144,6 +144,11 @@ handle_call( {load, App}, _From
     
 handle_call( {reload, App}, From, State) ->
     handle_call( {load, App}, From, State#state{ modules = sets:del_element(App, State#state.modules) } );
+    
+    
+handle_call( {get_raw_value, Name}, From, #state{config = Config} = State) ->
+    Value = typed_property:get_raw_value(Config, Name),
+    {reply, Value, State};
     
 
 handle_call(_Request, _From, State) ->

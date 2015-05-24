@@ -130,6 +130,7 @@ expand_property(TopProp, _, {Name, group, Value}) ->
 
     
 expand_property(TopProp, Prop, {_Name, variable, Value}) ->
+    % TODO
     get_raw_value(TopProp, Value),
     get_raw_value(Prop, Value),
     undefined;
