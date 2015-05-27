@@ -21,6 +21,7 @@
     { module                        :: atom()       % callback module
     , proxystate                    :: term()       % state of callback module
     , port
+    , btt_opts                      :: [atom()]
     }).
 
     
@@ -105,6 +106,7 @@ start_link(Name, CallbackModule, InitParams)
 % {driver, {"command", Args}}           -- [{packet, 2}, {args, Args}]
 % {driver, {appname, "command", Args}}  -- [{packet, 2}, {args, Args}]
 % {packet, 1 | 2 | 4 | raw}
+% safe
 %
 
 
@@ -139,14 +141,19 @@ init([CallbackModule, InitParams]) ->
                 
             Opts =  case proplists:get_value(packet, X, undefined) of
                         undefined   -> BaseOpts
-                    ;   raw         -> ( BaseOpts -- [stream, {packet, 2}] ) ++ [stream]
+                    ;   raw         -> xproplists:delete_append([packet], [stream], BaseOpts)
                     ;   N when  N =:= 1 orelse N =:= 2 orelse N =:= 4  ->
-                            ( BaseOpts -- [stream, {packet, 2}] ) ++ [{packet, N}]
+                            xproplists:delete_append([stream], [{packet, N}], BaseOpts)
                     end,
+
+            BTT_opts =  case proplists:get_value(safe, X, undefined) of
+                            undefined   -> []
+                        ;   true        -> [safe]
+                        end,
             
             Port = erlang:open_port(StartCmd, xproplists:merge(Opts, [binary, exit_status])),
 
-            InitState = #state{module = CallbackModule, port = Port},
+            InitState = #state{module = CallbackModule, port = Port, btt_opts = BTT_opts},
 
             case catch CallbackModule:init(InitParams) of
                 {ok, ProxyState}        -> {ok, InitState#state{proxystate = ProxyState}}
@@ -201,8 +208,8 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 
 handle_info( {Port, {data, Data}}
-           , #state{module = CallbackModule, proxystate = ProxyState, port = Port} = State) ->
-    case catch CallbackModule:handle_port(binary_to_term(Data), ProxyState) of
+           , #state{module = CallbackModule, proxystate = ProxyState, port = Port, btt_opts = BTT_opts} = State) ->
+    case catch CallbackModule:handle_port(binary_to_term(Data, BTT_opts), ProxyState) of
         {ok, NewState}              -> {noreply, State#state{proxystate = NewState}}
     ;   {ok, Cmd, NewState}         -> port_send(Cmd, State), {noreply, State#state{proxystate = NewState}}
     ;   {stop, Reason, NewState}    -> {stop, Reason, State#state{proxystate = NewState}}

@@ -31,6 +31,7 @@
 % Public API
 
 -spec get_id() -> {ok, binary()} | {error, term()}.
+
 get_id() ->
     gen_server:call(?SERVER, {get_id}).
 

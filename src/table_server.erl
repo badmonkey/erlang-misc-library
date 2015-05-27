@@ -14,7 +14,7 @@
         , terminate/2, code_change/3]).
 
         
--define(TABLE_SERVER, 'table$server').
+-define(TABLE_SERVER_TAG, 'table$server').
 
      
 %%%%% ------------------------------------------------------- %%%%%
@@ -156,7 +156,7 @@ create_tables( [Table | Rest], Created, CurrentTables
         
     ;   TDef when is_list(TDef) ->
             case proplists:get_value(subscribe, TDef) of
-                true        -> gen_server:cast(self(), {?TABLE_SERVER, subscribe, Table})
+                true        -> gen_server:cast(self(), {?TABLE_SERVER_TAG, subscribe, Table})
             ;   _Else       -> ok
             end,
             case table_match(Table, CurrentTables, proplists:get_value(attributes, TDef)) of
@@ -211,12 +211,12 @@ handle_cast(Msg, State) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_info({?TABLE_SERVER, subscribe, Table}, #state{} = State) ->
+handle_info({?TABLE_SERVER_TAG, subscribe, Table}, #state{} = State) ->
     mnesia:subscribe({table, Table, detailed}),
     {noreply, State};
     
     
-handle_info({?TABLE_SERVER, unsubscribe, Table}, #state{} = State) ->
+handle_info({?TABLE_SERVER_TAG, unsubscribe, Table}, #state{} = State) ->
     mnesia:unsubscribe({table, Table, detailed}),
     {noreply, State};
     

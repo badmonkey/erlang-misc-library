@@ -2,12 +2,19 @@
 -module(xproplists).
 -extends(proplists).
 
--export([merge/2, sort/1]).
+-export([merge/2, sort/1, delete_append/3]).
 
+-export_type([property/0, proplist/0]).
+
+
+-type property() :: proplists:property().
+-type proplist() :: [property()].
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+-spec merge( proplist(), property() | proplist() ) -> proplist().
 
 merge(PropsIn, NewProps)
         when  is_list(PropsIn)
@@ -37,10 +44,26 @@ merge(PropsIn, Atom)
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-spec sort( proplist() ) -> proplist().
+
 sort(Props)
         when is_list(Props)  ->
     proplists:compact(lists:keysort(1, proplists:unfold(Props))).
 
 
 %%%%% ------------------------------------------------------- %%%%%
+
+
+-spec delete_append( [atom()], proplist(), proplist() ) -> proplist().
+
+delete_append([], Append, List)
+        when  is_list(Append)
+            , is_list(List)  ->
+    merge(List, Append);
+
+
+delete_append([Hd | Rest], Append, List)
+        when  is_list(Append)
+            , is_list(List)  ->
+    delete_append(Rest, Append, proplists:delete(Hd, List)).
 
