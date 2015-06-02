@@ -18,8 +18,10 @@
                   
 
 -type nodeid() :: pos_integer().
--type routerid() :: term().
+-type routerid() :: pos_integer().
 -type data() :: term().
+
+-type routername() :: atom() | routerid().
 
 -type path_fragment() :: string() | binary() | atom() | number().
 -type match_fragment() :: match_star | {match_star, atom()}
@@ -38,23 +40,29 @@
 
 
 -record(router,
-    { router                        :: routerid()
+    { id                            :: routerid()
     , rootnode                      :: nodeid()
     }).
 
 -record(route_node,
     { key                           :: nodeid()
     , router                        :: routerid()
-    , data                          :: [data()]
+    , data          = []            :: [data()]
     , children      = dict:new()    :: dict:dict( path_fragment(), nodeid() )
     }).
     
+-record(registry,
+	{ name							:: atom()
+	, router						:: routerid()
+	}).
+    
 
 -record(state,
-    { router_table                  :: ets:tid()
+    { root_table                    :: ets:tid()
     , node_table                    :: ets:tid()
+    , registry_table				:: ets:tid()
     , nextid        = 1             :: routerid()
-    , registry      = dict:new()    :: dict:dict( atom(), routerid() )
+    , nextnode      = 1             :: nodeid()
     }).
 
          
@@ -80,42 +88,43 @@ new(Name) ->
     gen_server:call(?SERVER, {new_router, Name}).    
     
     
--spec free( routerid() ) -> type:ok_or_error().    
+-spec free( routername() ) -> type:ok_or_error().    
 free(Router) ->
     gen_server:call(?SERVER, {free_router, Router}).
 
     
     
--spec add( routerid(), path(), data() ) -> type:ok_or_error().
+-spec add( routername(), path(), data() ) -> type:ok_or_error().
 add(Router, Path, Data) ->
     gen_server:call(?SERVER, {add_route, Router, Path, Data}).
     
 
--spec remove( routerid(), path() ) -> type:ok_or_error().    
+-spec remove( routername(), path() ) -> type:ok_or_error().    
 remove(Router, Path) ->
     gen_server:call(?SERVER, {remove_route, Router, Path}).
+    
     
 
 %%%%% ------------------------------------------------------- %%%%%
     
    
--spec get( routerid(), path() ) -> [data()].
+-spec get( routername(), path() ) -> [data()].
 get(Router, Path) ->
     ok.
     
     
--spec get( routerid(), path(), term() ) -> [data()].
+-spec get( routername(), path(), term() ) -> [data()].
 get(Router, Path, Args) ->
     ok.
     
     
     
--spec get_with_matchs( routerid(), path() ) -> [{data(), bound_path()}].
+-spec get_with_matchs( routername(), path() ) -> [{data(), bound_path()}].
 get_with_matchs(Router, Path) ->
     ok.
 
 
--spec get_with_matchs( routerid(), path(), term() ) -> [{data(), bound_path()}].
+-spec get_with_matchs( routername(), path(), term() ) -> [{data(), bound_path()}].
 get_with_matchs(Router, Path, Args) ->
     ok.
 
@@ -125,11 +134,13 @@ get_with_matchs(Router, Path, Args) ->
 
 
 init(_Args) ->
-    RouterTable = ets:new(router_table, [protected, set, {read_concurrency, true}, {keypos, 2}]),
-    NodeTable = ets:new(node_table, [protected, set, {read_concurrency, true}, {keypos, 2}]),
+    RootTable = ets:new(router_root_table, [protected, set, named_table, {read_concurrency, true}, {keypos, 2}]),
+    NodeTable = ets:new(router_node_table, [protected, set, named_table, {read_concurrency, true}, {keypos, 2}]),
+    RegTable  = ets:new(router_registry_table, [protected, set, named_table, {read_concurrency, true}, {keypos, 2}]),
     
-    {ok, #state{ router_table = RouterTable
+    {ok, #state{ root_table = RootTable
                , node_table = NodeTable
+               , registry_table = RegTable
                }}.
 
     
@@ -137,14 +148,30 @@ init(_Args) ->
 
 
 handle_call({new_router}, _From, State) ->
-    {reply, ok, State};
+	Id = State#state.nextid,
+	Node = State#state.nextnode,
+	
+	ets:insert(State#state.root_table, #router{ id = Id, rootnode = Node } ),
+	ets:insert(State#state.node_table, #route_node{ key = Node, router = Id } ),
+	
+    {reply, Id, State#state{ nextid = Id + 1, nextnode = Node + 1 }};
     
     
-handle_call({new_router, Name}, _From, State) ->
-    {reply, ok, State};    
+handle_call({new_router, Name}, From, State)
+		when is_atom(Name)  ->
+	{reply, Id, NewState} = handle_call({new_router}, From, State),
+	ets:insert(State#state.registry_table, #registry{ name = Name, router = Id } ),
+	
+    {reply, Id, NewState}; 
     
     
 handle_call({free_router, Router}, _From, State) ->
+	Id = get_router(Router),
+
+	match_delete(State#state.root_table, #router{ id = Id, _ = '_' }),
+	match_delete(State#state.node_table, #route_node{ router = Id, _ = '_' }),
+	match_delete(State#state.registry_table, #registry{ router = Id, _ = '_' }),
+	
     {reply, ok, State};
 
     
@@ -177,9 +204,13 @@ handle_info(_Info, State) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+	ets:delete(State#state.root_table),
+	ets:delete(State#state.node_table),
+	ets:delete(State#state.registry_table),
     ok.
 
+    
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -188,29 +219,60 @@ code_change(_OldVsn, State, _Extra) ->
 % Private Functions
 
 
+-spec get_router( routername() ) -> routerid().
+get_router(Name)
+		when is_atom(Name)  ->
+	case ets:lookup(router_registry_table, Name) of
+		[]				-> throw({unknown_router, Name})
+	;	[{Name, Id}]	-> Id
+	end;
+	
+	
+get_router(Id) -> Id.
 
 
-% ["a", "b"]
-% ["a", "e"]
-% ["a", "b", {match_star, some_name}]
 
-% {[], "a", ["a"]}
-% {["a"], "b", undefined}
-% {["a"], "e", undefined}
+match_delete(Table, Spec) ->
+	[ ets:delete_object(Table, X) || X <- ets:match_object(Table, Spec) ].
+
+	
+	
+gather([], Acc) -> Acc;	
+gather([{undefined, _} | Rest], Acc) ->
+	gather(Rest, Acc);
+	
+gather([{#route_node{} = Node, []} | Rest], Acc) ->
+	gather(Rest, Acc ++ Node#route_node.data);
+
+gather([{#route_node{} = Node, [Hd | Tail]} | Rest], Acc) ->
+	NewList = [ {get_next_node(Node, Hd), Tail}
+			  , {get_next_node(Node, match_one), Tail}
+			  , {get_next_node(Node, match_any), []}
+			  , Rest],
+	gather(NewList, Acc).
+	
+
+	
+get_next_node( #route_node{ children = Children }, Frag ) ->
+	case dict:find(Frag, Children) of
+		{ok, Value}	->
+			case ets:lookup(router_node_table, Value) of
+				[]						-> undefined
+			;	[#route_node{} = Node]	-> Node
+			end
+	;	error		-> undefined
+	end.
 
 
 
+-spec is_wildcard( path_fragment() | match_fragment() ) -> boolean().
 
-% a, b, * -> X1, Y1
-% a, b, c -> X2
-% a, b, + -> X3
-% a, b, c, d -> X4
-% a, +, c -> X5
-
-% [a, b] -> X1 * = []
-% [a, b, c] -> X1 '*' = [c], Y1 '*'= [c], X2, X3 '+' = [c], X5 '+' = b
-% [a, b, f] -> X1 '*' = f, X3 '+' = f
-% [a, b, c, d] -> X1 '*' = [c, d], X4
+is_wildcard(match_star) -> true;
+is_wildcard({match_star,_}) -> true;
+is_wildcard(match_one) -> true;
+is_wildcard({match_one,_}) -> true;
+is_wildcard({match_one,_,{_,_}}) -> true;
+is_wildcard(_) -> false.
 
 
 
