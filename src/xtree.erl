@@ -31,7 +31,7 @@ foreach(_Pred, Tree) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec fold( fun(({K, V}, Acc) -> Acc), Acc, gb_tree:tree(K, V) ) -> Acc.
+-spec fold( fun(({K, V}, A) -> A), A, gb_tree:tree(K, V) ) -> A.
 
 fold(Fun, Acc, Tree) ->
     lists:foldl(Fun, Acc, gb_tree:to_list(Tree) ).

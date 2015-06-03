@@ -168,8 +168,9 @@ root_mean_square(List) when is_list(List) ->
 %%%%% ------------------------------------------------------- %%%%%
 
     
-primes(Prime, Max, Primes,Integers) when Prime > Max ->
+primes(Prime, Max, Primes, Integers) when Prime > Max ->
     lists:reverse([Prime|Primes]) ++ Integers;
+    
 primes(Prime, Max, Primes, Integers) ->
     [NewPrime|NewIntegers] = [ X || X <- Integers, X rem Prime =/= 0 ],
     primes(NewPrime, Max, [Prime|Primes], NewIntegers).

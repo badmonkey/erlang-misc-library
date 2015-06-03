@@ -34,10 +34,4 @@ token_map(F, S, Sep)
             , is_list(S)
             , is_list(Sep)  ->
     string:join( lists:map( F, string:tokens(S, Sep) ), Sep ).
-    
-    
-%%%%% ------------------------------------------------------- %%%%%
-
-
-
-
+   

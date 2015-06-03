@@ -7,6 +7,7 @@
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
 trace(Bin) when is_binary(Bin) ->
     lager:debug("TRACE binary ~p", [bin_to_hex(Bin)]),
     Bin;

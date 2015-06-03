@@ -2,12 +2,16 @@
 -module(xlists).
 -extends(lists).
 
--export([sorted_member/2, subsets/2, unique/1, drop/2, take/2, foldl/2, foldr/2, filter_fold/2, filter_fold/3]).
+-export([sorted_member/2, sorted_insert/2, subsets/2, unique/1]).
+-export([drop/2, take/2, foldl/2, foldr/2, filter_fold/2, filter_fold/3]).
+-export([mapx/3]).
 
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+-spec sorted_member(T, [T]) -> boolean().
 
 sorted_member(_X, []) -> false;
 sorted_member(X, [X | _Tl]) -> true;
@@ -18,7 +22,22 @@ sorted_member(X, [_Hd | Tl]) -> sorted_member(X, Tl).
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-spec sorted_insert(T, [T]) -> [T].
+
+sorted_insert(X, []) -> [X];
+sorted_insert(X, [Hd | Rest] = L) ->
+    case X =< Hd of
+        true    -> [ X | L ]
+    ;   false   -> [ Hd | sorted_insert(X, Rest) ]
+    end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
 % returns list of all sublists of L of size N
+-spec subsets( non_neg_integer(), [T] ) -> [[T]].
+
 subsets(_N, []) -> [[]];
 subsets(0, _L) -> [[]];
 subsets(N, L) when N > length(L) -> [[]];
@@ -29,6 +48,8 @@ subsets(N, [Hd | Tl] ) -> [ [Hd | T] || T <- subsets(N - 1, Tl) ] ++ subsets(N, 
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-spec unique([T]) -> [T].
+
 unique(List) when is_list(List) ->
     sets:to_list( sets:from_list(List) ).
 
@@ -36,9 +57,14 @@ unique(List) when is_list(List) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-spec drop( pos_integer(), [T] ) -> [T].
+
 drop(N, List) when is_list(List) ->
     lists:nthtail(N, List).
 
+    
+-spec take( pos_integer(), [T] ) -> [T].
+    
 take(N, List) when is_list(List) ->
     lists:sublist(List, N).
 
@@ -46,9 +72,14 @@ take(N, List) when is_list(List) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-spec foldl( fun((T, T) -> T), [T] ) -> T.
+
 foldl(F, [Hd | Tl]) ->
     lists:foldl(F, Hd, Tl).
 
+    
+-spec foldr( fun((T, T) -> T), [T] ) -> T.
+    
 foldr(F, [Hd | Tl]) ->
     lists:foldr(F, Hd, Tl).
 
@@ -56,13 +87,13 @@ foldr(F, [Hd | Tl]) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), {Acc, [V]} ) -> {Acc, [V]}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), {A, [V]} ) -> {A, [V]}.
 
 filter_fold(F, {Acc, List}) when is_list(List) ->
     filter_fold(F, Acc, [], List).
 
 
--spec filter_fold( fun((V, Acc) -> {boolean(), Acc}), Acc, [V] ) -> {Acc, [V]}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V] ) -> {A, [V]}.
 
 filter_fold(F, Acc, List) when is_list(List) ->
     filter_fold(F, Acc, [], List).
@@ -81,35 +112,11 @@ filter_fold(F, Acc, Result, [Hd | Tl]) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec map(fun(), list(), list()) -> list().
-map(Fun, Args, [Head | Tail]) ->
-    [apply(Fun, [Head | Args])| map(Fun, Args, Tail)];
-map(Fun, _, []) when is_function(Fun) ->
-    [].
+-spec mapx( fun((...) -> R), list(), list() ) -> [R].
+
+mapx(_Fun, _, []) -> [];
+    
+mapx(Fun, Args, [Head | Tail]) ->
+    [ apply(Fun, [Head | Args]) | mapx(Fun, Args, Tail) ].
     
 
-%%%%% ------------------------------------------------------- %%%%%
-
-% filter_first?
-
--type rope(T) :: list(T | rope(T)).
-
--spec delete_first(fun((term()) -> boolean()), list()) -> list().
-delete_first(Fun, List) ->
-    delete_first(Fun, List, []).
-
-delete_first(Fun, [], Acc) when is_function(Fun, 1) ->
-    lists:reverse(Acc);
-delete_first(Fun, [Head | Tail], Acc) ->
-    case Fun(Head) of
-        false ->
-            delete_first(Fun, Tail, [Head | Acc]);
-        true ->
-            lists:concat([lists:reverse(Acc), Tail])
-    end.
-
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
-    

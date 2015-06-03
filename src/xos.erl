@@ -8,7 +8,7 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec get_if_hwaddr( string() ) -> {ok, binary()} | {error, term()}.
+-spec get_if_hwaddr( string() ) -> {ok, binary()} | type:error().
 
 get_if_hwaddr(undefined) ->
     {error, if_not_found};
@@ -33,15 +33,18 @@ get_if_hwaddr(IfName) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec get_first_hwaddr() -> {ok, binary()} | {error, term()}.
+-spec get_first_hwaddr() -> {ok, binary()} | type:error().
 
 get_first_hwaddr() ->
     {ok, IfAddrs} = inet:getifaddrs(),
     find_hwaddr(IfAddrs).
 
     
--spec find_hwaddr( [{string(), proplists:proplist()}] ) -> {ok, binary()} | {error, term()}.
+-spec find_hwaddr( [{string(), proplists:proplist()}] ) -> {ok, binary()} | type:error().
 
+find_hwaddr([]) ->
+    {error, no_hwaddr_available};
+    
 find_hwaddr([{"lo", _IfConfig}|Rest]) ->
     find_hwaddr(Rest);
 
@@ -49,10 +52,7 @@ find_hwaddr([{_IfName, IfConfig}|Rest]) ->
     case lists:keyfind(hwaddr, 1, IfConfig) of
         {hwaddr, HwAddr}    -> {ok, erlang:list_to_binary(HwAddr)}
     ;   false               -> find_hwaddr(Rest)
-    end;
-    
-find_hwaddr(_) ->
-    {error, no_hwaddr_available}.
+    end.
     
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -89,7 +89,5 @@ find_executable([Hd | Rest], Name) ->
     case find_executable(Hd, Name) of
         non_existing    -> find_executable(Rest, Name)
     ;   Else            -> Else
-    end;
-
-find_executable(_, _) -> non_existing.
+    end.
 

@@ -8,6 +8,7 @@
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
 -spec match_delete( ets:tab(), ets:match_pattern() ) -> true.
 
 match_delete(Table, Spec) ->

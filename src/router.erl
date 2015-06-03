@@ -10,8 +10,8 @@
 -include_lib("erlangx/include/supervisors.hrl").
 
 
--export([wait_for_service/0, new/0, new/1, free/1, add/3]).
--export([get/2, get_many/2]).
+-export([wait_for_service/0, exists/1, new/0, new/1, free/1, add/3, remove/3]).
+-export([get/2, get_many/2, get_with_matches/2]).
 -export([start_link/0, child_spec/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -32,12 +32,14 @@
             
 -type subscribe_path() :: [subscribe_fragment()].
 -type publish_path() :: [path_fragment()].
--type bound_path() :: [path_fragment() | value_fragment()].
+
+-type value_list() :: [value_fragment()].
+-type match_list() :: [ { data(), value_list() } ].
 
 
 -export_type([ nodeid/0, routerid/0, data/0, routername/0
              , path_fragment/0, match_fragment/0, value_fragment/0, subscribe_fragment/0
-             , subscribe_path/0, publish_path/0, bound_path/0]).
+             , subscribe_path/0, publish_path/0, value_list/0, match_list/0]).
 
          
 
@@ -112,9 +114,20 @@ add(Router, Path, Data) ->
     gen_server:call(?SERVER, {add_route, Router, Path, Data}).
 
 
+-spec remove( routername(), subscribe_path(), data() ) -> type:ok_or_error().
+    
+remove(Router, Path, Data) ->
+    gen_server:call(?SERVER, {add_route, Router, Path, Data}).
+
 
 %%%%% ------------------------------------------------------- %%%%%
 % Public API that doesn't require talking to ?SERVER
+    
+    
+-spec exists( routername() ) -> boolean().
+
+exists(Router) ->
+    get_router(Router) =/= undefined.
     
    
 -spec get( routername(), publish_path() ) -> [data()].
@@ -127,6 +140,12 @@ get(Router, Path) ->
 
 get_many(Routers, Paths) ->
     gather([ {X, Y} || X <- Routers, Y <- Paths ], []).
+    
+    
+-spec get_with_matches( routername(), publish_path() ) -> match_list().
+
+get_with_matches(Router, Path) ->
+    gather_matches([{Router, Path, []}], []).    
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -235,7 +254,7 @@ code_change(_OldVsn, State, _Extra) ->
 get_router(Name)
         when is_atom(Name)  ->
     case ets:lookup(router_registry_table, Name) of
-        []                      -> throw({error, {unknown_router, Name}})
+        []                      -> undefined
     ;   [{registry, Name, Id}]  -> Id
     end;
 get_router(Id) -> Id.
@@ -286,6 +305,27 @@ gather([{#route_node{} = Node, [Hd | Tail]} | Rest], Acc) ->
               , {get_next_node(Node, match_any), []}
               | Rest],
     gather(NewList, Acc).
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+-spec gather_matches( [{#route_node{}, publish_path(), value_list()}], match_list() ) -> match_list().
+    
+gather_matches([], Acc) -> Acc; 
+gather_matches([{undefined, _, _} | Rest], Acc) ->
+    gather_matches(Rest, Acc);
+    
+gather_matches([{#route_node{} = Node, [], Values} | Rest], Acc) ->
+    Fixed = list:reverse(Values),
+    gather_matches(Rest, Acc ++ [ {D, Fixed} || D <- Node#route_node.data]);
+
+gather_matches([{#route_node{} = Node, [Hd | Tail], Values} | Rest], Acc) ->
+    NewList = [ {get_next_node(Node, Hd), Tail, Values}
+              , {get_next_node(Node, match_one), Tail, [{match_one, Hd} | Values]}
+              , {get_next_node(Node, match_any), [], [{match_any, Tail} | Values]}
+              | Rest],
+    gather_matches(NewList, Acc).    
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -301,9 +341,3 @@ get_next_node( #route_node{ children = Children }, Frag ) ->
     ;   error       -> undefined
     end.
 
-
-
-% PidList = generate_pid_list(WhatEver),
-% OldPri = process_flag(priority, high), % Raise priority, save old one
-% lists:foreach(fun({Pid, Msg}) -> send_message(Pid, Msg) end, PidList),
-% process_flag(priority, OldPri)
