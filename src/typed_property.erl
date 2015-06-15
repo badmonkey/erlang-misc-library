@@ -13,7 +13,7 @@
 -type property_name() :: atom() | string().
 -type property_type() :: atom | bool | integer | float | ipaddress | string | list | tuple | path.
 
--type property() :: [{ atom(), internal_type(), term()}].
+-type property() :: [{ atom(), internal_type(), term() }].
 -type internal_type() :: property_type() | group | variable | string_raw | list_raw | path_raw.
 
 
@@ -119,7 +119,7 @@ merge( [FHd | FRest] = First
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec expand( property() ) -> property() | {error, {unknown, atom()}}.
+-spec expand( property() ) -> property().
 
 expand(Prop) ->
     [ expand_property(Prop, Prop, X) || X <- Prop ].
@@ -207,7 +207,7 @@ naked_value({_Name, _Type, Value}) -> Value.
 find_group(Prop, []) ->
     {[], Prop};
     
-find_group(Prop, [Hd, Rest] = Key) ->
+find_group(Prop, [Hd | Rest] = Key) ->
     case lists:keyfind(Hd, 1, Prop) of
         false                   -> {Key, Prop}
     ;   {Hd, group, NewProp}    -> find_group(NewProp, Rest)
@@ -222,18 +222,17 @@ find_group(Prop, [Hd, Rest] = Key) ->
 
 find_key(_, []) -> undefined;
      
-find_key(Prop, [Hd, Rest]) ->
+find_key(Prop, [Hd]) ->
     case lists:keyfind(Hd, 1, Prop) of
         false                   -> undefined
-        
-    ;   {Hd, group, NewProp}
-            when Rest =:= []    -> {group, NewProp}
-            
+    ;   {Hd, group, NewProp}    -> {group, NewProp}
+    ;   {Hd, Type, Value}       -> {Type, Value}
+    end;
+    
+find_key(Prop, [Hd | Rest]) ->
+    case lists:keyfind(Hd, 1, Prop) of
+        false                   -> undefined
     ;   {Hd, group, NewProp}    -> find_key(NewProp, Rest)
-    
-    ;   {Hd, Type, Value}
-            when Rest =:= []    -> {Type, Value}
-    
     ;   {Hd, _, _}              -> undefined
     end.
     

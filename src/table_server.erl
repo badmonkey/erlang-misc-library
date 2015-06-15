@@ -171,7 +171,7 @@ create_tables( [Table | Rest], Created, CurrentTables
                             {{error, {table_creation_failed, Table, Reason}}, [], State}
 
                     end
-			;	error		-> {{error, bad_table_info}, [], State}
+            ;   error       -> {{error, bad_table_info}, [], State}
             end
             
     ;   Else                    ->
@@ -182,7 +182,7 @@ create_tables( [Table | Rest], Created, CurrentTables
 table_match(_, _, undefined) -> error;
     
 table_match(Table, Current, Attributes) ->
-    case list:member(Table, Current) of
+    case lists:member(Table, Current) of
         true    ->
             case mnesia:table_info(Table, attributes) of
                 Attributes  -> exists

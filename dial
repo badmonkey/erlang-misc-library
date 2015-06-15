@@ -1,0 +1,51 @@
+#!/bin/bash
+
+SYSTEM_PLT="ebin/erlang_system.plt"
+IGNORE=".ignore-warnings"
+SYSTEM_APPS="kernel stdlib erts mnesia crypto syntax_tools parsetools ssl public_key compiler"
+CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../"
+
+if [ "xx${1}xx" != "xx-racexx" ] ; then
+  if [ "xx${1}xx" != "xx-wallxx" ] ; then
+    WARNINGS="-Werror_handling"
+  else
+    WARNINGS="-Werror_handling -Wunmatched_returns -Wunderspecs"
+    shift
+  fi
+else
+  WARNINGS="-Wrace_conditions"
+  shift
+fi
+
+
+if [ ! -e $SYSTEM_PLT ] ; then
+  dialyzer --output_plt $SYSTEM_PLT --build_plt --apps $SYSTEM_APPS -r deps
+fi
+
+
+echo "Recompiling..."
+rebar compile |& tee dialyzer.dump
+
+
+if [ "xx${1}xx" = "xx-typexx" ] ; then
+  echo "Dumping types..."
+  typer $CMDLINE_SYSTEM  -r src  >& typer.dump
+  shift
+fi
+
+
+echo "Checking $WARNINGS" >> dialyzer.dump
+
+if [ "xx${1}xx" != "xxxx" ] ; then
+
+  echo "Checking ${1}... $WARNINGS"
+  dialyzer $CMDLINE_SYSTEM $WARNINGS  ebin/${1}.beam  |& egrep -v -f $IGNORE |& tee -a dialyzer.dump
+  
+else
+
+  echo "Checking beams... $WARNINGS"
+  dialyzer $CMDLINE_SYSTEM $WARNINGS  -r ebin  |& egrep -v -f $IGNORE |& tee -a dialyzer.dump
+
+fi
+
+echo done

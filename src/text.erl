@@ -18,7 +18,7 @@
 -spec is_format( string() ) -> boolean().
 
 is_format(X) ->
-    string:chr(X, '~') =/= 0.
+    string:chr(X, $~) =/= 0.
 
 
 guess_formatting(Number, String) ->
@@ -125,7 +125,7 @@ long_duration(Time, MaxParts, ShowRemain) ->
                     true    -> [ short_duration(Remain) | Parts ]
                 ;   false   -> Parts
                 end,
-    string:join(list:reverse(FullParts), " ").
+    string:join(lists:reverse(FullParts), " ").
     
     
     

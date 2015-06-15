@@ -54,5 +54,4 @@ notify_many(#publisher{} = Publisher, Paths, Mesg) ->
 -spec subscribe( #publisher{}, router:subscribe_path() ) -> type:ok_or_error().
 
 subscribe(#publisher{} = Publisher, Path) ->
-    router:add(Publisher#publisher.router, Path, self()),
-    ok.
+    router:add(Publisher#publisher.router, Path, self()).

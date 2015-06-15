@@ -18,7 +18,7 @@ pidseed() ->
 %%%%% ------------------------------------------------------- %%%%%
     
     
--spec hwaddr() -> binary().
+-spec hwaddr() -> <<_:48>>.
 
 hwaddr() ->
     <<RndHi:7, _:1, RndLow:40>> = crypto:rand_bytes(6),
@@ -29,10 +29,10 @@ hwaddr() ->
 %%%%% ------------------------------------------------------- %%%%%
 
     
--spec bits( pos_integer() ) -> binary().
+-spec bits( pos_integer() ) -> bitstring().
     
 bits(N) ->    
-    random:seed( pidseed() ),
+    _ = random:seed( pidseed() ),
     Rnd = random:uniform(2 bsl N - 1),
     <<Rnd:N>>.
 

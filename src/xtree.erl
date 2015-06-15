@@ -8,13 +8,13 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec delete_all( [K], gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
+-spec delete_all( [K], gb_trees:tree(K, V) ) -> gb_trees:tree(K, V).
 
 delete_all(Keys, Tree) ->
     % TODO iterate through tree once removing K's
     lists:foldl(
             fun(X, T) ->
-                gb_tree:delete_any(X, T)
+                gb_trees:delete_any(X, T)
             end
         , Tree, Keys).
 
@@ -22,7 +22,7 @@ delete_all(Keys, Tree) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec foreach( fun((K, V) -> V), gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
+-spec foreach( fun((K, V) -> V), gb_trees:tree(K, V) ) -> gb_trees:tree(K, V).
 
 foreach(_Pred, Tree) ->
     Tree.
@@ -31,16 +31,16 @@ foreach(_Pred, Tree) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec fold( fun(({K, V}, A) -> A), A, gb_tree:tree(K, V) ) -> A.
+-spec fold( fun(({K, V}, A) -> A), A, gb_trees:tree(K, V) ) -> A.
 
 fold(Fun, Acc, Tree) ->
-    lists:foldl(Fun, Acc, gb_tree:to_list(Tree) ).
+    lists:foldl(Fun, Acc, gb_trees:to_list(Tree) ).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter( fun((K, V) -> boolean()), gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
+-spec filter( fun((K, V) -> boolean()), gb_trees:tree(K, V) ) -> gb_trees:tree(K, V).
 
 filter(Pred, Tree)
         when is_function(Pred, 2)  ->
@@ -49,14 +49,14 @@ filter(Pred, Tree)
                     fun({Key, Value}) ->
                         Pred(Key, Value)
                     end
-                , gb_tree:to_list(Tree) ),
-    gb_tree:from_orddict(NewTree).
+                , gb_trees:to_list(Tree) ),
+    gb_trees:from_orddict(NewTree).
     
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec delete_if( fun((K, V) -> boolean()), gb_tree:tree(K, V) ) -> gb_tree:tree(K, V).
+-spec delete_if( fun((K, V) -> boolean()), gb_trees:tree(K, V) ) -> gb_trees:tree(K, V).
 
 delete_if(Pred, Tree)
         when is_function(Pred, 2)  ->

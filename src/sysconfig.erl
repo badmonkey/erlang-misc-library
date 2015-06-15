@@ -187,7 +187,7 @@ parse(non_existing) -> undefined;
 parse(FileName) ->
     {ok, InFile} = file:open(FileName, [read]),
     Acc = loop(InFile, []),
-    file:close(InFile),
+    _ = file:close(InFile),
 
     config_parser:parse(Acc).
 

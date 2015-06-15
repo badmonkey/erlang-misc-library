@@ -2,9 +2,9 @@
 -module(xlists).
 -extends(lists).
 
--export([sorted_member/2, sorted_insert/2, subsets/2, unique/1]).
--export([drop/2, take/2, foldl/2, foldr/2, filter_fold/2, filter_fold/3]).
--export([mapx/3]).
+-export([ sorted_member/2, sorted_insert/2, subsets/2, unique/1
+        , drop/2, take/2, foldl/2, filter_fold/2, filter_fold/3
+        , mapx/3, minmax/1, minmax/2]).
 
 
 
@@ -72,35 +72,31 @@ take(N, List) when is_list(List) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec foldl( fun((T, T) -> T), [T] ) -> T.
+-spec foldl( fun((T, T) -> T), nonempty_list(T) ) -> T.
 
 foldl(F, [Hd | Tl]) ->
     lists:foldl(F, Hd, Tl).
 
     
--spec foldr( fun((T, T) -> T), [T] ) -> T.
-    
-foldr(F, [Hd | Tl]) ->
-    lists:foldr(F, Hd, Tl).
-
-    
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), {A, [V]} ) -> {A, [V]}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), {A, [V]} ) -> {[V], A}.
 
 filter_fold(F, {Acc, List}) when is_list(List) ->
     filter_fold(F, Acc, [], List).
 
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V] ) -> {A, [V]}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V] ) -> {[V], A}.
 
 filter_fold(F, Acc, List) when is_list(List) ->
     filter_fold(F, Acc, [], List).
     
 
+-spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V], [V] ) -> {[V], A}.
+
 filter_fold(_, Acc, Result, []) ->
-    {Acc, lists:reverse(Result)};
+    {lists:reverse(Result), Acc};
 
 filter_fold(F, Acc, Result, [Hd | Tl]) ->
     case F(Hd, Acc) of
@@ -118,5 +114,31 @@ mapx(_Fun, _, []) -> [];
     
 mapx(Fun, Args, [Head | Tail]) ->
     [ apply(Fun, [Head | Args]) | mapx(Fun, Args, Tail) ].
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+minmax(L) when is_list(L) ->
+    minmax(fun(X,Y) -> X < Y end, L).
     
+
+minmax(_, []) -> [];
+minmax(F, [H | Rest]) -> minmax(F, Rest, {H, H}).
+
+
+-spec minmax( fun((T, T) -> boolean()), [T], {T, T} ) -> {T, T}.
+
+minmax(_, [], Acc) -> Acc;
+
+minmax(F, [H | Rest], {Min, Max} = Res) ->
+    Acc =   case F(H, Min) of
+                true    -> {H, Max}
+            ;   false   ->
+                    case F(Max, H) of
+                        true    -> {Min, H}
+                    ;   false   -> Res
+                    end
+            end,
+    minmax(F, Rest, Acc).
 

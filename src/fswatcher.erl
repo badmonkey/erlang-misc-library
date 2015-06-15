@@ -32,7 +32,7 @@ child_spec(Id, _Args) ->
 % Public API
 
 test() ->
-    port_server:call(?SERVER, {test}).
+    gen_server:call(?SERVER, {test}).
 
 
 start_link() ->

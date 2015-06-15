@@ -248,7 +248,7 @@ handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = Sta
 
 terminate(Reason, #state{module = CallbackModule, proxystate = ProxyState, port = Port}) ->
     catch CallbackModule:terminate(Reason, ProxyState),
-    erlang:close_port(Port),
+    erlang:port_close(Port),
     ok.
 
 

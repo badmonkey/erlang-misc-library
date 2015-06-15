@@ -6,7 +6,7 @@
 
 
 %% External API
--export([start_link/2, start_link/3, start_link/6]).
+-export([start_link/2, start_link/3, start_link/5, start_link/6]).
 
 
 %% gen_server callbacks
@@ -28,10 +28,10 @@
     { module                            :: atom()           % callback module
     , proxystate                        :: term()           % state of callback module
     , heartbeatMS                       :: pos_integer()    % in milliseconds
-    , timer         = nil               :: timer:tref()
-    , socket        = undefined         :: inet:socket()
-    , handlers      = gb_tree:empty()   :: gb_tree:tree( type:endpoint(), rejected | #client_handler{} )
-    , references    = gb_tree:empty()   :: gb_tree:tree( reference(), type:endpoint() )
+    , timer                             :: timer:tref()
+    , socket                            :: inet:socket()
+    , handlers      = gb_trees:empty()  :: gb_trees:tree( type:endpoint(), rejected | #client_handler{} )
+    , references    = gb_trees:empty()  :: gb_trees:tree( reference(), type:endpoint() )
     }).
 
     
@@ -97,22 +97,24 @@
 
 start_link(CallbackModule, Port)
         when is_atom(CallbackModule), is_integer(Port)  ->
-    start_link(CallbackModule, undefined, undefined, Port, [], ?DEFAULT_HEARTBEAT).
+    start_link(CallbackModule, undefined, {localhost, Port}, [], ?DEFAULT_HEARTBEAT).
 
 start_link(CallbackModule, Port, InitParams)
         when is_atom(CallbackModule), is_integer(Port), is_list(InitParams)  ->
-    start_link(CallbackModule, undefined, undefined, Port, InitParams, ?DEFAULT_HEARTBEAT).
+    start_link(CallbackModule, undefined, {localhost, Port}, InitParams, ?DEFAULT_HEARTBEAT).
+    
+
+start_link(CallbackModule, Name, IpAddr, Port, InitParams, HeartbeatSecs) ->
+    start_link(CallbackModule, Name, {IpAddr, Port}, InitParams, HeartbeatSecs).
     
     
-start_link(CallbackModule, Name, IpAddr, Port, InitParams, HeartbeatSecs)
+-spec start_link( atom(), type:server_name(), type:endpoint(), list(), pos_integer() ) -> type:start_result().
+
+start_link(CallbackModule, Name, Endpoint, InitParams, HeartbeatSecs)
         when  is_atom(CallbackModule)
-            , is_tuple(IpAddr), is_integer(Port)
+            , is_atom(Name) orelse is_tuple(Name)
             , is_list(InitParams), is_integer(HeartbeatSecs)  ->
-    case Name of
-        undefined           -> gen_server:start_link(?MODULE, [CallbackModule, InitParams, {IpAddr, Port}, HeartbeatSecs], [])
-    ;   X when is_atom(X)   -> gen_server:start_link({local, Name}, ?MODULE, [CallbackModule, InitParams, {IpAddr, Port}, HeartbeatSecs], [])
-    ;   _                   -> gen_server:start_link(Name, ?MODULE, [CallbackModule, InitParams, {IpAddr, Port}, HeartbeatSecs], [])
-    end.
+    gen_server_base:start_link_name(Name, ?MODULE, [CallbackModule, InitParams, Endpoint, HeartbeatSecs]).
     
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -126,8 +128,8 @@ init([CallbackModule, InitParams, Endpoint, HeartbeatSecs]) ->
     InitState = #state{module = CallbackModule, heartbeatMS = HeartbeatSecs * 1000},
 
     case catch CallbackModule:init(InitParams) of
-        {ok, ProxyState}        -> {ok, start_listener(Endpoint, InitState#state{ proxystate = ProxyState })}
-    ;   {ok, ProxyState, Arg}   -> {ok, start_listener(Endpoint, InitState#state{ proxystate = ProxyState }), Arg}
+        {ok, ProxyState}        -> start_listener(Endpoint, undefined, InitState#state{ proxystate = ProxyState })
+    ;   {ok, ProxyState, Arg}   -> start_listener(Endpoint, Arg, InitState#state{ proxystate = ProxyState })
     ;   {stop, _} = Stop        -> Stop
     ;   ignore                  -> ignore
     ;   {'EXIT', Reason}        -> {stop, {error, Reason}}
@@ -136,8 +138,11 @@ init([CallbackModule, InitParams, Endpoint, HeartbeatSecs]) ->
     
     
 -define(REQUIRED_SOCK_OPTS, [binary, active]).    
+
+start_listener(undefined, _, #state{} = State) ->
+    {stop, {error, invalid_endpoint}, State};
     
-start_listener({IpAddr, Port}, #state{heartbeatMS = HeartBeat} = State) ->
+start_listener({IpAddr, Port}, Arg, #state{heartbeatMS = HeartBeat} = State) ->
     SockOpts =  case IpAddr of
                     {_,_,_,_}           -> [{ip, IpAddr} | ?REQUIRED_SOCK_OPTS]
                 ;   {_,_,_,_,_,_,_,_}   -> [{ip, IpAddr} | ?REQUIRED_SOCK_OPTS]
@@ -145,7 +150,10 @@ start_listener({IpAddr, Port}, #state{heartbeatMS = HeartBeat} = State) ->
                 end,
     {ok, Socket} = gen_udp:open(Port, SockOpts),
     {ok, TRef} = timer:send_interval(HeartBeat, {'udp$server', heartbeat}),
-    State#state{ socket = Socket, timer = TRef }.
+    case Arg of
+        undefined   -> {ok, State#state{ socket = Socket, timer = TRef } }
+    ;   _           -> {ok, State#state{ socket = Socket, timer = TRef }, Arg}
+    end.
     
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -189,7 +197,7 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
                 {ok, Pid}           ->
                     MRef = erlang:monitor(process, Pid),
                     NewHandlers = gb_trees:insert(Endpoint, #client_handler{pid = Pid, monitorref = MRef}, Handlers),
-                    NewReferences = gb_tree:insert(MRef, Endpoint, References),
+                    NewReferences = gb_trees:insert(MRef, Endpoint, References),
                     Pid ! UdpPacket,
                     {noreply, State#state{handlers = NewHandlers, references = NewReferences}}
                 
@@ -203,7 +211,7 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
             ;   {ok, Pid, NewState} ->
                     MRef = erlang:monitor(process, Pid),
                     NewHandlers = gb_trees:insert(Endpoint, #client_handler{pid = Pid, monitorref = MRef}, Handlers),
-                    NewReferences = gb_tree:insert(MRef, Endpoint, References),
+                    NewReferences = gb_trees:insert(MRef, Endpoint, References),
                     Pid ! UdpPacket,
                     {noreply, State#state{proxystate = NewState, handlers = NewHandlers, references = NewReferences}}
                     
@@ -238,24 +246,23 @@ handle_info({'DOWN', MonitorRef, process, Object, Info}, State) ->
     
     
 handle_info( {'udp$server', heartbeat}
-           , #state{module = CallbackModule, proxystate = ProxyState, handlers = Handlers} = State) ->
+           , #state{handlers = Handlers} = State) ->
     
-    Proc =  fun
-                (_, {{stop, _} = Err, AccState}) ->
+    Proc =  fun (_, { {stop, _} = Err, AccState })  ->
                     {true, {Err, AccState}}
                     
-            ;   ({Endpoint, rejected}, {_, AccState}) ->
-                    case process_handler(rejected, Endpoint, AccState) of
+            ;   ({Endpt, rejected}, {_, AccState})  ->
+                    case process_handler(rejected, Endpt, AccState) of
                         {delete, NewState}          -> {false, {ok, NewState}}
                     ;   {keep, NewState}            -> {true, {ok, NewState}}
                     ;   {stop, Reason, NewState}    -> {true, {{stop, Reason}, NewState}}
                     end
                     
-            ;   (_, Acc)    -> {true, Acc}
+            ;   (_, Acc)                            -> {true, Acc}
             end,
             
-    {NewTree, Result} = xlists:filter_fold(Proc, {ok, State}, gb_tree:to_list(Handlers) ),
-    NewHandlers = gb_tree:from_orddict(NewTree),
+    {NewTree, Result} = xlists:filter_fold(Proc, {ok, State}, gb_trees:to_list(Handlers) ),
+    NewHandlers = gb_trees:from_orddict(NewTree),
     
     case Result of
         {ok, AState} ->
@@ -295,7 +302,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec process_handler(rejected, type:endpoint(), #state{}) -> {keep, #state{}} | {delete, #state{}} | {stop, term(), #state{}}.
+-spec process_handler(rejected, type:endpoint(), #state{}) -> {keep, #state{}} | {delete, #state{}} | {stop, type:error(), #state{}}.
 
 process_handler( rejected, Endpoint
                , #state{module = CallbackModule, proxystate = ProxyState} = State)  ->
@@ -311,7 +318,7 @@ process_handler( rejected, Endpoint
             {stop, {error, Reason}, State}
             
     ;   Else                ->
-            {stop, {bad_return_value, Else}, State}     
+            {stop, {error, {bad_return_value, Else}}, State}     
     end;
 
     

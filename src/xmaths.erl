@@ -1,10 +1,10 @@
 
 -module(xmaths).
 
--export([list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1,
-         weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1,
-         std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1,
-         std_spread/1, primes/1, as_list/1, as_list/2, round/2]).
+-export([ list_sums/1, list_product/1, arithmetic_mean/1, geometric_mean/1
+        , weighted_arithmetic_mean/1, histograph/1, median/1, mode/1, std_deviation/1
+        , std_deviation2/1, root_mean_square/1, list_partial_sums/1, list_differences/1
+        , std_spread/1, primes/1, as_list/1, as_list/2, round/2]).
 
          
 
@@ -181,18 +181,21 @@ primes(N) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+-define(MAX_BASE, 62).   % a-zA-Z0-9
+
     
 as_list(I) -> erlang:integer_to_list(I).
 
 
--spec as_list( integer(), integer() ) -> string().
+-spec as_list( integer(), 2..?MAX_BASE ) -> string().
 
 as_list(I, 10) -> erlang:integer_to_list(I);
 as_list(I, Base)
     when  is_integer(I)
         , is_integer(Base)
         , Base >= 2
-        , Base =< 1+$Z-$A+10+1+$z-$a  ->
+        , Base =< ?MAX_BASE  ->
     if
         I < 0   -> [$- | as_list(-I, Base, [])]
     ;   true    -> as_list(I, Base, [])
@@ -200,7 +203,7 @@ as_list(I, Base)
 as_list(I, Base) -> erlang:error(badarg, [I, Base]).
 
 
--spec as_list( integer(), integer(), string() ) -> string().
+-spec as_list( integer(), 2..?MAX_BASE, string() ) -> string().
 
 as_list(I0, Base, R0) ->
     D  = I0 rem Base,
@@ -214,12 +217,12 @@ as_list(I0, Base, R0) ->
         I1 =:= 0    -> R1
     ;   true        -> as_list(I1, Base, R1)
     end.
-
+    
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec round( number(), non_neg_integer() ) -> type:number().    
+-spec round( number(), non_neg_integer() ) -> number().    
 
 round(Number, 0) ->    
     erlang:trunc(Number);

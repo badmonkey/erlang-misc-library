@@ -24,7 +24,7 @@
     , packetmode    = raw           :: packet_mode()
     , buffer        = <<>>          :: binary()
     , wait_size     = 0             :: non_neg_integer()
-    , compressor    = nil           :: zlib:zstream()
+    , compressor    = undefined     :: undefined | zlib:zstream()
     , udpdetails    = undefined     :: type:endpoint()
     }).
 
@@ -194,14 +194,14 @@ handle_info( {udp, Socket, Ip, Port, Packet}
             {noreply, ResetState#state{proxystate = NewState}}
 
     ;   {reply, Reply, NewState}                ->
-            gen_udp:send(Socket, Ip, Port, Reply),
+            _ = gen_udp:send(Socket, Ip, Port, Reply),
             {noreply, ResetState#state{proxystate = NewState}}
 
     ;   {stop, Reason, NewState}                ->
             {stop, Reason, ResetState#state{proxystate = NewState}}
             
     ;   {close, Reply, NewState}                ->
-            gen_udp:send(Socket, Ip, Port, Reply),
+            _ = gen_udp:send(Socket, Ip, Port, Reply),
             {stop, normal, ResetState#state{proxystate = NewState}}
             
     ;   {replace_callback, Module, InitParams}
@@ -239,12 +239,12 @@ handle_info( {tcp, Socket, Data}
                 {noreply, ResetState#state{proxystate = NewState}}
                 
         ;   {reply, Reply, NewState}                ->
-                gen_tcp:send(Socket, Reply),
+                _ = gen_tcp:send(Socket, Reply),
                 {noreply, ResetState#state{proxystate = NewState}}
 
         ;   {more, Length, NewState} when is_integer(Length), Length > 0 ->      
                 xerlang:trace("MORE", {Length, byte_size(FullData)}),
-                {noreply, ResetState#state{proxystate = NewState, buffer = <<FullData>>, wait_size = byte_size(FullData) + Length}}
+                {noreply, ResetState#state{proxystate = NewState, buffer = FullData, wait_size = byte_size(FullData) + Length}}
                 
         ;   {ok, NewState, PktType}                 ->
                 validate_mode(PktType),
@@ -259,7 +259,7 @@ handle_info( {tcp, Socket, Data}
                 {stop, Reason, ResetState#state{proxystate = NewState}}
                 
         ;   {close, Reply, NewState}                ->
-                gen_tcp:send(Socket, Reply),
+                _ = gen_tcp:send(Socket, Reply),
                 {stop, normal, ResetState#state{proxystate = NewState}}
                 
         ;   {replace_callback, Module, InitParams}
@@ -293,7 +293,7 @@ handle_info( {tcp, Socket, Data}
                         handle_info( {tcp, Socket, Rest}, ResetState#state{proxystate = NewState} )
 
                 ;   {reply, Reply, NewState}                ->
-                        gen_tcp:send(Socket, Reply),
+                        _ = gen_tcp:send(Socket, Reply),
                         xerlang:trace("Data Sent"),
                         % check for more packets
                         handle_info( {tcp, Socket, Rest}, ResetState#state{proxystate = NewState} )
@@ -313,7 +313,7 @@ handle_info( {tcp, Socket, Data}
                         {stop, Reason, ResetState#state{proxystate = NewState}}
                         
                 ;   {close, Reply, NewState}                ->
-                        gen_tcp:send(Socket, Reply),
+                        _ = gen_tcp:send(Socket, Reply),
                         {stop, normal, ResetState#state{proxystate = NewState}}
                         
                 ;   {replace_callback, Module, InitParams}
@@ -364,11 +364,11 @@ handle_info( {tcp_error, Socket, Reason}
             {stop, Reason2, State#state{proxystate = NewState}}
             
     ;   {reply, Reply, NewState}    ->
-            gen_tcp:send(Socket, Reply),
+            _ = gen_tcp:send(Socket, Reply),
             {stop, Reason, State#state{proxystate = NewState}}
 
     ;   {close, Reply, NewState}    ->
-            gen_tcp:send(Socket, Reply),
+            _ = gen_tcp:send(Socket, Reply),
             {stop, Reason, State#state{proxystate = NewState}}
             
     ;   {'EXIT', Reason}            -> {stop, {error, Reason}, State}

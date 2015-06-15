@@ -8,6 +8,8 @@
         , abcast/2, abcast/3
         , multi_call/2, multi_call/3, multi_call/4
         , wake_hib/5]).
+        
+-export([start_link_name/3]).  
     
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -41,3 +43,13 @@ wake_hib(Parent, Name, State, Mod, Debug) ->
   
 
 %%%%% ------------------------------------------------------- %%%%%
+
+
+-spec start_link_name( type:server_name(), atom(), list() ) -> type:start_result().
+
+start_link_name(Name, Module, Args) ->
+    case Name of
+        undefined           -> gen_server:start_link(Module, Args, [])
+    ;   X when is_atom(X)   -> gen_server:start_link({local, Name}, Module, Args, [])
+    ;   _                   -> gen_server:start_link(Name, Module, Args, [])
+    end.

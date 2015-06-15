@@ -24,7 +24,7 @@ in_seconds() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec now_in_milliseconds() -> number().
+-spec now_in_milliseconds() -> float().
 
 now_in_milliseconds() ->
     {MegaSec, Sec, MicroSec} = erlang:now(),

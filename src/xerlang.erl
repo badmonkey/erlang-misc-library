@@ -9,15 +9,15 @@
 
 
 trace(Bin) when is_binary(Bin) ->
-    lager:debug("TRACE binary ~p", [bin_to_hex(Bin)]),
+    _ = lager:debug("TRACE binary ~p", [bin_to_hex(Bin)]),
     Bin;
     
 trace(Term) ->
-    lager:debug("TRACE ~p", [Term]),
+    _ = lager:debug("TRACE ~p", [Term]),
     Term.
     
 trace(Msg, Term) ->
-    lager:debug("TRACE ~p ~p", [Msg, Term]),
+    _ = lager:debug("TRACE ~p ~p", [Msg, Term]),
     Term.
 
 
@@ -34,7 +34,7 @@ bin_to_hex(Bin) when is_binary(Bin) ->
 
 
 term_sha1(Term) ->
-    crypto:hash(sha1, term_to_binary(Term)).
+    crypto:hash(sha, term_to_binary(Term)).
     
     
     

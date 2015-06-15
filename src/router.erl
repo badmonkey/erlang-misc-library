@@ -47,20 +47,20 @@
 % Server State
 
 
--record(router,
+-record(router_root,
     { id                            :: routerid()
-    , rootnode                      :: nodeid()
+    , rootnode                      :: nodeid() | type:match_any()
     }).
 
 -record(route_node,
-    { key                           :: nodeid()
+    { key                           :: nodeid() | type:match_any()
     , router                        :: routerid()
-    , data          = []            :: [data()]
-    , children      = dict:new()    :: dict:dict( subscribe_fragment(), nodeid() )
+    , data          = []            :: [data()] | type:match_any()
+    , children      = dict:new()    :: dict:dict( subscribe_fragment(), nodeid() ) | type:match_any()
     }).
     
 -record(registry,
-    { name                          :: atom()
+    { name                          :: atom() | type:match_any()
     , router                        :: routerid()
     }).
     
@@ -130,22 +130,22 @@ exists(Router) ->
     get_router(Router) =/= undefined.
     
    
--spec get( routername(), publish_path() ) -> [data()].
+-spec get( routername(), publish_path() ) -> [data()] | no_return().
 
 get(Router, Path) ->
-    gather([{Router, Path}], []).
+    gather([{get_root_node(Router), Path}], []).
 
     
--spec get_many( [routername()], [publish_path()] ) -> [data()].
+-spec get_many( [routername()], [publish_path()] ) -> [data()] | no_return().
 
 get_many(Routers, Paths) ->
-    gather([ {X, Y} || X <- Routers, Y <- Paths ], []).
+    gather([ {get_root_node(X), Y} || X <- Routers, Y <- Paths ], []).
     
     
--spec get_with_matches( routername(), publish_path() ) -> match_list().
+-spec get_with_matches( routername(), publish_path() ) -> match_list() | no_return().
 
 get_with_matches(Router, Path) ->
-    gather_matches([{Router, Path, []}], []).    
+    gather_matches([{get_root_node(Router), Path, []}], []).    
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -174,7 +174,7 @@ handle_call({new_router}, _From, State) ->
     Id = State#state.nextid,
     Node = State#state.nextnode,
     
-    ets:insert(State#state.root_table, #router{ id = Id, rootnode = Node } ),
+    ets:insert(State#state.root_table, #router_root{ id = Id, rootnode = Node } ),
     ets:insert(State#state.node_table, #route_node{ key = Node, router = Id } ),
     
     {reply, Id, State#state{ nextid = Id + 1, nextnode = Node + 1 }};
@@ -190,8 +190,8 @@ handle_call({new_router, Name}, From, State)
     
 handle_call({free_router, Router}, _From, State) ->
     Id = get_router(Router),
-
-    xets:match_delete(State#state.root_table, #router{ id = Id, _ = '_' }),
+   
+    xets:match_delete(State#state.root_table, #router_root{ id = Id, _ = '_'}),
     xets:match_delete(State#state.node_table, #route_node{ router = Id, _ = '_' }),
     xets:match_delete(State#state.registry_table, #registry{ router = Id, _ = '_' }),
     
@@ -249,7 +249,7 @@ code_change(_OldVsn, State, _Extra) ->
 % Private Functions
 
 
--spec get_router( routername() ) -> routerid().
+-spec get_router( routername() ) -> routerid() | undefined.
 
 get_router(Name)
         when is_atom(Name)  ->
@@ -260,7 +260,7 @@ get_router(Name)
 get_router(Id) -> Id.
 
 
--spec get_root_node( routerid() ) -> #route_node{} | type:error().   
+-spec get_root_node( routername() ) -> #route_node{} | no_return().   
  
 get_root_node(Router) ->
     Id = get_router(Router),
@@ -317,7 +317,7 @@ gather_matches([{undefined, _, _} | Rest], Acc) ->
     gather_matches(Rest, Acc);
     
 gather_matches([{#route_node{} = Node, [], Values} | Rest], Acc) ->
-    Fixed = list:reverse(Values),
+    Fixed = lists:reverse(Values),
     gather_matches(Rest, Acc ++ [ {D, Fixed} || D <- Node#route_node.data]);
 
 gather_matches([{#route_node{} = Node, [Hd | Tail], Values} | Rest], Acc) ->
