@@ -123,7 +123,7 @@ minmax(L) when is_list(L) ->
     minmax(fun(X,Y) -> X < Y end, L).
     
 
-minmax(_, []) -> [];
+minmax(_, []) -> undefined;
 minmax(F, [H | Rest]) -> minmax(F, Rest, {H, H}).
 
 
