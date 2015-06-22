@@ -81,7 +81,7 @@
 
 
 start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+    gen_server:start_link(?MODULE, [], []).
 
     
 child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
@@ -93,6 +93,16 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 
 
 init(_Args) ->
+	_Url = "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example",
+	
+	Host = "push.planetside2.com",
+	Path = "/streaming?environment=ps2&service-id=s:example",
+	
+	{ok, Pid} = gun:open(Host, 443),
+	{ok, http} = gun:await_up(Pid),
+	
+	gun:ws_upgrade(Pid, Path),
+	
     {ok, #state{}}.
 
     
@@ -119,11 +129,18 @@ handle_cast(_Msg, State) ->
 %{gun_data, Pid, StreamRef, nofin, Data} 
 %{gun_data, Pid, StreamRef, fin, Data}
 
+% {gun_ws, Pid, close} ->
+% {gun_ws, Pid, {close, Code, _}} ->
+% {gun_ws, Pid, Frame} ->
+% {gun_down, Pid, ws, _, _, _} ->
+
 %{gun_ws, Pid, Frame}
 
 
-handle_info(_Info, State) ->
-    {stop, invalid_info_request, State}.
+handle_info(Info, State) ->
+	lager:debug("handle_info", [Info]),
+	{noreply, State}.
+    %{stop, invalid_info_request, State}.
 
     
 %%%%% ------------------------------------------------------- %%%%%
