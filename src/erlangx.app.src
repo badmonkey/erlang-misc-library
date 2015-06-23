@@ -19,7 +19,9 @@
         [ snowflake, sysconfig, fswatcher, router
         ] },
     {applications,
-        [ kernel, stdlib, crypto, lager, gun
+        [ kernel, stdlib, lager
+        , crypto, public_key, ssl
+        , ranch, cowlib, asn1, gun
         ] },
     {mod, { erlangx, []}},
     {env, []}

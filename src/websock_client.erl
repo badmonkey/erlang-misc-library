@@ -81,7 +81,9 @@
 
 
 start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+	application:ensure_all_started(gun),
+	application:ensure_all_started(lager),
+    gen_server:start_link(?MODULE, ["wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"], []).
 
     
 child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
@@ -92,7 +94,17 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 % Initialise Server
 
 
-init(_Args) ->
+init([Url]) ->
+	lager:set_loglevel(lager_console_backend, debug),
+	lager:debug("starting websock_client"),
+	
+	case http_uri:parse(Url) of
+		{error, Reason} ->
+		{error, {bad_format, Reason}};
+		{ok, {Scheme, Userinfo, ParseUrl, Port, ParseHeaders, ParseBody}} ->
+			lager:debug("Url ~p", [{Scheme, Userinfo, ParseUrl, Port, ParseHeaders, ParseBody}])
+	end,
+	
 	_Url = "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example",
 	
 	Host = "push.planetside2.com",
@@ -128,17 +140,20 @@ handle_cast(_Msg, State) ->
 %{gun_response, Pid, StreamRef, nofin, Status, Headers}
 %{gun_data, Pid, StreamRef, nofin, Data} 
 %{gun_data, Pid, StreamRef, fin, Data}
+%{gun_up, ServerPid, Protocol}
 
 % {gun_ws, Pid, close} ->
 % {gun_ws, Pid, {close, Code, _}} ->
 % {gun_ws, Pid, Frame} ->
 % {gun_down, Pid, ws, _, _, _} ->
 
+% {gun_ws, Pid, {text, Text}} ->
+
 %{gun_ws, Pid, Frame}
 
 
 handle_info(Info, State) ->
-	lager:debug("handle_info", [Info]),
+	lager:debug("handle_info ~p", [Info]),
 	{noreply, State}.
     %{stop, invalid_info_request, State}.
 
