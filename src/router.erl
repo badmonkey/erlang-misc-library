@@ -49,18 +49,18 @@
 
 -record(router_root,
     { id                            :: routerid()
-    , rootnode                      :: nodeid() | type:match_any()
+    , rootnode                      :: type:searchable( nodeid() )
     }).
 
 -record(route_node,
-    { key                           :: nodeid() | type:match_any()
+    { key                           :: type:searchable( nodeid() )
     , router                        :: routerid()
-    , data          = []            :: [data()] | type:match_any()
-    , children      = dict:new()    :: dict:dict( subscribe_fragment(), nodeid() ) | type:match_any()
+    , data          = []            :: type:searchable( [data()] )
+    , children      = dict:new()    :: type:searchable( dict:dict( subscribe_fragment(), nodeid() ) )
     }).
     
 -record(registry,
-    { name                          :: atom() | type:match_any()
+    { name                          :: type:searchable( atom() )
     , router                        :: routerid()
     }).
     

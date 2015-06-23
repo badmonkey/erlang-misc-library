@@ -4,7 +4,8 @@
 -export([get/1]).
 
 -export_type([ error/0, ok_or_error/0, endpoint/0, start_result/0
-             , atomlist/0, format/0, match_any/0, server_name/0]).
+             , atomlist/0, format/0, match_any/0, searchable/1
+             , server_name/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -22,6 +23,7 @@
 -type format() :: string().
 
 -type match_any() :: '_'.
+-type searchable(T) :: '_' | T.
 
 -type server_name() :: undefined | atom() | {local, term()} | {global, term()} | {via, atom(), term()}.
 

@@ -186,6 +186,7 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 %%%%% ------------------------------------------------------- %%%%%
 
 
+%% handle udp packets
 handle_info( {udp, Socket, Ip, Port, Packet}
            , #state{packetmode = udp, module = CallbackModule, proxystate = ProxyState, socket = Socket} = State) ->
     ResetState = State#state{buffer = <<>>, wait_size = 0},

@@ -2,7 +2,7 @@
 
 SYSTEM_PLT="ebin/erlang_system.plt"
 IGNORE=".ignore-warnings"
-SYSTEM_APPS="kernel stdlib erts mnesia crypto syntax_tools parsetools ssl public_key compiler"
+SYSTEM_APPS="kernel stdlib erts mnesia crypto syntax_tools parsetools ssl public_key compiler inets"
 CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../"
 
 if [ "xx${1}xx" != "xx-racexx" ] ; then

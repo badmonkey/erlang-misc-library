@@ -242,6 +242,7 @@ handle_info( {udp, Socket, Ip, Port, _Packet} = UdpPacket
     
             
 handle_info({'DOWN', MonitorRef, process, Object, Info}, State) ->
+    % TODO deal with handler dying
     {noreply, State};
     
     

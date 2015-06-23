@@ -18,13 +18,32 @@
 % Server State
 
 
+-type client_mode() :: disconnected | http_connected | ws_connected.
+
 -record(state,
-    {
+    { module                            :: atom()           % callback module
+    , proxystate                        :: term()           % state of callback module
+    , gunner                            :: pid()
+    , mref                              :: reference()
+    , stream                            :: reference()
+    , host                              :: string()
+    , port                              :: pos_integer()
+    , request                           :: string()
+    , mode          = disconnected      :: client_mode()
+    , json_decode   = false             :: boolean()
     }).
 
     
 %%%%% ------------------------------------------------------- %%%%%    
          
+
+-callback websock_info() -> [proplists:property()].
+
+
+-callback handle_frame(Msg :: term(), State :: term()) ->
+      {ok, NewState :: term()}
+    | {ok, Cmd :: term(), NewState :: term()}
+    | {stop, Reason :: term(), NewState :: term()}.         
 
     
 % similiar to gen_server callbacks (same params but with additional return values)
@@ -81,8 +100,8 @@
 
 
 start_link() ->
-	application:ensure_all_started(gun),
-	application:ensure_all_started(lager),
+    application:ensure_all_started(gun),
+    application:ensure_all_started(lager),
     gen_server:start_link(?MODULE, ["wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"], []).
 
     
@@ -93,29 +112,34 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 %%%%% ------------------------------------------------------- %%%%%
 % Initialise Server
 
+% "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"
 
 init([Url]) ->
-	lager:set_loglevel(lager_console_backend, debug),
-	lager:debug("starting websock_client"),
-	
-	case http_uri:parse(Url) of
-		{error, Reason} ->
-		{error, {bad_format, Reason}};
-		{ok, {Scheme, Userinfo, ParseUrl, Port, ParseHeaders, ParseBody}} ->
-			lager:debug("Url ~p", [{Scheme, Userinfo, ParseUrl, Port, ParseHeaders, ParseBody}])
-	end,
-	
-	_Url = "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example",
-	
-	Host = "push.planetside2.com",
-	Path = "/streaming?environment=ps2&service-id=s:example",
-	
-	{ok, Pid} = gun:open(Host, 443),
-	{ok, http} = gun:await_up(Pid),
-	
-	gun:ws_upgrade(Pid, Path),
-	
-    {ok, #state{}}.
+    lager:set_loglevel(lager_console_backend, debug),
+    lager:debug("starting websock_client"),
+    
+    SchemeDefs = http_uri:scheme_defaults() ++ [{ws, 80}, {wss, 443}],
+
+    Result =    case http_uri:parse(Url, [{scheme_defaults, SchemeDefs}]) of
+                    {error, Reason} ->
+                        {error, {bad_format, Reason}};
+                    {ok, {_Scheme, _Userinfo, _ParseUrl, _Port, _ParseHeaders, _ParseBody} = Out} ->
+                        Out
+                end,
+    lager:debug("Url ~p", [Result]),
+
+
+    {ok, Pid} = gun:open("push.planetside2.com", 443),
+    Mref = monitor(process, Pid),
+
+    { ok
+    , #state{ gunner = Pid
+            , mref = Mref
+            , host = "push.planetside2.com"
+            , port = 443
+            , request = "/streaming?environment=ps2&service-id=s:example"
+            }
+    }.
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -134,27 +158,39 @@ handle_cast(_Msg, State) ->
     
 %%%%% ------------------------------------------------------- %%%%%
 
-    
-%{'DOWN', _, _, _, Reason}    
+ 
 %{gun_response, Pid, StreamRef, fin, Status, Headers}
 %{gun_response, Pid, StreamRef, nofin, Status, Headers}
 %{gun_data, Pid, StreamRef, nofin, Data} 
 %{gun_data, Pid, StreamRef, fin, Data}
-%{gun_up, ServerPid, Protocol}
 
 % {gun_ws, Pid, close} ->
 % {gun_ws, Pid, {close, Code, _}} ->
 % {gun_ws, Pid, Frame} ->
 % {gun_down, Pid, ws, _, _, _} ->
-
 % {gun_ws, Pid, {text, Text}} ->
+% {gun_ws, Pid, Frame}
 
-%{gun_ws, Pid, Frame}
 
+handle_info( {gun_up, Pid, _Protocol}, #state{ gunner = Pid, request = Request } = State) ->
+    lager:debug("gunner up, upgrade to websock"),
+    Streamref = gun:ws_upgrade(Pid, Request),
+    {noreply, State#state{ stream = Streamref, mode = http_connected } };
+    
+    
+handle_info( {'DOWN', Mref, process, Pid, _Reason}, #state{ gunner = Pid, mref = Mref } = State) ->
+    lager:debug("gunner process down"),
+    {noreply, State#state{ mode = disconnected }};
+    
+    
+handle_info( {gun_ws_upgrade, Pid, ok, _Headers}, #state{ gunner = Pid } = State)->
+    lager:debug("gunner is now webscale"),
+    {noreply, State#state{ mode = ws_connected }};
+    
 
 handle_info(Info, State) ->
-	lager:debug("handle_info ~p", [Info]),
-	{noreply, State}.
+    lager:debug("handle_info ~p", [Info]),
+    {noreply, State}.
     %{stop, invalid_info_request, State}.
 
     
