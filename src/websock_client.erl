@@ -99,10 +99,14 @@
 % Public API
 
 
+start_apps() ->
+	application:ensure_all_started(gun),
+    application:ensure_all_started(lager).
+    
+    
 start_link() ->
-    application:ensure_all_started(gun),
-    application:ensure_all_started(lager),
-    gen_server:start_link(?MODULE, ["wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"], []).
+    start_apps(),
+    gen_server:start_link(?MODULE, [undefined, undefined], []).
 
     
 child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
@@ -114,32 +118,33 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 
 % "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"
 
-init([Url]) ->
-    lager:set_loglevel(lager_console_backend, debug),
-    lager:debug("starting websock_client"),
+init([undefined, Opts]) ->
+	init([]);
+	
+init([Url, undefined]) ->
+	init();
+	
+init([Url, Opts]) ->
+	SchemeDefs = http_uri:scheme_defaults() ++ [{ws, 80}, {wss, 443}],
+
+    case http_uri:parse(Url, [{scheme_defaults, SchemeDefs}]) of
+		{error, Reason} ->
+			{stop, {bad_format, Reason}}
+			
+	;	{ok, {Scheme, _Userinfo, Host, Port, ParseHeaders, ParseBody} } ->
+			{ok, Pid} = gun:open(Host, Port),
+			Mref = monitor(process, Pid),
     
-    SchemeDefs = http_uri:scheme_defaults() ++ [{ws, 80}, {wss, 443}],
+			{ ok
+			, #state{ gunner = Pid
+					, mref = Mref
+					, host = Host
+					, port = Port
+					, request = ParseHeaders ++ ParseBody
+					}
+			}
+	end.
 
-    Result =    case http_uri:parse(Url, [{scheme_defaults, SchemeDefs}]) of
-                    {error, Reason} ->
-                        {error, {bad_format, Reason}};
-                    {ok, {_Scheme, _Userinfo, _ParseUrl, _Port, _ParseHeaders, _ParseBody} = Out} ->
-                        Out
-                end,
-    lager:debug("Url ~p", [Result]),
-
-
-    {ok, Pid} = gun:open("push.planetside2.com", 443),
-    Mref = monitor(process, Pid),
-
-    { ok
-    , #state{ gunner = Pid
-            , mref = Mref
-            , host = "push.planetside2.com"
-            , port = 443
-            , request = "/streaming?environment=ps2&service-id=s:example"
-            }
-    }.
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -187,11 +192,20 @@ handle_info( {gun_ws_upgrade, Pid, ok, _Headers}, #state{ gunner = Pid } = State
     lager:debug("gunner is now webscale"),
     {noreply, State#state{ mode = ws_connected }};
     
+    
 
-handle_info(Info, State) ->
-    lager:debug("handle_info ~p", [Info]),
-    {noreply, State}.
-    %{stop, invalid_info_request, State}.
+%
+%% Passthrough
+%
+
+handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_info(Info, ProxyState) of
+        {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+    end.
 
     
 %%%%% ------------------------------------------------------- %%%%%

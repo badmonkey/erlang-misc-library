@@ -9,6 +9,19 @@ cf push -b https://github.com/spiegela/cf-buildpack-erlang
 
 
 
+upgrade(OldVsn, NextVsn, State) ->
+    NextState = code_change(NextVsn, State),
+    case code_change({down, OldVsn}, NextState) of
+        State -> {ok, NextState};
+        _ -> {error, abort_code_upgrade}
+    end.
+    
+That is, they upgrade the state and immediately downgrade it again. If
+there is any discrepancy here, then they abort the upgrade. According to
+Tanenbaum this captures a remarkable number of botched upgrades.    
+
+
+
 https://github.com/gburd/gen_paxos
 
 https://github.com/mattwilliamson/chordial

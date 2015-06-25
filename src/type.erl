@@ -3,29 +3,39 @@
 
 -export([get/1]).
 
--export_type([ error/0, ok_or_error/0, endpoint/0, start_result/0
-             , atomlist/0, format/0, match_any/0, searchable/1
-             , server_name/0]).
+-export_type([ error/0, ok_or_error/0, value_or_error/1
+			 , endpoint/0
+			 , start_result/0, server_name/0
+             , atomlist/0, format/0
+             , match_any/0, searchable/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--type error() :: {error, _}.
+-type error() :: { error, _ }.
 -type ok_or_error() :: ok | error().
+-type value_or_error(T) :: { ok, T } | error().
 
--type endpoint() :: { localhost | inet:ip_address(), inet:port_number() } | undefined.
 
--type start_result() :: { ok, pid() } | ignore | error().
+-type endpoint() :: undefined
+				 | { inet:port_number() }
+				 | { localhost | addr_any | inet:ip_address()
+				   , inet:port_number() }.
+
+
+-type start_result() :: ignore | value_or_error( pid() ).
+
+-type server_name() :: undefined | atom() | {local, term()} | {global, term()} | {via, atom(), term()}.
+
 
 -type atomlist() :: atom() | [atom()].
 
 -type format() :: string().
 
--type match_any() :: '_'.
--type searchable(T) :: '_' | T.
 
--type server_name() :: undefined | atom() | {local, term()} | {global, term()} | {via, atom(), term()}.
+-type match_any() :: '_' | '$1' | '$2' | '$3' | '$4' | '$5' | '$6' | '$7' | '$8' | '$9'.
+-type searchable(T) :: match_any() | T.
 
 
 %%%%% ------------------------------------------------------- %%%%%
