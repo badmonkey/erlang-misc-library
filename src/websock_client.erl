@@ -9,7 +9,7 @@
 -include_lib("erlangx/include/supervisors.hrl").
 
 
--export([start_link/0, child_spec/2]).
+-export([start_link/1, start_link/2, start_link/3, start_link/4, child_spec/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -31,6 +31,7 @@
     , request                           :: string()
     , mode          = disconnected      :: client_mode()
     , json_decode   = false             :: boolean()
+    , options       = []                :: [proplists:property()]
     }).
 
     
@@ -100,13 +101,45 @@
 
 
 start_apps() ->
-	application:ensure_all_started(gun),
+    application:ensure_all_started(gun),
     application:ensure_all_started(lager).
     
     
-start_link() ->
+start_link(CallbackModule) ->
+    start_link(undefined, CallbackModule, undefined, []).
+    
+    
+start_link(Name, CallbackModule)
+        when  is_atom(Name)
+            , is_atom(CallbackModule)  ->
+    start_link(Name, CallbackModule, undefined, []);
+    
+start_link(CallbackModule, Url)
+        when  is_atom(CallbackModule)
+            , is_list(Url)  ->
+    start_link(undefined, CallbackModule, Url, []).
+
+    
+start_link(Name, CallbackModule, Url)
+        when  is_atom(Name)
+            , is_atom(CallbackModule)
+            , is_list(Url)  ->
+    start_link(Name, CallbackModule, Url, []);
+    
+start_link(CallbackModule, Url, Opts)
+        when  is_atom(CallbackModule)
+            , is_list(Url)
+            , is_list(Opts)  ->
+    start_link(undefined, CallbackModule, Url, Opts).    
+    
+    
+start_link(Name, CallbackModule, Url, Opts)
+        when  is_atom(Name)
+            , is_atom(CallbackModule)
+            , is_list(Url) orelse Url =:= undefined
+            , is_list(Opts)  ->
     start_apps(),
-    gen_server:start_link(?MODULE, [undefined, undefined], []).
+    gen_server_base:start_link_name(Name, ?MODULE, [CallbackModule, Url, Opts]).    
 
     
 child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
@@ -118,33 +151,49 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 
 % "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"
 
-init([undefined, Opts]) ->
-	init([]);
-	
-init([Url, undefined]) ->
-	init();
-	
-init([Url, Opts]) ->
-	SchemeDefs = http_uri:scheme_defaults() ++ [{ws, 80}, {wss, 443}],
 
-    case http_uri:parse(Url, [{scheme_defaults, SchemeDefs}]) of
-		{error, Reason} ->
-			{stop, {bad_format, Reason}}
-			
-	;	{ok, {Scheme, _Userinfo, Host, Port, ParseHeaders, ParseBody} } ->
-			{ok, Pid} = gun:open(Host, Port),
-			Mref = monitor(process, Pid),
+init([CallbackModule, Url, Opts]) ->
+    process_flag(trap_exit, true),
+
+    behaviour:assert(CallbackModule, port_server),
     
-			{ ok
-			, #state{ gunner = Pid
-					, mref = Mref
-					, host = Host
-					, port = Port
-					, request = ParseHeaders ++ ParseBody
-					}
-			}
-	end.
-
+    try
+        BaseOpts =  case CallbackModule:websock_info() of
+                        undefined           -> undefined
+                    ;   X1 when is_list(X1) -> X1
+                    ;   _                   -> throw({error, invalid_wbsock_info})
+                    end,
+        
+        SchemeDefs = http_uri:scheme_defaults() ++ [{ws, 80}, {wss, 443}],
+        
+        TargetUrl = case {Url, proplists:get_value(url, BaseOpts, undefined)} of
+                        {undefined, undefined}  -> throw({error, no_valid_url})
+                    ;   {undefined, X2}         -> X2
+                    ;   {_, _}                  -> Url
+                    end,
+        
+        case http_uri:parse(TargetUrl, [{scheme_defaults, SchemeDefs}]) of
+            {error, Reason} ->
+                {stop, {bad_format, Reason}}
+                
+        ;   {ok, {Scheme, _Userinfo, Host, Port, ParseHeaders, ParseBody} } ->
+                {ok, Pid} = gun:open(Host, Port),
+                Mref = monitor(process, Pid),
+        
+                { ok
+                , #state{ gunner = Pid
+                        , mref = Mref
+                        , host = Host
+                        , port = Port
+                        , mode = disconnected
+                        , request = ParseHeaders ++ ParseBody
+                        , options = xproplists:merge(BaseOpts, Opts)
+                        }
+                }
+        end
+    catch exit:Why ->
+        {stop, Why, #state{}}
+    end.
 
     
 %%%%% ------------------------------------------------------- %%%%%
