@@ -142,10 +142,10 @@ get_many(Routers, Paths) ->
     gather([ {get_root_node(X), Y} || X <- Routers, Y <- Paths ], []).
     
     
--spec get_with_matches( routername(), publish_path() ) -> match_list() | no_return().
+-spec get_with_matches( routername(), [publish_path()] ) -> match_list() | no_return().
 
-get_with_matches(Router, Path) ->
-    gather_matches([{get_root_node(Router), Path, []}], []).    
+get_with_matches(Router, Paths) ->
+    gather_matches([{get_root_node(Router), X, []} || X <- Paths], []).    
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -320,10 +320,10 @@ gather_matches([{#route_node{} = Node, [], Values} | Rest], Acc) ->
     Fixed = lists:reverse(Values),
     gather_matches(Rest, Acc ++ [ {D, Fixed} || D <- Node#route_node.data]);
 
-gather_matches([{#route_node{} = Node, [Hd | Tail], Values} | Rest], Acc) ->
-    NewList = [ {get_next_node(Node, Hd), Tail, Values}
+gather_matches([{#route_node{} = Node, [Hd | Tail] = Path, Values} | Rest], Acc) ->
+    NewList = [ {get_next_node(Node, Hd), Tail, [Hd | Values]}
               , {get_next_node(Node, match_one), Tail, [{match_one, Hd} | Values]}
-              , {get_next_node(Node, match_any), [], [{match_any, Tail} | Values]}
+              , {get_next_node(Node, match_any), [], [{match_any, Path} | Values]}
               | Rest],
     gather_matches(NewList, Acc).    
 

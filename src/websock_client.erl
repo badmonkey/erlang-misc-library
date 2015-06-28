@@ -12,13 +12,17 @@
 -export([start_link/1, start_link/2, start_link/3, start_link/4, child_spec/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
+         
+         
+-define(WEBSOCK_TAG,'websock$tag').
+         
 
 
 %%%%% ------------------------------------------------------- %%%%%
 % Server State
 
 
--type client_mode() :: disconnected | http_connected | ws_connected.
+-type client_mode() :: disconnected | http_pending | http_connected | ws_connected.
 
 -record(state,
     { module                            :: atom()           % callback module
@@ -155,7 +159,7 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 init([CallbackModule, Url, Opts]) ->
     process_flag(trap_exit, true),
 
-    behaviour:assert(CallbackModule, port_server),
+    behaviour:assert(CallbackModule, websock_client),
     
     try
         BaseOpts =  case CallbackModule:websock_info() of
@@ -185,7 +189,7 @@ init([CallbackModule, Url, Opts]) ->
                         , mref = Mref
                         , host = Host
                         , port = Port
-                        , mode = disconnected
+                        , mode = http_pending
                         , request = ParseHeaders ++ ParseBody
                         , options = xproplists:merge(BaseOpts, Opts)
                         }
@@ -199,49 +203,85 @@ init([CallbackModule, Url, Opts]) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_call(_Request, _From, State) ->
-    {stop, invalid_call_request, State}.
+handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_call(Request, From, ProxyState) of
+        {reply, Reply, NewServerState}          -> {reply, Reply, State#state{proxystate = NewServerState}}
+    ;   {reply, Reply, NewServerState, Arg}     -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
+    ;   {noreply, NewServerState}               -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}          -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}          -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {stop, Reason, Reply, NewServerState}   -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+    ;   Else                                    -> {stop, {bad_return_value, Else}, State}
+    end.
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
+
+handle_cast({?WEBSOCK_TAG, reconnect}, #state{ mode = disconnected, host = Host, port = Port } = State) ->
+    {ok, Pid} = gun:open(Host, Port),
+    Mref = monitor(process, Pid),
+    { noreply
+    , State#state{
+              gunner = Pid
+            , mref = Mref
+            , mode = http_pending
+        }};
     
-handle_cast(_Msg, State) ->
-    {stop, invalid_cast_request, State}.
+    
+handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_cast(Msg, ProxyState) of
+        {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+    end.
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
- 
-%{gun_response, Pid, StreamRef, fin, Status, Headers}
-%{gun_response, Pid, StreamRef, nofin, Status, Headers}
-%{gun_data, Pid, StreamRef, nofin, Data} 
-%{gun_data, Pid, StreamRef, fin, Data}
 
-% {gun_ws, Pid, close} ->
-% {gun_ws, Pid, {close, Code, _}} ->
-% {gun_ws, Pid, Frame} ->
-% {gun_down, Pid, ws, _, _, _} ->
-% {gun_ws, Pid, {text, Text}} ->
-% {gun_ws, Pid, Frame}
-
-
-handle_info( {gun_up, Pid, _Protocol}, #state{ gunner = Pid, request = Request } = State) ->
-    lager:debug("gunner up, upgrade to websock"),
+handle_info( {gun_up, Pid, Protocol}, #state{ gunner = Pid, request = Request } = State) ->
+    lager:debug("gunner up, upgrade to websock ~p", [Protocol]),
     Streamref = gun:ws_upgrade(Pid, Request),
     {noreply, State#state{ stream = Streamref, mode = http_connected } };
     
     
-handle_info( {'DOWN', Mref, process, Pid, _Reason}, #state{ gunner = Pid, mref = Mref } = State) ->
-    lager:debug("gunner process down"),
-    {noreply, State#state{ mode = disconnected }};
+handle_info( {gun_down, Pid, ws, _, _, _}, #state{ gunner = Pid, mref = Mref } = State) ->
+    lager:debug("gunner process gun_down"),
+    close(Pid, Mref),
+    reconnect(),
+    {noreply, State#state{ mode = disconnected, gunner = undefined, mref = undefined }};
     
     
-handle_info( {gun_ws_upgrade, Pid, ok, _Headers}, #state{ gunner = Pid } = State)->
+handle_info( {'DOWN', Mref, process, Pid, Reason}, #state{ gunner = Pid, mref = Mref } = State) ->
+    lager:debug("gunner process Down ~p", [Reason]),
+    close(Pid, Mref),
+    reconnect(),
+    {noreply, State#state{ mode = disconnected, gunner = undefined, mref = undefined }};
+    
+    
+handle_info( {gun_ws_upgrade, Pid, ok, _Headers}, #state{ gunner = Pid } = State) ->
     lager:debug("gunner is now webscale"),
     {noreply, State#state{ mode = ws_connected }};
     
     
+handle_info( {gun_ws, Pid, close}, #state{ gunner = Pid } = State) ->
+    gun:ws_send(Pid, close),
+    {noreply, State};
+
+
+handle_info( {gun_ws, Pid, {close, Code, _}}, #state{ gunner = Pid } = State) ->
+    gun:ws_send(Pid, {close, Code, <<>>}),
+    {noreply, State};
+    
+    
+
+% {gun_ws, Pid, {text, Text}} ->
+% {gun_ws, Pid, Frame}
+
 
 %
 %% Passthrough
@@ -269,5 +309,15 @@ code_change(_OldVsn, State, _Extra) ->
     
 %%%%% ------------------------------------------------------- %%%%%
 % Private Functions
+
+
+close(Pid, Ref) ->
+    demonitor(Ref),
+    gun:close(Pid),
+    gun:flush(Pid).
+    
+    
+reconnect() ->
+    self() ! {?WEBSOCK_TAG, reconnect}.
 
 

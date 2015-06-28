@@ -128,7 +128,7 @@ create_tables(Tables, #state{} = State) ->
     CurrentTables = mnesia:system_info(tables),
     case create_tables(Tables, [], CurrentTables, State) of
         {ok, Created, StateN}   ->
-            case mnesia:wait_for_tables(Created, 10000) of  % @todo some way to control timeout value
+            case mnesia:wait_for_tables(Created, infinity) of
                 ok                  ->
                     {ok, StateN}
                     
@@ -232,8 +232,18 @@ handle_info({?TABLE_SERVER_TAG, unsubscribe, Table}, #state{} = State) ->
 %{delete, {Tab, Key}, ActivityId}
     
     
-handle_info(Info, State) ->
-    {stop, {invalid_info_request, Info}, State}.
+%
+%% Passthrough
+%
+
+handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_info(Info, ProxyState) of
+        {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+    end.
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -246,8 +256,4 @@ terminate(_Reason, #state{}) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
- 
-
-                              
-%net_kernel:monitor_nodes(true, [nodedown_reason])
 

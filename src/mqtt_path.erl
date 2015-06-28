@@ -2,7 +2,7 @@
 -module(mqtt_path).
 
 
--export([new_publish/1, new_subscribe/1, create_path/1]).
+-export([new_publish/1, new_subscribe/1]).
 
 
 -type input_type() :: string() | binary().
@@ -91,6 +91,7 @@ replace_wildcards([Hd | Rest])
 check_path([], _)                           -> ok;
 check_path([[]], _)                         -> {error, path_ends_with_a_seperator};
 check_path([[] | _Rest], _)                 -> {error, path_contains_empty_part};
+check_path([root, root | _Rest], _)         -> {error, path_contains_empty_part};
 check_path([match_star], AllowWild)         -> valid_wildcard(AllowWild);
 check_path([match_star | _Rest], _)         -> {error, wildcard_not_allowed_here};
 

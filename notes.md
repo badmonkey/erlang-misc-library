@@ -9,6 +9,12 @@ cf push -b https://github.com/spiegela/cf-buildpack-erlang
 
 
 
+
+                              
+%net_kernel:monitor_nodes(true, [nodedown_reason])
+
+
+
 upgrade(OldVsn, NextVsn, State) ->
     NextState = code_change(NextVsn, State),
     case code_change({down, OldVsn}, NextState) of
