@@ -1,5 +1,5 @@
 
--module(table_server).
+-module(table_service).
 -extends(gen_server_base).
 
 -behaviour(gen_server).
@@ -14,7 +14,7 @@
         , terminate/2, code_change/3]).
 
         
--define(TABLE_SERVER_TAG, 'table$server').
+-define(TABLE_SERVICE_TAG, 'table$service').
 
      
 %%%%% ------------------------------------------------------- %%%%%
@@ -31,7 +31,7 @@
 
 
 -callback tables() ->
-      [atom()].
+	[atom()].
     
 -callback table_info(Table :: atom()) ->
     [proplists:property()].
@@ -98,7 +98,7 @@ start_link(CallbackModule, Name, InitParams, ListenerList)
 init([CallbackModule, InitParams]) ->
     process_flag(trap_exit, true),
     
-    behaviour:assert(CallbackModule, table_server),
+    behaviour:assert(CallbackModule, table_service),
 
     case catch CallbackModule:tables() of 
         {'EXIT', Reason}    -> {stop, {error, Reason}}
@@ -156,7 +156,7 @@ create_tables( [Table | Rest], Created, CurrentTables
         
     ;   TDef when is_list(TDef) ->
             case proplists:get_value(subscribe, TDef) of
-                true        -> gen_server:cast(self(), {?TABLE_SERVER_TAG, subscribe, Table})
+                true        -> gen_server:cast(self(), {?TABLE_SERVICE_TAG, subscribe, Table})
             ;   _Else       -> ok
             end,
             case table_match(Table, CurrentTables, proplists:get_value(attributes, TDef)) of
@@ -211,12 +211,12 @@ handle_cast(Msg, State) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_info({?TABLE_SERVER_TAG, subscribe, Table}, #state{} = State) ->
+handle_info({?TABLE_SERVICE_TAG, subscribe, Table}, #state{} = State) ->
     mnesia:subscribe({table, Table, detailed}),
     {noreply, State};
     
     
-handle_info({?TABLE_SERVER_TAG, unsubscribe, Table}, #state{} = State) ->
+handle_info({?TABLE_SERVICE_TAG, unsubscribe, Table}, #state{} = State) ->
     mnesia:unsubscribe({table, Table, detailed}),
     {noreply, State};
     
