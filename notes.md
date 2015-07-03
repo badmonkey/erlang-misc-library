@@ -27,6 +27,8 @@ there is any discrepancy here, then they abort the upgrade. According to
 Tanenbaum this captures a remarkable number of botched upgrades.    
 
 
+https://github.com/ErlyORM/boss_db
+
 
 https://github.com/gburd/gen_paxos
 
