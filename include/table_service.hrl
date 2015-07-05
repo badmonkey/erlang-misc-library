@@ -1,10 +1,8 @@
 
 %%%%% ------------------------------------------------------- %%%%%
 
-%
-% before using FIELDS make sure the module is compiled with
-% -compile([{parse_transform, record_info_runtime}]).
-%
+-compile([{parse_transform, record_info_runtime}]).
+
 
 -define(FIELDS(T), {attributes, record_info_fields(T)}).
 

@@ -31,7 +31,7 @@
 
 
 -callback tables() ->
-	[atom()].
+    [atom()].
     
 -callback table_info(Table :: atom()) ->
     [proplists:property()].

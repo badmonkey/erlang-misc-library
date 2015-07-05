@@ -48,6 +48,7 @@ init(_Args) ->
 
 
 handle_call(_Request, _From, State) ->
+    lager:info("{{serverid}}:call stopped ~p", [_Request]),
     {stop, invalid_call_request, State}.
 
     
@@ -55,6 +56,7 @@ handle_call(_Request, _From, State) ->
 
     
 handle_cast(_Msg, State) ->
+    lager:info("{{serverid}}:cast stopped ~p", [_Msg]),
     {stop, invalid_cast_request, State}.
 
     
@@ -62,6 +64,7 @@ handle_cast(_Msg, State) ->
 
     
 handle_info(_Info, State) ->
+    lager:info("{{serverid}}:info stopped ~p", [_Info]),
     {stop, invalid_info_request, State}.
 
     

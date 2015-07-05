@@ -1,9 +1,8 @@
 
 -module({{tablesrvid}}).
--compile([{parse_transform, record_info_runtime}]).
 -vsn("{{version}}").
 
--behaviour(table_server).
+-behaviour(table_service).
 -behaviour(supervisor_child).
 
 -define(SERVER, ?MODULE).

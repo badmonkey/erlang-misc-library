@@ -1,21 +1,29 @@
 
 -module(publisher).
 
--export([new/1, notify/3, notify_many/3, subscribe/2]).
+-export([new/1, new/2, notify/3, notify_many/3, subscribe/2]).
 
 
 -record(publisher,
     { router
+    , wrapper
     }).
     
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec new( router:routername() ) -> #publisher{}.
+-spec new( atom() ) -> #publisher{}.
 
 new(Router) ->
-    #publisher{ router = Router }.
+    new(Router, fun(X) -> X end).
+    
+    
+-spec new( atom(), fun( (term()) -> term() ) ) -> #publisher{}.
+
+new(Router, Wrapper) ->
+    router:new(Router),
+    #publisher{ router = Router, wrapper = Wrapper }.    
     
     
 %%%%% ------------------------------------------------------- %%%%%    
@@ -26,8 +34,11 @@ new(Router) ->
 notify(#publisher{} = Publisher, Path, Mesg) ->
     PidList = router:get(Publisher#publisher.router, Path),
 
+    Wrapper = Publisher#publisher.wrapper,
+    Wrapped = Wrapper(Mesg),
+    
     OldPri = process_flag(priority, high),
-    lists:foreach(fun(Pid) -> Pid ! Mesg end, PidList),
+    lists:foreach(fun(Pid) -> Pid ! Wrapped end, PidList),
     process_flag(priority, OldPri),
     
     ok.
@@ -41,8 +52,11 @@ notify(#publisher{} = Publisher, Path, Mesg) ->
 notify_many(#publisher{} = Publisher, Paths, Mesg) ->
     PidList = router:get_many([Publisher#publisher.router], Paths),
 
+    Wrapper = Publisher#publisher.wrapper,
+    Wrapped = Wrapper(Mesg),
+    
     OldPri = process_flag(priority, high),
-    lists:foreach(fun(Pid) -> Pid ! Mesg end, PidList),
+    lists:foreach(fun(Pid) -> Pid ! Wrapped end, PidList),
     process_flag(priority, OldPri),
     
     ok.    

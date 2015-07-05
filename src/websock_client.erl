@@ -14,7 +14,7 @@
          terminate/2, code_change/3]).
          
          
--define(WEBSOCK_TAG,'websock$tag').
+-define(WEBSOCK_TAG, 'websock$tag').
          
 
 
@@ -34,7 +34,7 @@
     , port                              :: pos_integer()
     , request                           :: string()
     , mode          = disconnected      :: client_mode()
-    , json_decode   = false             :: boolean()
+    , frame_handler = json              :: text | json
     , options       = []                :: [proplists:property()]
     }).
 
@@ -47,7 +47,7 @@
 
 -callback handle_frame(Msg :: term(), State :: term()) ->
       {ok, NewState :: term()}
-    | {ok, Cmd :: term(), NewState :: term()}
+    | {ok, Reply :: term(), NewState :: term()}
     | {stop, Reason :: term(), NewState :: term()}.         
 
     
@@ -153,13 +153,13 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 %%%%% ------------------------------------------------------- %%%%%
 % Initialise Server
 
-% "wss://push.planetside2.com/streaming?environment=ps2&service-id=s:example"
-
 
 init([CallbackModule, Url, Opts]) ->
     process_flag(trap_exit, true),
 
     behaviour:assert(CallbackModule, websock_client),
+    
+    lager:debug("Starting websock_client with module = ~p, url = ~p, opts = ~p", [CallbackModule, Url, Opts]),
     
     try
         BaseOpts =  case CallbackModule:websock_info() of
@@ -184,16 +184,25 @@ init([CallbackModule, Url, Opts]) ->
                 {ok, Pid} = gun:open(Host, Port),
                 Mref = monitor(process, Pid),
         
-                { ok
-                , #state{ gunner = Pid
-                        , mref = Mref
-                        , host = Host
-                        , port = Port
-                        , mode = http_pending
-                        , request = ParseHeaders ++ ParseBody
-                        , options = xproplists:merge(BaseOpts, Opts)
-                        }
-                }
+                InitState = #state{ module = CallbackModule
+                                  , gunner = Pid
+                                  , mref = Mref
+                                  , host = Host
+                                  , port = Port
+                                  , mode = http_pending
+                                  , request = ParseHeaders ++ ParseBody
+                                  , options = xproplists:merge(BaseOpts, Opts)
+                                  },
+
+                case catch CallbackModule:init([TargetUrl]) of
+                    {ok, ProxyState}        -> {ok, InitState#state{proxystate = ProxyState}}
+                ;   {ok, ProxyState, Arg}   -> {ok, InitState#state{proxystate = ProxyState}, Arg}
+                ;   {stop, _} = Stop        -> Stop
+                ;   ignore                  -> ignore
+                ;   {'EXIT', Reason}        -> {stop, {error, Reason}}
+                ;   Else                    -> {stop, {bad_return_value, Else}}
+                end
+
         end
     catch exit:Why ->
         {stop, Why, #state{}}
@@ -205,14 +214,18 @@ init([CallbackModule, Url, Opts]) ->
 
 handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
     case catch CallbackModule:handle_call(Request, From, ProxyState) of
-        {reply, Reply, NewServerState}          -> {reply, Reply, State#state{proxystate = NewServerState}}
-    ;   {reply, Reply, NewServerState, Arg}     -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
-    ;   {noreply, NewServerState}               -> {noreply, State#state{proxystate = NewServerState}}
-    ;   {noreply, NewServerState, Arg}          -> {noreply, State#state{proxystate = NewServerState}, Arg}
-    ;   {stop, Reason, NewServerState}          -> {stop, Reason, State#state{proxystate = NewServerState}}
-    ;   {stop, Reason, Reply, NewServerState}   -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
-    ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
-    ;   Else                                    -> {stop, {bad_return_value, Else}, State}
+        {reply, Reply, NewServerState}                  -> {reply, Reply, State#state{proxystate = NewServerState}}
+    ;   {reply, Reply, NewServerState, Arg}             -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
+    ;   {reply_send, Msg, Reply, NewServerState}        -> send_data(Msg, State), {reply, Reply, State#state{proxystate = NewServerState}}
+    ;   {reply_send, Msg, Reply, NewServerState, Arg}   -> send_data(Msg, State), {reply, Reply, State#state{proxystate = NewServerState}, Arg}
+    ;   {noreply, NewServerState}                       -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}                  -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {noreply_send, Msg, NewServerState}             -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply_send, Msg, NewServerState, Arg}        -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}                  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {stop, Reason, Reply, NewServerState}           -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                                -> {stop, {error, Reason}, State}
+    ;   Else                                            -> {stop, {bad_return_value, Else}, State}
     end.
 
     
@@ -232,11 +245,13 @@ handle_cast({?WEBSOCK_TAG, reconnect}, #state{ mode = disconnected, host = Host,
     
 handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
     case catch CallbackModule:handle_cast(Msg, ProxyState) of
-        {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
-    ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
-    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
-    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
-    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+        {noreply, NewServerState}                   -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}              -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {noreply_send, Msg, NewServerState}         -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply_send, Msg, NewServerState, Arg}    -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}              -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                            -> {stop, {error, Reason}, State}
+    ;   Else                                        -> {stop, {bad_return_value, Else}, State}
     end.
 
     
@@ -244,28 +259,28 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 
 handle_info( {gun_up, Pid, Protocol}, #state{ gunner = Pid, request = Request } = State) ->
-    lager:debug("gunner up, upgrade to websock ~p", [Protocol]),
+    lager:debug("websock_client gunner up, upgrade to websock ~p", [Protocol]),
     Streamref = gun:ws_upgrade(Pid, Request),
     {noreply, State#state{ stream = Streamref, mode = http_connected } };
     
     
 handle_info( {gun_down, Pid, ws, _, _, _}, #state{ gunner = Pid, mref = Mref } = State) ->
-    lager:debug("gunner process gun_down"),
+    lager:debug("websock_client gunner process gun_down"),
     close(Pid, Mref),
     reconnect(),
     {noreply, State#state{ mode = disconnected, gunner = undefined, mref = undefined }};
     
     
 handle_info( {'DOWN', Mref, process, Pid, Reason}, #state{ gunner = Pid, mref = Mref } = State) ->
-    lager:debug("gunner process Down ~p", [Reason]),
+    lager:debug("websock_client gunner process Down ~p", [Reason]),
     close(Pid, Mref),
     reconnect(),
     {noreply, State#state{ mode = disconnected, gunner = undefined, mref = undefined }};
     
     
 handle_info( {gun_ws_upgrade, Pid, ok, _Headers}, #state{ gunner = Pid } = State) ->
-    lager:debug("gunner is now webscale"),
-    {noreply, State#state{ mode = ws_connected }};
+    lager:debug("websock_client gunner is now webscale"),
+    handle_frame_callback({system, up}, State#state{ mode = ws_connected });
     
     
 handle_info( {gun_ws, Pid, close}, #state{ gunner = Pid } = State) ->
@@ -277,9 +292,19 @@ handle_info( {gun_ws, Pid, {close, Code, _}}, #state{ gunner = Pid } = State) ->
     gun:ws_send(Pid, {close, Code, <<>>}),
     {noreply, State};
     
+
+handle_info( {gun_ws, Pid, {system, _} = Data}, #state{ gunner = Pid } = State) ->    
+    handle_frame_callback(Data, State);
+
+    
+handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = json } = State) ->
+    % TODO betty error handling
+    handle_frame_callback({json, jsx:decode(Data, [return_maps])}, State);
     
 
-% {gun_ws, Pid, {text, Text}} ->
+handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = text } = State) ->    
+    handle_frame_callback({text, Data}, State);    
+
 % {gun_ws, Pid, Frame}
 
 
@@ -289,11 +314,13 @@ handle_info( {gun_ws, Pid, {close, Code, _}}, #state{ gunner = Pid } = State) ->
 
 handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
     case catch CallbackModule:handle_info(Info, ProxyState) of
-        {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
-    ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
-    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
-    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
-    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+        {noreply, NewServerState}                   -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}              -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {noreply_send, Msg, NewServerState}         -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply_send, Msg, NewServerState, Arg}    -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}              -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                            -> {stop, {error, Reason}, State}
+    ;   Else                                        -> {stop, {bad_return_value, Else}, State}
     end.
 
     
@@ -310,6 +337,48 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%% ------------------------------------------------------- %%%%%
 % Private Functions
 
+
+send_data([], #state{} = State) ->
+    ok;
+    
+send_data([Hd | Rest], #state{} = State) ->
+    send_data(Hd, State),
+    send_data(Rest, State);
+    
+
+send_data(close, #state{ gunner = Pid }) ->
+    gun:ws_send(Pid, close);
+    
+
+send_data({json, Data}, #state{ gunner = Pid, frame_handler = json }) ->
+    gun:ws_send(Pid, {text, Data});
+    
+send_data({text, Data}, #state{ gunner = Pid, frame_handler = json }) ->
+    gun:ws_send(Pid, {text, jsx:encode(Data)});
+    
+send_data({text, Data}, #state{ gunner = Pid, frame_handler = text }) ->
+    gun:ws_send(Pid, {text, Data});
+    
+    
+send_data(Data, #state{ gunner = Pid, frame_handler = json }) ->
+    gun:ws_send(Pid, {text, jsx:encode(Data)});
+    
+send_data(Data, #state{ gunner = Pid, frame_handler = text }) ->
+    gun:ws_send(Pid, {text, Data}).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+    
+    
+handle_frame_callback(Data, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_frame(Data, ProxyState) of
+        {ok, NewServerState}            -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {ok, Msg, NewServerState}       -> send_data(Msg, State), {noreply, State#state{proxystate = NewServerState}}
+    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+    end.
+    
 
 close(Pid, Ref) ->
     demonitor(Ref),

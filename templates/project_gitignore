@@ -4,6 +4,7 @@ deps
 *.d
 *.beam
 *.plt
-erl_crash.dump
+*.dump
 ebin
 .rebar
+logs/

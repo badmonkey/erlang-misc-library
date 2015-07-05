@@ -33,7 +33,7 @@
 -type subscribe_path() :: [subscribe_fragment()].
 -type publish_path() :: [path_fragment()].
 
--type value_list() :: [value_fragment()].
+-type value_list() :: [path_fragment() | value_fragment()].
 -type match_list() :: [ { data(), value_list() } ].
 
 
@@ -117,7 +117,7 @@ add(Router, Path, Data) ->
 -spec remove( routername(), subscribe_path(), data() ) -> type:ok_or_error().
     
 remove(Router, Path, Data) ->
-    gen_server:call(?SERVER, {add_route, Router, Path, Data}).
+    gen_server:call(?SERVER, {remove_route, Router, Path, Data}).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -213,6 +213,23 @@ handle_call({add_route, Router, Path, Data}, _From, State) ->
     {reply, ok, NewState};
     
     
+handle_call({remove_route, Router, Path, Data}, _From, State) ->
+    {Top, NewState} = lists:foldl(
+                            fun(Frag, {CurrentNode, NState}) ->
+                                case get_next_node(CurrentNode, Frag) of
+                                    undefined   ->
+                                            % TODO fail instead of making new node
+                                        make_new_node(CurrentNode, Frag, NState)
+                                ;   X           -> {X, NState}
+                                end
+                            end,
+                            {get_root_node(Router), State},
+                            Path),
+        % TODO actually handle removing of Data from Top
+    ets:insert(State#state.node_table, Top#route_node{ data = [Data | Top#route_node.data] }),
+    {reply, ok, NewState};    
+    
+    
 handle_call(_Request, _From, State) ->
     {stop, invalid_call_request, State}.
 
@@ -265,8 +282,8 @@ get_router(Id) -> Id.
 get_root_node(Router) ->
     Id = get_router(Router),
     case ets:lookup(router_root_table, Id) of
-        []                      -> throw({error, {invalid_router, Router}})
-    ;   [{router, Id, Nodeid}]  ->
+        []                          -> throw({error, {invalid_router, Router}})
+    ;   [{router_root, Id, Nodeid}] ->
             case ets:lookup(router_node_table, Nodeid) of
                 []                      -> throw({error, {invalid_node, Nodeid}})
             ;   [#route_node{} = Node]  -> Node
