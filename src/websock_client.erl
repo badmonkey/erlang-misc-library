@@ -338,7 +338,7 @@ code_change(_OldVsn, State, _Extra) ->
 % Private Functions
 
 
-send_data([], #state{} = State) ->
+send_data([], #state{}) ->
     ok;
     
 send_data([Hd | Rest], #state{} = State) ->
