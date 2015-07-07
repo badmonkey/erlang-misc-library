@@ -7,7 +7,8 @@
 
 -define(SERVER, ?MODULE).
 
--include_lib("erlangx/include/table_server.hrl").
+-include_lib("erlangx/include/supervisors.hrl").
+-include_lib("erlangx/include/table_service.hrl").
 
 
 -export([start_link/1, child_spec/2]).

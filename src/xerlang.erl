@@ -2,7 +2,8 @@
 -module(xerlang).
 -extends(erlang).
 
--export([trace/1, trace/2, bin_to_hex/1, term_sha1/1]).
+-export([ trace/1, trace/2, bin_to_hex/1
+        , term_sha1/1, binary_to_integer/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -37,4 +38,11 @@ term_sha1(Term) ->
     crypto:hash(sha, term_to_binary(Term)).
     
     
-    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+binary_to_integer(Bin) ->
+	X = binary_to_list(Bin),
+	list_to_integer(X).
+
+
