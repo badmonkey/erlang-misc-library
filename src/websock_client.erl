@@ -159,7 +159,7 @@ init([CallbackModule, Url, Opts]) ->
 
     behaviour:assert(CallbackModule, websock_client),
     
-    lager:debug("Starting websock_client with module = ~p, url = ~p, opts = ~p", [CallbackModule, Url, Opts]),
+    lager:info("Starting websock_client with module = ~p, url = ~p, opts = ~p", [CallbackModule, Url, Opts]),
     
     try
         BaseOpts =  case CallbackModule:websock_info() of
@@ -259,27 +259,27 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 
 
 handle_info( {gun_up, Pid, Protocol}, #state{ gunner = Pid, request = Request } = State) ->
-    lager:debug("websock_client gunner up, upgrade to websock ~p", [Protocol]),
+    lager:debug("Gunner up, upgrade to websock ~p", [Protocol]),
     Streamref = gun:ws_upgrade(Pid, Request),
     {noreply, State#state{ stream = Streamref, mode = http_connected } };
     
     
 handle_info( {gun_down, Pid, ws, _, _, _}, #state{ gunner = Pid, mref = Mref } = State) ->
-    lager:debug("websock_client gunner process gun_down"),
+    lager:debug("Gunner process gun_down"),
     close(Pid, Mref),
     reconnect(),
     {noreply, State#state{ mode = disconnected, gunner = undefined, mref = undefined }};
     
     
 handle_info( {'DOWN', Mref, process, Pid, Reason}, #state{ gunner = Pid, mref = Mref } = State) ->
-    lager:debug("websock_client gunner process Down ~p", [Reason]),
+    lager:debug("Gunner process Down ~p", [Reason]),
     close(Pid, Mref),
     reconnect(),
     {noreply, State#state{ mode = disconnected, gunner = undefined, mref = undefined }};
     
     
 handle_info( {gun_ws_upgrade, Pid, ok, _Headers}, #state{ gunner = Pid } = State) ->
-    lager:debug("websock_client gunner is now webscale"),
+    lager:info("Websock_client is now ready {~p, ~p}", [State#state.host, State#state.request]),
     handle_frame_callback({system, up}, State#state{ mode = ws_connected });
     
     
@@ -298,7 +298,7 @@ handle_info( {gun_ws, Pid, {system, _} = Data}, #state{ gunner = Pid } = State) 
 
     
 handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = json } = State) ->
-    % TODO betty error handling
+    % TODO better error handling
     handle_frame_callback({json, jsx:decode(Data, [return_maps])}, State);
     
 

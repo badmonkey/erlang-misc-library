@@ -6,7 +6,7 @@
 
 
 %% External API
--export([start_link/4]).
+-export([start_link/1, start_link/2, start_link/3]).
 
 
 %% gen_server callbacks
@@ -80,17 +80,20 @@
 % Public API
 
 
-%%  
-%% ListenerList = [{IpAddr, Port, Userdata}]
-%%
-start_link(CallbackModule, Name, InitParams, ListenerList)
-        when is_atom(CallbackModule), is_list(InitParams), is_list(ListenerList)  ->
-    case Name of
-        undefined           -> gen_server:start_link(?MODULE, [CallbackModule, InitParams, ListenerList], [])
-    ;   X when is_atom(X)   -> gen_server:start_link({local, Name}, ?MODULE, [CallbackModule, InitParams, ListenerList], [])
-    ;   _                   -> gen_server:start_link(Name, ?MODULE, [CallbackModule, InitParams, ListenerList], [])
-    end.
+start_link(CallbackModule) ->
+    start_link(CallbackModule, undefined, []).
     
+    
+start_link(CallbackModule, InitParams) ->
+    start_link(CallbackModule, undefined, InitParams).    
+    
+
+start_link(CallbackModule, Name, InitParams)
+        when  is_atom(CallbackModule)
+            , is_atom(Name) orelse is_tuple(Name)
+            , is_list(InitParams)  ->
+    gen_server_base:start_link_name(Name, ?MODULE, [CallbackModule, InitParams]).
+
 
 %%%%% ------------------------------------------------------- %%%%%
 
@@ -126,8 +129,23 @@ init([CallbackModule, InitParams]) ->
     
 create_tables(Tables, #state{} = State) ->    
     CurrentTables = mnesia:system_info(tables),
+    
+    lager:info("Required tables ~p", [Tables]),
+    
+        % if there are no tables yet, go ahead and create the schema on disk
+        % TODO should only do this if the node is not discless
+    case CurrentTables of
+        [schema]    ->
+            mnesia:stop(),
+            lager:debug("creating schema"),
+            catch mnesia:create_schema([node()]), 
+            mnesia:start()
+    ;   _Else       -> ok
+    end,
+    
     case create_tables(Tables, [], CurrentTables, State) of
         {ok, Created, StateN}   ->
+            lager:debug("Waiting for tables ~p", [Created]),
             case mnesia:wait_for_tables(Created, infinity) of
                 ok                  ->
                     {ok, StateN}
@@ -163,6 +181,7 @@ create_tables( [Table | Rest], Created, CurrentTables
                 exists      -> create_tables(Rest, Created, CurrentTables, State)
             ;   mismatch    -> {{error, {mismatch_table_definition, Table}}, [], State}
             ;   undefined   ->
+                    lager:debug("Creating table ~p", [Table]),
                     case mnesia:create_table(Table, proplists:delete(subscribe, TDef)) of
                         {atomic, ok}      ->
                             create_tables(Rest, [Table | Created], CurrentTables, State)
@@ -197,15 +216,30 @@ table_match(Table, Current, Attributes) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_call(Request, From, State) ->
-    {stop, {invalid_call_request, Request, From}, State}.
+handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_call(Request, From, ProxyState) of
+        {reply, Reply, NewServerState}          -> {reply, Reply, State#state{proxystate = NewServerState}}
+    ;   {reply, Reply, NewServerState, Arg}     -> {reply, Reply, State#state{proxystate = NewServerState}, Arg}
+    ;   {noreply, NewServerState}               -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}          -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}          -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {stop, Reason, Reply, NewServerState}   -> {stop, Reason, Reply, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                        -> {stop, {error, Reason}, State}
+    ;   Else                                    -> {stop, {bad_return_value, Else}, State}
+    end.
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-handle_cast(Msg, State) ->
-    {stop, {invalid_cast_request, Msg}, State}.
+handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    case catch CallbackModule:handle_cast(Msg, ProxyState) of
+        {noreply, NewServerState}       -> {noreply, State#state{proxystate = NewServerState}}
+    ;   {noreply, NewServerState, Arg}  -> {noreply, State#state{proxystate = NewServerState}, Arg}
+    ;   {stop, Reason, NewServerState}  -> {stop, Reason, State#state{proxystate = NewServerState}}
+    ;   {'EXIT', Reason}                -> {stop, {error, Reason}, State}
+    ;   Else                            -> {stop, {bad_return_value, Else}, State}
+    end.
 
 
 %%%%% ------------------------------------------------------- %%%%%

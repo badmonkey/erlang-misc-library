@@ -51,7 +51,7 @@ table_info(Table) ->
 
 
 start_link() ->
-    table_server:start_link(?MODULE).
+    table_server:start_link(?MODULE, ?SERVER, []).
     
     
 child_spec(Id, Args) -> ?SERVICE_SPEC(Id, ?MODULE, Args).

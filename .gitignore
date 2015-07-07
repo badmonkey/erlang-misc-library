@@ -12,3 +12,4 @@ rel/example_project
 src/config_lexer.erl
 src/config_parser.erl
 logs/
+database/
