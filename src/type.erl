@@ -5,7 +5,7 @@
 
 -export_type([ error/0, ok_or_error/0, value_or_error/1
              , endpoint/0
-             , start_result/0, server_name/0
+             , start_result/0, server_name/0, server_from/0
              , atomlist/0, format/0
              , match_any/0, searchable/1]).
 
@@ -27,6 +27,7 @@
 -type start_result() :: ignore | value_or_error( pid() ).
 
 -type server_name() :: undefined | atom() | {local, term()} | {global, term()} | {via, atom(), term()}.
+-type server_from() :: {pid(), term()}.
 
 
 -type atomlist() :: atom() | [atom()].
