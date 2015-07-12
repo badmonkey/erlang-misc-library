@@ -1,7 +1,7 @@
 
 -module(binencoder).
 
--export([buffer/2, varint/1, utf16_string/1, utf16_list/1, utf8/1, json/1]).
+-export([buffer/2, varint/1, utf16_string/1, utf16_list/1, utf8/1, json_buffer/1]).
 
 
 
@@ -68,8 +68,7 @@ encode_utf16_list([H | T], Acc) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-json(Term) ->
-    true = jsx:is_term(Term),
-    buffer(varint, jsx:encode(Term)).
+json_buffer(Term) ->
+    buffer(varint, jiffy:encode(Term)).
 
     

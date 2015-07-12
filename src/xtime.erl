@@ -1,7 +1,7 @@
 
 -module(xtime).
 
--export([in_seconds/0, in_milliseconds/0, now_in_milliseconds/0, unix_epoch/0, gregorian_epoch/0]).
+-export([in_seconds/0, in_milliseconds/0, unix_epoch/0, gregorian_epoch/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -24,21 +24,10 @@ in_seconds() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec now_in_milliseconds() -> float().
-
-now_in_milliseconds() ->
-    {MegaSec, Sec, MicroSec} = erlang:now(),
-    1000000000 * MegaSec + 1000 * Sec + MicroSec/1000.
-    
-
-%%%%% ------------------------------------------------------- %%%%%
-
-
 -spec unix_epoch() -> non_neg_integer().
 
 unix_epoch() ->    
-    {MegaSeconds, Seconds, MicroSeconds} = erlang:now(),
-    (MegaSeconds * 1000000000000 + Seconds * 1000000 + MicroSeconds).
+    erlang:system_time(micro_seconds).
     
 
 %%%%% ------------------------------------------------------- %%%%%

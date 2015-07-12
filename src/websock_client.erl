@@ -299,7 +299,7 @@ handle_info( {gun_ws, Pid, {system, _} = Data}, #state{ gunner = Pid } = State) 
     
 handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = json } = State) ->
     % TODO better error handling
-    handle_frame_callback({json, jsx:decode(Data, [return_maps])}, State);
+    handle_frame_callback({json, jiffy:decode(Data, [return_maps])}, State);
     
 
 handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = text } = State) ->    
@@ -354,14 +354,14 @@ send_data({json, Data}, #state{ gunner = Pid, frame_handler = json }) ->
     gun:ws_send(Pid, {text, Data});
     
 send_data({text, Data}, #state{ gunner = Pid, frame_handler = json }) ->
-    gun:ws_send(Pid, {text, jsx:encode(Data)});
+    gun:ws_send(Pid, {text, jiffy:encode(Data)});
     
 send_data({text, Data}, #state{ gunner = Pid, frame_handler = text }) ->
     gun:ws_send(Pid, {text, Data});
     
     
 send_data(Data, #state{ gunner = Pid, frame_handler = json }) ->
-    gun:ws_send(Pid, {text, jsx:encode(Data)});
+    gun:ws_send(Pid, {text, jiffy:encode(Data)});
     
 send_data(Data, #state{ gunner = Pid, frame_handler = text }) ->
     gun:ws_send(Pid, {text, Data}).
