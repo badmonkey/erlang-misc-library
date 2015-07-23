@@ -42,7 +42,7 @@ term_sha1(Term) ->
 
 
 binary_to_integer(Bin) ->
-	X = binary_to_list(Bin),
-	list_to_integer(X).
+    X = binary_to_list(Bin),
+    list_to_integer(X).
 
 

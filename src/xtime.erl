@@ -1,7 +1,9 @@
 
 -module(xtime).
 
--export([in_seconds/0, in_milliseconds/0, unix_epoch/0, gregorian_epoch/0]).
+-export([in_seconds/0, in_milliseconds/0, unix_time/0, unix_epoch/0, gregorian_epoch/0]).
+
+-export_type([unix_timestamp/0, epoch_timestamp/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -24,7 +26,18 @@ in_seconds() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec unix_epoch() -> non_neg_integer().
+-type unix_timestamp() :: non_neg_integer().
+-spec unix_time() -> unix_timestamp().
+
+unix_time() ->
+    erlang:system_time(seconds).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-type epoch_timestamp() :: non_neg_integer().
+-spec unix_epoch() -> epoch_timestamp().
 
 unix_epoch() ->    
     erlang:system_time(micro_seconds).
