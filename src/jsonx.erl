@@ -42,7 +42,10 @@ get(Key, Json) ->
     get(Key, Json, undefined).
 
 
--spec get( key_path(), js_object(), js_term() | jsthrow ) -> js_term().
+-spec get( key_path(), js_object(), js_term() | jsthrow ) -> js_term() | no_return().
+
+get({}, _Json, jsthrow) ->
+    throw({error, non_exists});
 
 get({}, _Json, Default) ->
     Default;
@@ -54,7 +57,7 @@ get(Keys, Json, Default)
     
 get(Keys, Json, jsthrow) ->
     case get(Keys, Json, undefined) of
-        undefined   -> throw({error, non_exist})
+        undefined   -> throw({error, non_exists})
     ;   X           -> X
     end;
     
@@ -72,7 +75,7 @@ get([Key | Rest], Json, Default) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec get_value( key(), js_object() | js_array() | select_result() ) -> js_term().
+-spec get_value( key(), js_object() | js_array() | select_result() ) -> js_term() | no_return().
 
 % convert key string() | atom()
 get_value(Key, Obj)
@@ -123,7 +126,7 @@ get_value(Index, [_H | _T] = List)
     
 get_value(Index, Obj)
         when is_integer(Index)  ->
-    erlang:error({index_for_non_list, {Index, Obj}});
+    throw({error, {index_for_non_list, Index, Obj}});
 
 
 % array_select()
@@ -176,7 +179,7 @@ matching_element(CompKey, {E})
     matching_element(CompKey, E);
     
 matching_element(Key, E) ->
-    erlang:error({error_matching_element, {Key, E}}).
+    throw({error, {error_matching_element, Key, E}}).
     
 
     
