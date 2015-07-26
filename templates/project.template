@@ -18,6 +18,7 @@
 {dir, "priv"}.
 
 {file, "project_rebar.config",  "rebar.config"}.
+{file, "project_relx.config",   "relx.config"}.
 {file, "project_gitignore",     ".gitignore"}.
 
 {template, "project_README.md", "README.md"}.
