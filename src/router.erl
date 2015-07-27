@@ -10,7 +10,7 @@
 -include_lib("erlangx/include/supervisors.hrl").
 
 
--export([wait_for_service/0, exists/1, new/0, new/1, free/1, add/3, remove/3]).
+-export([wait_for_service/0, exists/1, new/0, new/1, free/1, add/3, remove/3, dump_all/0]).
 -export([get/2, get_many/2, get_with_matches/2]).
 -export([start_link/0, child_spec/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -118,8 +118,9 @@ add(Router, Path, Data) ->
     
 remove(Router, Path, Data) ->
     gen_server:call(?SERVER, {remove_route, Router, Path, Data}).
-
-
+    
+ 
+ 
 %%%%% ------------------------------------------------------- %%%%%
 % Public API that doesn't require talking to ?SERVER
     
@@ -147,6 +148,28 @@ get_many(Routers, Paths) ->
 get_with_matches(Router, Paths) ->
     gather_matches([{get_root_node(Router), X, []} || X <- Paths], []).    
 
+    
+dump_all() ->
+    ets:foldl(
+        fun(#registry{} = Reg, undefined) ->
+            lager:debug("REGISTRY ~p", [Reg])
+        end,
+        undefined, router_registry_table),
+    
+    ets:foldl(
+        fun(#router_root{} = Root, undefined) ->
+            lager:debug("ROOT ~p", [Root])
+        end,
+        undefined, router_root_table),
+        
+    ets:foldl(
+        fun(#route_node{} = Node, undefined) ->
+            lager:debug("NODE ~p", [Node])
+        end,
+        undefined, router_node_table),
+        
+    ok.
+        
     
 %%%%% ------------------------------------------------------- %%%%%
 % Initialise Server
@@ -182,10 +205,16 @@ handle_call({new_router}, _From, State) ->
     
 handle_call({new_router, Name}, From, State)
         when is_atom(Name)  ->
-    {reply, Id, NewState} = handle_call({new_router}, From, State),
-    ets:insert(State#state.registry_table, #registry{ name = Name, router = Id } ),
-    
-    {reply, Id, NewState}; 
+        
+    case get_router(Name) of
+        undefined   ->
+            {reply, Id, NewState} = handle_call({new_router}, From, State),
+            ets:insert(State#state.registry_table, #registry{ name = Name, router = Id } ),
+            {reply, Id, NewState}
+            
+    ;   RouterId    ->
+            {reply, RouterId, State}
+    end;
     
     
 handle_call({free_router, Router}, _From, State) ->

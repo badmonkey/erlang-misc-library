@@ -37,6 +37,8 @@ notify(#publisher{} = Publisher, Path, Mesg) ->
     Wrapper = Publisher#publisher.wrapper,
     Wrapped = Wrapper(Mesg),
     
+    %lager:debug("PUBLISH ~p to ~p -> ~p", [Wrapped, Path, PidList]),
+    
     OldPri = process_flag(priority, high),
     lists:foreach(fun(Pid) -> Pid ! Wrapped end, PidList),
     process_flag(priority, OldPri),
@@ -68,4 +70,5 @@ notify_many(#publisher{} = Publisher, Paths, Mesg) ->
 -spec subscribe( #publisher{}, router:subscribe_path() ) -> type:ok_or_error().
 
 subscribe(#publisher{} = Publisher, Path) ->
+    %lager:debug("SUBSCRIBE ~p to ~p", [self(), Path]),
     router:add(Publisher#publisher.router, Path, self()).
