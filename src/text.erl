@@ -76,6 +76,7 @@ short_duration(Time) ->
 	;	Time >= ?SECS_PER_HOUR      -> pluralize(Time / ?SECS_PER_HOUR, " hr")
     ;   Time >= ?SECS_PER_MIN       -> pluralize(Time / ?SECS_PER_MIN, " min")
     ;   Time >= 1 orelse Time =:= 0 -> pluralize(Time, " sec")
+
     ;   Time >= ?MILLISEC_PER_SEC   -> pluralize(Time / ?MILLISEC_PER_SEC, " mSec")
     ;   Time >= ?MICROSEC_PER_SEC   -> pluralize(Time / ?MICROSEC_PER_SEC, " uSec")
     ;   true                        -> pluralize(Time / ?NANOSEC_PER_SEC, " nSec")
@@ -97,6 +98,7 @@ time_ranges() ->
     , {?SECS_PER_HOUR,  defer_pluralize("~B hour",   "~B hours")}
     , {?SECS_PER_MIN,   defer_pluralize("~B minute", "~B minutes")}
     ].
+    
     
     
 -spec long_duration( non_neg_integer(), non_neg_integer(), boolean() ) -> string().    
