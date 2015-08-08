@@ -8,7 +8,7 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec assert( atom(), atom() ) -> ok | no_return().
+-spec assert( atom(), atom() ) -> ok | type:exception().
 
 assert(Module, Behave) ->
     case check_for(Module, Behave) of

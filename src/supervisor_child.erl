@@ -18,7 +18,7 @@ build_specs(Modules) -> build_specs(Modules, bestguess).
 
 
 -type build_type() :: strict | bestguess.
--spec build_specs( [atom() | tuple()], build_type() ) -> [supervisor:child_spec()] | no_return().
+-spec build_specs( [atom() | tuple()], build_type() ) -> [supervisor:child_spec()] | type:exception().
 
 build_specs(Modules, Type) ->
     [ get_spec(X, Type) || X <- Modules ].
@@ -45,7 +45,7 @@ get_spec(Spec, _Type) when is_tuple(Spec) ->
     Spec.
     
     
--spec get_spec( atom(), atom(), list(), atom() ) -> supervisor:child_spec() | no_return().
+-spec get_spec( atom(), atom(), list(), atom() ) -> supervisor:child_spec() | type:exception().
     
 get_spec(Id, Module, Args, Type)
         when  is_atom(Id)

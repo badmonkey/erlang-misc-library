@@ -1,9 +1,22 @@
 #!/bin/bash
 
-SYSTEM_PLT="ebin/erlang_system.plt"
-IGNORE=".ignore-warnings"
+if [ -e ./deps/erlangx/.ignore-warnings ] ; then
+  ERLX_CLIENT="yes"
+  SYSTEM_PLT="./deps/erlangx/ebin/erlang_system.plt"
+  IGNORE="./deps/erlangx/.ignore-warnings"
+  CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../ -I apps/ -I deps/erlangx/.."
+  EXTRA_BEAMS="-r deps/erlangx/ebin"
+else
+  ERLX_CLIENT="no"
+  SYSTEM_PLT="ebin/erlang_system.plt"
+  IGNORE=".ignore-warnings"
+  CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../"
+  EXTRA_BEAMS=""
+fi
+
+
 SYSTEM_APPS="kernel stdlib erts mnesia crypto syntax_tools parsetools ssl public_key compiler inets"
-CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../"
+
 
 if [ "xx${1}xx" != "xx-racexx" ] ; then
   if [ "xx${1}xx" != "xx-wallxx" ] ; then
@@ -19,12 +32,16 @@ fi
 
 
 if [ ! -e $SYSTEM_PLT ] ; then
-  dialyzer --output_plt $SYSTEM_PLT --build_plt --apps $SYSTEM_APPS -r deps
+  if [ "xx${ERLX_CLIENT}xx" = "xxyesxx" ] ; then
+    dialyzer --output_plt $SYSTEM_PLT --build_plt --apps $SYSTEM_APPS  |& tee dialyzer.dump
+  else
+    dialyzer --output_plt $SYSTEM_PLT --build_plt --apps $SYSTEM_APPS -r deps  |& tee dialyzer.dump
+  fi
 fi
 
 
 echo "Recompiling..."
-rebar compile |& tee dialyzer.dump
+rebar compile |& tee -a dialyzer.dump
 
 
 if [ "xx${1}xx" = "xx-typexx" ] ; then
@@ -37,15 +54,11 @@ fi
 echo "Checking $WARNINGS" >> dialyzer.dump
 
 if [ "xx${1}xx" != "xxxx" ] ; then
-
   echo "Checking ${1}... $WARNINGS"
   dialyzer $CMDLINE_SYSTEM $WARNINGS  ebin/${1}.beam  |& egrep -v -f $IGNORE |& tee -a dialyzer.dump
-  
 else
-
   echo "Checking beams... $WARNINGS"
-  dialyzer $CMDLINE_SYSTEM $WARNINGS  -r ebin  |& egrep -v -f $IGNORE |& tee -a dialyzer.dump
-
+  dialyzer $CMDLINE_SYSTEM $WARNINGS  $EXTRA_BEAMS -r apps -r ebin  |& egrep -v -f $IGNORE |& tee -a dialyzer.dump
 fi
 
 echo done

@@ -72,8 +72,8 @@ pluralize(Number, Singular, Plural, Precision) ->
 
 short_duration(Time) ->
     if
-		Time >= ?SECS_PER_DAY       -> pluralize(Time / ?SECS_PER_DAY, " day")
-	;	Time >= ?SECS_PER_HOUR      -> pluralize(Time / ?SECS_PER_HOUR, " hr")
+        Time >= ?SECS_PER_DAY       -> pluralize(Time / ?SECS_PER_DAY, " day")
+    ;   Time >= ?SECS_PER_HOUR      -> pluralize(Time / ?SECS_PER_HOUR, " hr")
     ;   Time >= ?SECS_PER_MIN       -> pluralize(Time / ?SECS_PER_MIN, " min")
     ;   Time >= 1 orelse Time =:= 0 -> pluralize(Time, " sec")
 
@@ -98,8 +98,7 @@ time_ranges() ->
     , {?SECS_PER_HOUR,  defer_pluralize("~B hour",   "~B hours")}
     , {?SECS_PER_MIN,   defer_pluralize("~B minute", "~B minutes")}
     ].
-    
-    
+
     
 -spec long_duration( non_neg_integer(), non_neg_integer(), boolean() ) -> string().    
     
@@ -125,7 +124,10 @@ long_duration(Time, MaxParts, ShowRemain) ->
 
     FullParts = case ShowRemain of
                     true    -> [ short_duration(Remain) | Parts ]
-                ;   false   -> Parts
+                ;   false   ->  case Parts of
+                                    []  -> ["less than 1 minute"]
+                                ;   _   -> Parts
+                                end
                 end,
     string:join(lists:reverse(FullParts), " ").
     
@@ -134,9 +136,10 @@ long_duration(Time, MaxParts, ShowRemain) ->
 -define(TIMESINCE_MAXPARTS, 2).
 
 
--spec timesince( non_neg_integer() ) -> string().
+-spec timesince( non_neg_integer() | undefined ) -> string().
 -spec timesince( non_neg_integer(), non_neg_integer() ) -> string().
 
+timesince(undefined) -> "undefined";
 timesince(FromTime) -> long_duration(xtime:in_seconds() - FromTime, ?TIMESINCE_MAXPARTS, false).
 timesince(FromTime, ToTime) -> long_duration(ToTime - FromTime, ?TIMESINCE_MAXPARTS, false).
 

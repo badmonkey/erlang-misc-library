@@ -181,6 +181,8 @@ init([CallbackModule, Url, Opts]) ->
                 {stop, {bad_format, Reason}}
                 
         ;   {ok, {Scheme, _Userinfo, Host, Port, ParseHeaders, ParseBody} } ->
+                lager:info("websock_client begin with  Url = ~p, Host = ~p:~p", [TargetUrl, Host, Port]),
+                
                 {ok, Pid} = gun:open(Host, Port),
                 Mref = monitor(process, Pid),
         

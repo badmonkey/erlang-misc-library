@@ -131,19 +131,19 @@ exists(Router) ->
     get_router(Router) =/= undefined.
     
    
--spec get( routername(), publish_path() ) -> [data()] | no_return().
+-spec get( routername(), publish_path() ) -> [data()] | type:exception().
 
 get(Router, Path) ->
     gather([{get_root_node(Router), Path}], []).
 
     
--spec get_many( [routername()], [publish_path()] ) -> [data()] | no_return().
+-spec get_many( [routername()], [publish_path()] ) -> [data()] | type:exception().
 
 get_many(Routers, Paths) ->
     gather([ {get_root_node(X), Y} || X <- Routers, Y <- Paths ], []).
     
     
--spec get_with_matches( routername(), [publish_path()] ) -> match_list() | no_return().
+-spec get_with_matches( routername(), [publish_path()] ) -> match_list() | type:exception().
 
 get_with_matches(Router, Paths) ->
     gather_matches([{get_root_node(Router), X, []} || X <- Paths], []).    
@@ -306,7 +306,7 @@ get_router(Name)
 get_router(Id) -> Id.
 
 
--spec get_root_node( routername() ) -> #route_node{} | no_return().   
+-spec get_root_node( routername() ) -> #route_node{} | type:exception().   
  
 get_root_node(Router) ->
     Id = get_router(Router),

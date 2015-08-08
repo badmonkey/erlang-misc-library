@@ -42,7 +42,7 @@ get(Key, Json) ->
     get(Key, Json, undefined).
 
 
--spec get( key_path(), js_object(), js_term() | jsthrow ) -> js_term() | no_return().
+-spec get( key_path(), js_object(), js_term() | jsthrow ) -> js_term() | type:exception().
 
 get({}, _Json, jsthrow) ->
     throw({error, non_exists});
@@ -75,7 +75,7 @@ get([Key | Rest], Json, Default) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec get_value( key(), js_object() | js_array() | select_result() ) -> js_term() | no_return().
+-spec get_value( key(), js_object() | js_array() | select_result() ) -> js_term() | type:exception().
 
 % convert key string() | atom()
 get_value(Key, Obj)

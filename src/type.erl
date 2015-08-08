@@ -7,7 +7,8 @@
              , endpoint/0
              , start_result/0, server_name/0, server_from/0
              , atomlist/0, format/0
-             , match_any/0, searchable/1]).
+             , match_any/0, searchable/1
+             , exception/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -37,6 +38,8 @@
 
 -type match_any() :: '_' | '$1' | '$2' | '$3' | '$4' | '$5' | '$6' | '$7' | '$8' | '$9'.
 -type searchable(T) :: match_any() | T.
+
+-type exception() :: no_return().
 
 
 %%%%% ------------------------------------------------------- %%%%%
