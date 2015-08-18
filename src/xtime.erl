@@ -26,7 +26,7 @@ in_seconds() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--type unix_timestamp() :: non_neg_integer().
+-type unix_timestamp() :: type:natural().
 -spec unix_time() -> unix_timestamp().
 
 unix_time() ->
@@ -36,7 +36,7 @@ unix_time() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--type epoch_timestamp() :: non_neg_integer().
+-type epoch_timestamp() :: type:natural().
 -spec unix_epoch() -> epoch_timestamp().
 
 unix_epoch() ->    

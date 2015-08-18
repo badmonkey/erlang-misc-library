@@ -23,7 +23,7 @@
     , socket        = undefined     :: inet:socket()
     , packetmode    = raw           :: packet_mode()
     , buffer        = <<>>          :: binary()
-    , wait_size     = 0             :: non_neg_integer()
+    , wait_size     = 0             :: type:natural()
     , compressor    = undefined     :: undefined | zlib:zstream()
     , udpdetails    = undefined     :: type:endpoint()
     }).

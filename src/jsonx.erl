@@ -1,7 +1,8 @@
 
 -module(jsonx).
 
--export([get/2, get/3]).
+-export([ get/2, get/3, compare/3, compare/4
+        , as_boolean/1, as_integer/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -45,7 +46,7 @@ get(Key, Json) ->
 -spec get( key_path(), js_object(), js_term() | jsthrow ) -> js_term() | type:exception().
 
 get({}, _Json, jsthrow) ->
-    throw({error, non_exists});
+    throw({error, empty_key});
 
 get({}, _Json, Default) ->
     Default;
@@ -57,7 +58,7 @@ get(Keys, Json, Default)
     
 get(Keys, Json, jsthrow) ->
     case get(Keys, Json, undefined) of
-        undefined   -> throw({error, non_exists})
+        undefined   -> throw({error, {non_exists, Keys}})
     ;   X           -> X
     end;
     
@@ -153,6 +154,56 @@ get_value(_Key, [_H | _T]) ->
 % catchall  error?    
 %get_value(_Key, _Obj) ->
 %    undefined.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+compare(Key1, Key2, Json) ->
+    compare(Key1, Key2, Json, undefined).
+    
+    
+-spec compare( key_path(), key_path(), js_object(), undefined | jsthrow ) -> boolean() | type:exception().
+
+compare(Key1, Key2, Json, Default) ->
+    Value1 = get(Key1, Json, Default),
+    Value2 = get(Key2, Json, Default),
+    Value1 =:= Value2.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec as_boolean( binary() | string() | integer() ) -> boolean() | type:exception().
+
+as_boolean(B) when is_binary(B) ->
+    as_boolean( xerlang:binary_to_integer(B) );
+
+as_boolean("false") -> false;
+as_boolean("true") -> true;
+as_boolean("no") -> false;
+as_boolean("yes") -> true;
+as_boolean(L) when is_list(L) ->
+    as_boolean( list_to_integer(L) );
+    
+as_boolean(0) -> false;
+as_boolean(1) -> true;
+
+as_boolean(X) -> throw({error, {not_a_bool, X}}).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec as_integer( binary() | string() | integer() ) -> integer().
+
+as_integer(B) when is_binary(B) ->
+    as_integer( xerlang:binary_to_integer(B) );
+
+as_integer(L) when is_list(L) ->
+    as_integer( list_to_integer(L) );
+    
+as_integer(X) when is_integer(X) -> X.
 
     
 %%%%% ------------------------------------------------------- %%%%%

@@ -5,7 +5,7 @@
     {modules,
         [ erlangx, xlists, xmaths, xmaps, xproplists, xerlang
         , xtime, xos, xrandom, xstring, xcode, xtree, xshell
-        , xpg2, xets
+        , xpg2, xets, xsets
         
         , anagram, bindecoder, binencoder, uuid, type, udp_server
         , tcp_listener, packet_processor, port_server, table_server

@@ -233,17 +233,6 @@ handle_call(Request, From, #state{module = CallbackModule, proxystate = ProxySta
     
 %%%%% ------------------------------------------------------- %%%%%
 
-
-handle_cast({?WEBSOCK_TAG, reconnect}, #state{ mode = disconnected, host = Host, port = Port } = State) ->
-    {ok, Pid} = gun:open(Host, Port),
-    Mref = monitor(process, Pid),
-    { noreply
-    , State#state{
-              gunner = Pid
-            , mref = Mref
-            , mode = http_pending
-        }};
-    
     
 handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
     case catch CallbackModule:handle_cast(Msg, ProxyState) of
@@ -260,6 +249,19 @@ handle_cast(Msg, #state{module = CallbackModule, proxystate = ProxyState} = Stat
 %%%%% ------------------------------------------------------- %%%%%
 
 
+handle_info( {?WEBSOCK_TAG, reconnect}
+           , #state{ mode = disconnected, host = Host, port = Port } = State) ->
+    lager:debug("Attempting to reconnect ~p:~p", [Host, Port]),
+    {ok, Pid} = gun:open(Host, Port),
+    Mref = monitor(process, Pid),
+    { noreply
+    , State#state{
+              gunner = Pid
+            , mref = Mref
+            , mode = http_pending
+        }};
+
+        
 handle_info( {gun_up, Pid, Protocol}, #state{ gunner = Pid, request = Request } = State) ->
     lager:debug("Gunner up, upgrade to websock ~p", [Protocol]),
     Streamref = gun:ws_upgrade(Pid, Request),
@@ -315,6 +317,8 @@ handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = 
 %
 
 handle_info(Info, #state{module = CallbackModule, proxystate = ProxyState} = State) ->
+    lager:debug("Passthrough ~p", [Info]),
+    
     case catch CallbackModule:handle_info(Info, ProxyState) of
         {noreply, NewServerState}                   -> {noreply, State#state{proxystate = NewServerState}}
     ;   {noreply, NewServerState, Arg}              -> {noreply, State#state{proxystate = NewServerState}, Arg}

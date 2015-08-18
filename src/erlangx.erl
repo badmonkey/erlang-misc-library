@@ -14,12 +14,7 @@ start() ->
     application:load(erlangx).
     
 start(_StartType, _StartArgs) ->
-    {ok, spawn(
-            fun() ->
-                receive
-                    _ -> ok
-                end
-            end )}.
+    erlangx_sup:start_link().
 
 stop(_State) ->
     ok.
