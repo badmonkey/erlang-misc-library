@@ -3,7 +3,7 @@
 
 -export([in_seconds/0, in_milliseconds/0, unix_time/0, unix_epoch/0, gregorian_epoch/0]).
 
--export_type([unix_timestamp/0, epoch_timestamp/0]).
+-export_type([unix_timestamp/0, epoch_timestamp/0, seconds/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -26,6 +26,7 @@ in_seconds() ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
+-type seconds() :: type:natural().
 -type unix_timestamp() :: type:natural().
 -spec unix_time() -> unix_timestamp().
 

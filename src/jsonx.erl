@@ -176,18 +176,20 @@ compare(Key1, Key2, Json, Default) ->
 
 -spec as_boolean( binary() | string() | integer() ) -> boolean() | type:exception().
 
+as_boolean(<<"true">>)          -> true;
+as_boolean(<<"false">>)         -> false;
 as_boolean(B) when is_binary(B) ->
     as_boolean( xerlang:binary_to_integer(B) );
 
-as_boolean("false") -> false;
-as_boolean("true") -> true;
-as_boolean("no") -> false;
-as_boolean("yes") -> true;
-as_boolean(L) when is_list(L) ->
+as_boolean("false")             -> false;
+as_boolean("true")              -> true;
+as_boolean("no")                -> false;
+as_boolean("yes")               -> true;
+as_boolean(L) when is_list(L)   ->
     as_boolean( list_to_integer(L) );
     
-as_boolean(0) -> false;
-as_boolean(1) -> true;
+as_boolean(0)                   -> false;
+as_boolean(1)                   -> true;
 
 as_boolean(X) -> throw({error, {not_a_bool, X}}).
 

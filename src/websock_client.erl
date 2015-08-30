@@ -298,11 +298,12 @@ handle_info( {gun_ws, Pid, {close, Code, _}}, #state{ gunner = Pid } = State) ->
     
 
 handle_info( {gun_ws, Pid, {system, _} = Data}, #state{ gunner = Pid } = State) ->    
+    lager:info("Websock_client system change: ~p}", [Data]),
     handle_frame_callback(Data, State);
 
     
 handle_info( {gun_ws, Pid, {text, Data}}, #state{ gunner = Pid, frame_handler = json } = State) ->
-    % TODO better error handling
+    % TODO better error handling of decode
     handle_frame_callback({json, jiffy:decode(Data, [return_maps])}, State);
     
 

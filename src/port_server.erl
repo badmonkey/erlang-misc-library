@@ -259,7 +259,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-port_send({verbatim, X}, #state{port = Port}) ->
+port_send({send, X}, #state{port = Port}) ->
     erlang:port_command(Port, term_to_binary(X));
 
 port_send([], #state{}) ->

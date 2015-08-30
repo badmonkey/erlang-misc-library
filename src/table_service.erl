@@ -16,6 +16,9 @@
         
 -define(TABLE_SERVICE_TAG, 'table$service').
 
+
+% TODO upgrading tables via mnesia:transform_table(Tab, Fun, NewAttributeList, NewRecordName) 
+     
      
 %%%%% ------------------------------------------------------- %%%%%
 
@@ -134,6 +137,7 @@ create_tables(Tables, #state{} = State) ->
     
         % if there are no tables yet, go ahead and create the schema on disk
         % TODO should only do this if the node is not discless
+        % TODO global lock? Many table_service might want to create teh schema
     case CurrentTables of
         [schema]    ->
             mnesia:stop(),

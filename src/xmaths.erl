@@ -152,6 +152,10 @@ std_deviation(Values) ->
     { _, X } = std_deviation2(Values),
     X.
 
+    
+std_spread({M, undefined}) ->
+    [{0.0, M, M}];
+    
 std_spread({M, S}) ->
     [{0.6827, M -  S, M +  S}
     ,{0.9545, M -2*S, M +2*S}
