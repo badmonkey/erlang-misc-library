@@ -1,0 +1,19 @@
+{application, erlx_snowflake,
+[
+    {description, "erlx_snowflake"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ snowflake
+        , erlx_snowflake_app, erlx_snowflake_sup
+        ] },
+    {registered,
+        [ snowflake
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+    {mod, { erlx_snowflake_app, []}},
+    {env, []}
+]}.
+

@@ -10,7 +10,7 @@ else
   ERLX_CLIENT="no"
   SYSTEM_PLT="ebin/erlang_system.plt"
   IGNORE=".ignore-warnings"
-  CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../"
+  CMDLINE_SYSTEM="--plt $SYSTEM_PLT -I ../ -I apps/"
   EXTRA_BEAMS=""
 fi
 

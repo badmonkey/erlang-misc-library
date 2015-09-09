@@ -12,11 +12,10 @@
         , gen_server_base, supervisor_child, behaviour, typed_property
         , record_info_runtime, text, publisher, mqtt_path
         
-        , config_lexer, config_parser, fswatcher, snowflake, sysconfig
         , router
         ] },
     {registered,
-        [ snowflake, sysconfig, fswatcher, router
+        [ router
         ] },
     {applications,
         [ kernel, stdlib, lager
