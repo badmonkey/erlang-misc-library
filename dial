@@ -48,6 +48,7 @@ if [ "xx${1}xx" = "xx-typexx" ] ; then
   echo "Dumping types..."
   typer $CMDLINE_SYSTEM  -r src  >& typer.dump
   shift
+  echo "done"
 fi
 
 

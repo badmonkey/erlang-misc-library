@@ -20,6 +20,9 @@
 -define(NANOSEC_PER_MICROSEC,   1000).
 -define(NANOSEC_PER_SEC,        ?NANOSEC_PER_MICROSEC * ?MICROSEC_PER_SEC).
 
+-define(MILLISEC_PER_MIN,       ?SECS_PER_MIN * ?MILLISEC_PER_SEC).
+-define(MILLISEC_PER_HOUR,      ?MINS_PER_HOUR * ?MILLISEC_PER_MIN).
+
 
 %%%%% ------------------------------------------------------- %%%%%
 % Byte size constants

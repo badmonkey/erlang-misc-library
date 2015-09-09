@@ -1,0 +1,19 @@
+{application, erlx_frontloader,
+[
+    {description, "erlx_frontloader"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ erlx_frontloader
+        , erlx_frontloader_app, erlx_frontloader_sup
+        ] },
+    {registered,
+        [ erlx_frontloader
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+    {mod, { erlx_frontloader_app, []}},
+    {env, []}
+]}.
+

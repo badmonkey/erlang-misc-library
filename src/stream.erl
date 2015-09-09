@@ -71,15 +71,14 @@ stddev_samples( #stream_stddev{ n = N } ) -> N.
 
 
 stddev_test() ->
+    Values = [2,4,4,4,5,5,7,9],
     Out = lists:foldl(
                  fun(X, #stream_stddev{} = State) ->
                     stddev_push(X, State)
                  end
                , stddev_new()
-               , [2,4,4,4,5,5,7,9] ),
-    erlang:display( stddev_values(Out) ),
-    erlang:display( xmaths:std_deviation2([2,4,4,4,5,5,7,9]) ),
-    ok.
+               , Values ),
+    stddev_values(Out) =:= xmaths:std_deviation2(Values).
 
 
 %%%%% ------------------------------------------------------- %%%%%
