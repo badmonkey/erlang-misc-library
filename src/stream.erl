@@ -144,6 +144,7 @@ sample_test() ->
     }).
 
     
+    
 -spec minmax_new() -> #stream_minmax{}.
 
 minmax_new() ->
@@ -180,6 +181,41 @@ minmax_values( #stream_minmax{ min = Min, max = Max } ) ->
     
     
 %%%%% ------------------------------------------------------- %%%%%
+
+
+-record(stream_frequent,
+    { k			= 1			:: type:natural()
+	, data		= #{}		:: #{ term() => type:natural() }
+    }).
+
+
+    
+-spec frequent_new( type:natural() ) -> #stream_frequent{}.
+
+frequent_new(K)
+		when K > 1  ->
+    #stream_frequent{ k = K }. 
+    
+    
+frequent_push( X
+			 , #stream_frequent{ k = K
+							   , data = Data } = State ) ->
+	Sz = maps:size(Data),
+	case maps:get(X, Data, undefined) of
+		undefined when Sz < K - 1	->
+			#stream_frequent{ k = K, data = maps:put(X, 1, Data) }
+			
+	;	undefined					->
+			NewData = xmaps:mutate(
+							fun (K, 1) -> remove
+							;   (K, V) -> V - 1
+							end, Data),
+			#stream_frequent{ k = K, data = NewData }
+	
+	;	Val							->
+			#stream_frequent{ k = K, data = maps:put(X, Val + 1, Data) }
+	end.
+
 
 
 % Here's a simple description of Misra-Gries' Frequent algorithm. Demaine (2002) and
