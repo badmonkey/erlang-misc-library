@@ -4,7 +4,7 @@
 
 -behaviour(supervisor).
 
--export([start/0, start_link/0, init/1]).
+-export([start_link/0, init/1]).
 
 -include_lib("erlangx/include/supervisors.hrl").
 
@@ -13,12 +13,6 @@
 % Public API
 
 
-start() ->
-    application:ensure_all_started(sysconfig),
-    lager:info("Started erlx_sysconfig server"),
-    application:load(sysconfig).
-    
-    
 start_link() ->
     ?START_SUPERVISOR( erlx_sysconfig_sup ).
     

@@ -7,6 +7,7 @@
 -export([ sample_new/1, sample_push/2, sample_values/1
         , sample_test/0]).
 -export([ minmax_new/0, minmax_push/2, minmax_values/1]).
+-export([ frequent_new/1, frequent_push/2, frequent_values/1]).
         
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -208,8 +209,8 @@ frequent_push( X
             
     ;   undefined                   ->
             NewData = xmaps:mutate(
-                            fun (K, 1) -> remove
-                            ;   (K, V) -> V - 1
+                            fun (_, 1) -> remove
+                            ;   (_, V) -> V - 1
                             end, Data),
             #stream_frequent{ k = K, n = N + 1, data = NewData }
     

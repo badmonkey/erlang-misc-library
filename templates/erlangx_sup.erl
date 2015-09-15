@@ -4,19 +4,13 @@
 
 -behaviour(supervisor).
 
--export([start/0, start_link/0, init/1]).
+-export([start_link/0, init/1]).
 
 -include_lib("erlangx/include/supervisors.hrl").
 
 
 %%%%% ------------------------------------------------------- %%%%%
 % Public API
-
-
-start() ->
-    application:ensure_all_started({{name}}),
-    lager:info("Started {{name}} server"),
-    application:load({{name}}).
     
     
 start_link() ->

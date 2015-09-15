@@ -10,8 +10,9 @@
         [ erlx_frontloader
         ] },
     {applications,
-        [ kernel, stdlib, crypto
-        , erlangx, lager
+        [ kernel, stdlib, erlangx, lager
+        , crypto, public_key, ssl, asn1
+        , ranch, cowlib, cowboy
         ] },
     {mod, { erlx_frontloader_app, []}},
     {env, []}

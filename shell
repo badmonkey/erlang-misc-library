@@ -1,3 +1,9 @@
 #!/bin/bash
 
-exec kjell -pz ebin/ deps/*/ebin apps/*/ebin  -s erlangx
+APP="erlangx"
+
+if [ "xx${1}xx" != "xxxx" ] ; then
+  APP=${1}
+fi
+
+exec kjell -pz ebin/ deps/*/ebin apps/*/ebin  -s ${APP}

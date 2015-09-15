@@ -64,3 +64,7 @@ get(X) when is_atom(X)      -> atom;
 get(_X)                     -> unknown.
 
 
+%throw_if_error({error, X}) ->
+%throw_if_error(X) ->
+
+

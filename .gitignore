@@ -11,5 +11,5 @@ rel/example_project
 .rebar
 src/config_lexer.erl
 src/config_parser.erl
-logs/
+log/
 database/

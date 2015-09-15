@@ -1,14 +1,14 @@
 
 -module(behaviour).
 
--export([assert/2, check_for/2, is_any_of/2, gather_behaviours/1]).
+-export([assert/2, check_for_module/1, check_for/2, is_any_of/2, gather_behaviours/1]).
 
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec assert( atom(), atom() ) -> ok | type:exception().
+-spec assert( module(), atom() ) -> ok | type:exception().
 
 assert(Module, Behave) ->
     case check_for(Module, Behave) of
@@ -20,7 +20,19 @@ assert(Module, Behave) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec check_for( atom(), atom() ) -> boolean().
+-spec check_for_module( module() ) -> ok | type:exception().
+
+check_for_module(Module) ->
+    case code:which(Module) of
+        non_existing    -> throw( {error, {no_module, Module}} )
+    ;   _               -> ok
+    end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec check_for( module(), atom() ) -> boolean().
 
 check_for(Module, Behave)
         when  is_atom(Module)
@@ -32,7 +44,7 @@ check_for(Module, Behave)
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec is_any_of( atom(), [atom()] ) -> [atom()].
+-spec is_any_of( module(), [atom()] ) -> [atom()].
 
 is_any_of(Module, Behaviours)
         when  is_atom(Module)
@@ -46,6 +58,7 @@ is_any_of(Module, Behaviours)
 
 
 gather_behaviours(Module) when is_atom(Module) ->
+    check_for_module(Module),
     gather_behaviours( Module:module_info(attributes), [] ).
     
 

@@ -4,7 +4,7 @@
 
 -behaviour(supervisor).
 
--export([start/0, start_link/0, init/1]).
+-export([start_link/0, init/1]).
 
 -include_lib("erlangx/include/supervisors.hrl").
 
@@ -12,12 +12,6 @@
 %%%%% ------------------------------------------------------- %%%%%
 % Public API
 
-
-start() ->
-    application:ensure_all_started(snowflake),
-    lager:info("Started erlx_snowflake server"),
-    application:load(snowflake).
-    
     
 start_link() ->
     ?START_SUPERVISOR( erlx_snowflake_sup ).
