@@ -43,7 +43,8 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 init(_Args) ->
     Dispatch = cowboy_router:compile(
         [ { '_'
-          , [ { '_', cowboy_default_handler, [] }
+          , [ { "/:top/[...]", cowboy_default_handler, ["Bind test"] }
+			, { '_', cowboy_default_handler, ["Catch All"] }
             ]
           }
         ]),
@@ -55,7 +56,8 @@ init(_Args) ->
                                , [ {env, [{dispatch, Dispatch}]} ]
                                ),
     
-    %PrivDir = code:priv_dir(erlx_frontloader),
+    %PrivDir = xcode:priv_dir(erlx_frontloader),
+    %lager:info("priv_dir: ~s", [PrivDir]),
     %{ok, _} = cowboy:start_https( https
     %                            , 16
     %                            , [ {port, 8443}
