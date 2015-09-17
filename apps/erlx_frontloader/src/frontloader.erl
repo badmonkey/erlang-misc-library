@@ -43,8 +43,8 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 init(_Args) ->
     Dispatch = cowboy_router:compile(
         [ { '_'
-          , [ { "/:top/[...]", cowboy_default_handler, ["Bind test"] }
-			, { '_', cowboy_default_handler, ["Catch All"] }
+          , [ { "/:top/[...]", cowboy_debug_handler, ["Bind test"] }
+            , { '_', cowboy_debug_handler, ["Catch All"] }
             ]
           }
         ]),

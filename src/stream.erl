@@ -184,21 +184,21 @@ minmax_values( #stream_minmax{ min = Min, max = Max } ) ->
 
 
 -record(stream_fold,
-    { func					:: fun()
-    , accum					:: term()
+    { func                  :: fun()
+    , accum                 :: term()
     }).
 
     
     
--spec fold_new( fun((X, A) -> A), A ) -> #stream_fold{}.
+-spec fold_new( fun((term(), A) -> A), A ) -> #stream_fold{}.
 
 fold_new(F, A) ->
-    #stream_minmax{ func = F, accum = A }.    
+    #stream_fold{ func = F, accum = A }.    
     
     
 fold_push( X
          , #stream_fold{ func = F, accum = A }) ->
-	#stream_fold{ func = F, accum = F(X, A) };
+    #stream_fold{ func = F, accum = F(X, A) }.
             
          
 fold_values( #stream_fold{ accum = A } ) -> A.
