@@ -7,6 +7,7 @@
 -export([ sample_new/1, sample_push/2, sample_values/1
         , sample_test/0]).
 -export([ minmax_new/0, minmax_push/2, minmax_values/1]).
+-export([ fold_new/2, fold_push/2, fold_values/1]).
 -export([ frequent_new/1, frequent_push/2, frequent_values/1]).
         
 
@@ -159,15 +160,13 @@ minmax_push( X
     
                            
 minmax_push( X
-           , #stream_minmax{ min = Min
-                           , max = Max })
+           , #stream_minmax{ min = Min, max = Max })
         when X < Min  ->
     #stream_minmax{ min = X, max = Max };
         
         
 minmax_push( X
-           , #stream_minmax{ min = Min
-                           , max = Max })
+           , #stream_minmax{ min = Min, max = Max })
         when X > Max  ->
     #stream_minmax{ min = Min, max = X };
         
@@ -180,7 +179,31 @@ minmax_push( _X
 minmax_values( #stream_minmax{ min = Min, max = Max } ) ->                       
     {Min, Max}.
     
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-record(stream_fold,
+    { func					:: fun()
+    , accum					:: term()
+    }).
+
     
+    
+-spec fold_new( fun((X, A) -> A), A ) -> #stream_fold{}.
+
+fold_new(F, A) ->
+    #stream_minmax{ func = F, accum = A }.    
+    
+    
+fold_push( X
+         , #stream_fold{ func = F, accum = A }) ->
+	#stream_fold{ func = F, accum = F(X, A) };
+            
+         
+fold_values( #stream_fold{ accum = A } ) -> A.
+    
+        
 %%%%% ------------------------------------------------------- %%%%%
 
 
@@ -192,16 +215,16 @@ minmax_values( #stream_minmax{ min = Min, max = Max } ) ->
 
 
     
+% Based on Misra-Gries' Frequent algorithm.
+    
 -spec frequent_new( type:natural() ) -> #stream_frequent{}.
 
-frequent_new(K)
-        when K > 1  ->
+frequent_new(K) when K > 1  ->
     #stream_frequent{ k = K, n = 0 }. 
     
     
 frequent_push( X
-             , #stream_frequent{ k = K, n = N
-                               , data = Data }) ->
+             , #stream_frequent{ k = K, n = N, data = Data }) ->
     Sz = maps:size(Data),
     case maps:get(X, Data, undefined) of
         undefined when Sz < K - 1   ->
@@ -223,20 +246,3 @@ frequent_values( #stream_frequent{ n = N
                                  , data = Data }) ->    
     { N, maps:to_list(Data) }.
     
-
-% Here's a simple description of Misra-Gries' Frequent algorithm. Demaine (2002) and
-% others have optimized the algorithm, but this gives you the gist.
-
-% Specify the threshold fraction, 1 / k; any item that occurs more than n / k times will
-% be found. Create an an empty map (like a red-black tree); the keys will be search terms,
-% and the values will be a counter for that term.
-
-% Look at each item in the stream.
-% If the term exists in the map, increment the associated counter.
-% Otherwise, if the map less than k - 1 entries, add the term to the map with a counter of one.
-% However, if the map has k - 1 entries already, decrement the counter in every entry.
-% If any counter reaches zero during this process, remove it from the map.
-% Note that you can process an infinite amount of data with a fixed amount of storage
-% (just the fixed-size map). The amount of storage required depends only on the threshold of
-% interest, and the size of the stream does not matter.
-
