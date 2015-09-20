@@ -1,6 +1,8 @@
 
 -module(smart_routes).
 
+-export([resolve_routes/2, resolve_routes/3]).
+
 
 %%%%% ------------------------------------------------------- %%%%%
 
@@ -11,9 +13,6 @@
 -type opts() :: tuple() | #{} | list().
 
 -type route_handler() :: module() | { module(), via, node() }.
-
--type route_path() :: { Path::route_match(), Handler::module(), Opts::any() }
-                    | { Path::route_match(), cowboy:fields(), Handler::module(), Opts::any() }. 
                     
 -type smart_path() :: route_handler()
         | { Handler::route_handler(), Opts::opts() }
@@ -23,10 +22,17 @@
         .
     
 -type smart_rule() :: { Host::route_match(), Paths::[smart_path()] }
-                    | { Host::route_match(), cowboy:fields(), Paths::[smart_path()] }.
+                    | { Host::route_match(), Paths::route_handler() }
+                    | { Host::route_match(), cowboy:fields(), Paths::[smart_path()] }
+                    | { Host::route_match(), cowboy:fields(), Paths::route_handler() }
+                    .
 
 -type routes() :: [ smart_rule() ].
 
+
+% processed paths for use with cowboy
+-type route_path() :: { Path::route_match(), Handler::module(), Opts::any() }
+                    | { Path::route_match(), cowboy:fields(), Handler::module(), Opts::any() }. 
 
 -export_type([routes/0, smart_path/0, smart_rule/0, route_path/0, route_handler/0, opts/0]).
 
@@ -34,6 +40,19 @@
               
 %%%%% ------------------------------------------------------- %%%%%
 
+
+-spec resolve_routes( route_match(), route_handler(), opts() ) -> [ route_path() ] | type:error().
+
+resolve_routes(Modules, Opts) ->
+    resolve_routes("/", Modules, Opts).
+
+    
+resolve_routes('_', Modules, Opts) ->
+    {error, invalid_prefix};
+    
+resolve_routes(Prefix, Modules, Opts) ->
+    ok.
+    
 
 % 
 %[ { "www.monolith.org"
