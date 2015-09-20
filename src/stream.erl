@@ -6,7 +6,8 @@
         , stddev_test/0]).
 -export([ sample_new/1, sample_push/2, sample_values/1
         , sample_test/0]).
--export([ minmax_new/0, minmax_push/2, minmax_values/1]).
+-export([ minmax_new/0, minmax_new/1, minmax_push/2
+        , minmax_values/1, minmax_median/1, minmax_samples/1]).
 -export([ fold_new/2, fold_push/2, fold_values/1]).
 -export([ frequent_new/1, frequent_push/2, frequent_values/1]).
         
@@ -141,45 +142,63 @@ sample_test() ->
 
 
 -record(stream_minmax,
-    { min       = undefined :: number() | undefined
+    { n         = 0         :: type:natural()
+    , min       = undefined :: number() | undefined
     , max       = undefined :: number() | undefined
+    , estmedian = undefined :: number() | undefined
     }).
 
     
     
--spec minmax_new() -> #stream_minmax{}.
+-spec minmax_new( number() ) -> #stream_minmax{}.
 
-minmax_new() ->
-    #stream_minmax{}.    
+minmax_new() -> minmax_new(0).
+
+minmax_new(Est) ->
+    #stream_minmax{ estmedian = Est }.    
     
     
 minmax_push( X
-           , #stream_minmax{ min = undefined
-                           , max = undefined }) ->
-    #stream_minmax{ min = X, max = X };
+           , #stream_minmax{ n = 0
+                           , estmedian = undefined }) ->
+    #stream_minmax{ n = 1, min = X, max = X, estmedian = X };
+    
+minmax_push( X
+           , #stream_minmax{ n = 0
+                           , estmedian = Est }) ->
+    NwEst =     if
+                    X > Est -> Est + 1
+                ;   X < Est -> Est - 1
+                ;   true    -> Est
+                end,
+    #stream_minmax{ n = 1, min = X, max = X, estmedian = NwEst };
     
                            
 minmax_push( X
-           , #stream_minmax{ min = Min, max = Max })
-        when X < Min  ->
-    #stream_minmax{ min = X, max = Max };
-        
-        
-minmax_push( X
-           , #stream_minmax{ min = Min, max = Max })
-        when X > Max  ->
-    #stream_minmax{ min = Min, max = X };
-        
-        
-minmax_push( _X
-           , #stream_minmax{} = State) ->
-    State.
-        
+           , #stream_minmax{ n = N
+                           , min = Min, max = Max
+                           , estmedian = Est }) ->
+    {NwMin, NwMax} =    if
+                            X < Min     -> {X,   Max}
+                        ;   X > Max     -> {Min, X}
+                        ;   true        -> {Min, Max}
+                        end,
+    NwEst =     if
+                    X > Est -> Est + 1
+                ;   X < Est -> Est - 1
+                ;   true    -> Est
+                end,
+    #stream_minmax{ n = N + 1, min = NwMin, max = NwMax, estmedian = NwEst }.
+
          
 minmax_values( #stream_minmax{ min = Min, max = Max } ) ->                       
     {Min, Max}.
     
-
+    
+minmax_median( #stream_minmax{ estmedian = Est } ) -> Est.        
+minmax_samples( #stream_minmax{ n = N } ) -> N.    
+    
+    
 %%%%% ------------------------------------------------------- %%%%%
 
 
@@ -246,3 +265,37 @@ frequent_values( #stream_frequent{ n = N
                                  , data = Data }) ->    
     { N, maps:to_list(Data) }.
     
+
+    
+    
+%def frugal_2u(stream, m = 0, q = 0.5, f = constantly_one):
+%  step, sign = 1, 1
+ 
+%for item in stream:
+%  if item > m and random() > 1 - q:
+%    # Increment the step size if and only if the estimate keeps moving in
+%    # the same direction. Step size is incremented by the result of applying
+%    # the specified step function to the previous step size.
+%    step += f(step) if sign > 0 else -1 * f(step)
+%    # Increment the estimate by step size if step is positive. Otherwise,
+%    # increment the step size by one.
+%    m += step if step > 0 else 1
+%    # Mark that the estimate increased this step
+%    sign = 1
+%    # If the estimate overshot the item in the stream, pull the estimate back
+%    # and re-adjust the step size.
+%    if m > item:
+%      step += (item - m)
+%      m = item
+%  # If the item is less than the stream, follow all of the same steps as
+%  # above, with signs reversed.
+%  elif item < m and random() > q:
+%    step += f(step) if sign < 0 else -1 * f(step)
+%    m -= step if step > 0 else 1
+%    sign = -1
+%    if m < item:
+%      step += (m - item)
+%      m = item
+%  # Damp down the step size to avoid oscillation.
+%  if (m - item) * sign < 0 and step > 1:
+%    step = 1 
