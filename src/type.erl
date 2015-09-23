@@ -1,7 +1,7 @@
 
 -module(type).
 
--export([get/1]).
+-export([get/1, throw_if_error/1]).
 
 -export_type([ error/0, ok_or_error/0, value_or_error/1
              , endpoint/0
@@ -60,11 +60,12 @@ get(X) when is_pid(X)       -> pid;
 get(X) when is_port(X)      -> port;
 get(X) when is_reference(X) -> reference;
 get(X) when is_atom(X)      -> atom;
+get(X) when is_map(X)       -> map;
 
 get(_X)                     -> unknown.
 
 
-%throw_if_error({error, X}) ->
-%throw_if_error(X) ->
+throw_if_error({error, X})  -> throw( {error, X} );
+throw_if_error(X)           -> X.
 
 

@@ -9,32 +9,42 @@
 
 %% parts copied from cowboy_router.erl
 -type route_match() :: '_' | iodata().
+-type host_match() :: '_' | iodata().
 
--type opts() :: tuple() | #{} | list().
+-type opts() :: tuple() | #{} | list() | undefined.
 
--type route_handler() :: module() | { module(), via, node() }.
+-type route_handler() :: module().
+-type route_provider() :: module() | { module(), via, node() }.
                     
--type smart_path() :: route_handler()
-        | { Handler::route_handler(), Opts::opts() }
-        | { Path::route_match(), Handler::route_handler(), Opts::opts() }
-        | { Path::route_match(), cowboy:fields(), Handler::route_handler(), Opts::opts()}
-        | { Path::route_match(), Paths::[smart_path()] }
-        .
+-type path() ::   route_provider()
+              | { route_provider(), Opts::opts() }
+              
+              | { Path::route_match(), Paths::routes() }
+              
+              | { Path::route_match(), Handler::route_handler(), Opts::opts() }
+              | { Path::route_match(), cowboy:fields(), Handler::route_handler(), Opts::opts()}
+              .
+              
+-type routes() :: [path()].              
+        
     
--type smart_rule() :: { Host::route_match(), Paths::[smart_path()] }
-                    | { Host::route_match(), Paths::route_handler() }
-                    | { Host::route_match(), cowboy:fields(), Paths::[smart_path()] }
-                    | { Host::route_match(), cowboy:fields(), Paths::route_handler() }
-                    .
+-type rule() :: { Host::host_match(), Paths::routes() }
+              | { Host::host_match(), route_provider(), opts() }
+              | { Host::host_match(), cowboy:fields(), Paths::routes() }    %% ambiguous?
+              .
 
--type routes() :: [ smart_rule() ].
+-type sites() :: [ rule() ].
 
 
 % processed paths for use with cowboy
 -type route_path() :: { Path::route_match(), Handler::module(), Opts::any() }
                     | { Path::route_match(), cowboy:fields(), Handler::module(), Opts::any() }. 
 
--export_type([routes/0, smart_path/0, smart_rule/0, route_path/0, route_handler/0, opts/0]).
+-export_type([ route_path/0
+             , sites/0, rule/0
+             , routes/0, path/0
+             , route_handler/0, route_provider/0, opts/0
+             , host_match/0, route_match/0]).
 
               
               
@@ -72,7 +82,6 @@ resolve_routes(Prefix, Modules, Opts) ->
 %    , { "/:subdomain"
 %      , [ { xcowboy_virthost_status, [":subdomain"]}
 %        , { "/api", {some_remote_module, via, 'remote@node2'}, [some_value, "red"]}
-%        , {include, "subdomain_static.cfg"}
 %        ]
 %      }
 %    , {magic_module, []}

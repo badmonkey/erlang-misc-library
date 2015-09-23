@@ -23,24 +23,32 @@ unprotect_file(File)->
     
     
     
-    
+-type options() :: { http|https, inet:port_number() }
+                 | { acceptors, type:natural() }
+                 .
 { listener
 , Name::atom()
-, SchemePorts::one_or_many( {http|https, natural()} )
-}.
-
-{ listener
-, Name::atom()
-, Options::one_or_many( {atom(), any()} )
-, SchemePorts::one_or_many( {http|https, natural()} )
+, Options::one_or_many( options() )
 }.
 
 { site
-, Host::string()
-, ListenerName::one_or_many( atom() )
-, PathList::[route_path()]
+, Host::smart_routes:host_match()
+, ListenerName::atom()
+, PathList::smart_routes:routes()
 }.
 
+{ site
+, Host::smart_routes:host_match()
+, ListenerName::atom()
+, smart_routes:route_provider(), smart_routes:opts()
+}.
+
+{ site
+, Host::smart_routes:host_match()
+, ListenerName::atom()
+, constraint, cowboy:fields()
+, PathList::smart_routes:routes()
+}.
 
 
 
@@ -51,21 +59,37 @@ unprotect_file(File)->
 }.
 
 { listener, devserver
-, [ {acceptors, 10} ]
-, [ {http, 8080}
+, [ {acceptors, 10}
+  , {http, 8080}
   , {https, 8443}
   ]
 }.
 
 
 
-{ site, "warbeard.monolith.one", mainserver
+{ site, "warbeard.monolith.one"
+, mainserver
 , [
   ]
 }.
 
 
-{ site, "something.monolith.one", [mainserver, devserver]
+{ site, "something.monolith.one"
+, devserver
 , [
   ]
 }.
+
+{ site, "wiki.monolith.one"
+, mainserver
+, wiki_routes, {some, options}
+}.
+
+{ site, "something.monolith.one"
+, devserver
+, "cowboy:fields"
+, [
+  ]
+}.
+
+
