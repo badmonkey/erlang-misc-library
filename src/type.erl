@@ -6,7 +6,7 @@
 -export_type([ error/0, ok_or_error/0, value_or_error/1
              , endpoint/0
              , start_result/0, server_name/0, server_from/0
-             , atomlist/0, format/0
+             , one_or_many/1, atomlist/0, format/0
              , match_any/0, searchable/1
              , exception/0, natural/0]).
 
@@ -31,10 +31,10 @@
 -type server_from() :: {pid(), term()}.
 
 
--type atomlist() :: atom() | [atom()].
+-type one_or_many(T) :: T | [T].
+-type atomlist() :: one_or_many(atom()).
 
 -type format() :: string().
-
 
 -type match_any() :: '_' | '$1' | '$2' | '$3' | '$4' | '$5' | '$6' | '$7' | '$8' | '$9'.
 -type searchable(T) :: match_any() | T.
