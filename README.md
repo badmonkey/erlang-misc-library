@@ -26,6 +26,7 @@ unprotect_file(File)->
 -type options() :: { http|https, inet:port_number() }
                  | { acceptors, type:natural() }
                  .
+                 
 { listener
 , Name::atom()
 , Options::one_or_many( options() )
@@ -87,7 +88,7 @@ unprotect_file(File)->
 
 { site, "something.monolith.one"
 , devserver
-, "cowboy:fields"
+, constraint, "cowboy:fields"
 , [
   ]
 }.
