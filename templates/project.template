@@ -23,10 +23,10 @@
 
 {template, "project_README.md", "README.md"}.
 {template, "project_priv.config", "priv/{{name}}.config"}.
-{template, "project_sys.config","priv/sys.config"}.
 {template, "project_shell",     "shell"}.
 {chmod, 8#744, "shell"}.
 
+{template, "erlangx_sys.config","priv/sys.config"}.
 {template, "erlangx.app.src",   "src/{{name}}.app.src"}.    
 {template, "erlangx_app.erl",   "src/{{applicationid}}.erl"}.
 {template, "erlangx_sup.erl",   "src/{{supervisorid}}.erl"}.
