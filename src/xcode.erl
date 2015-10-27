@@ -2,10 +2,11 @@
 -module(xcode).
 -extends(code).
 
--export([is_app_file/2, search_for_file/3, find_all_files/3]).
+-export([ search_for_file/3, find_all_files/3]).
 -export([ ebin_dir/0, ebin_dir/1, priv_dir/0, priv_dir/1
         , config_dir/0, config_dir/1, data_dir/0, data_dir/1
         , data_dir_for/1]).
+-export([ is_app_file/1, is_app_file/2, app_subdir/1, app_subdir/2]).
 
 
 -type filelist_type() :: atom() | file:filename() | [atom() | file:filename()].
@@ -36,6 +37,10 @@ app_dir(App, Subdir)
 %%%%% ------------------------------------------------------- %%%%%
 
 
+app_subdir(Subparts) ->
+    app_subdir(application:get_application(), Subparts).
+
+
 -spec app_subdir( atom(), filelist_type() ) -> file:filename().
     
 app_subdir(App, Subdir)
@@ -49,6 +54,10 @@ app_subdir(App, Subdirs)
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+is_app_file(Subparts) ->
+    is_app_file(application:get_application(), Subparts).
+    
 
 -spec is_app_file( atom(), filelist_type() ) -> non_existing | file:filename().
 
