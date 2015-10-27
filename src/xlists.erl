@@ -4,7 +4,8 @@
 
 -export([ sorted_member/2, sorted_insert/2, subsets/2, unique/1
         , drop/2, take/2, foldl/2, filter_fold/2, filter_fold/3
-        , mapx/3, minmax/1, minmax/2, interval/2, shuffle/1, shuffle2/1]).
+        , mapx/3, minmax/1, minmax/2, interval/2, mutate/2
+        , randmerge/2, shuffle/1]).
 
 
 
@@ -131,7 +132,8 @@ minmax(F, [H | Rest]) -> minmax(F, Rest, {H, H}).
 
 minmax(_, [], Acc) -> Acc;
 
-minmax(F, [H | Rest], {Min, Max} = Res) ->
+minmax(F, [H | Rest], {Min, Max} = Res)
+        when is_function(F,2)  ->
     Acc =   case F(H, Min) of
                 true    -> {H, Max}
             ;   false   ->
@@ -151,39 +153,90 @@ minmax(F, [H | Rest], {Min, Max} = Res) ->
 interval(X, X) -> [X];
 interval(Fir, Sec) when Fir < Sec  -> lists:seq(Fir, Sec);
 interval(Fir, Sec) -> lists:seq(Fir, Sec, -1).
-	
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+             
+-spec mutate( fun((V) -> remove | V ) , [V] ) -> [V].
+
+mutate(Pred, List)
+        when is_function(Pred,1), is_list(List)  ->
+    lists:reverse(
+        lists:foldl(
+              fun(Xin, Acc) ->
+                case Pred(Xin) of
+                    remove  -> Acc
+                ;   Xout    -> [Xout | Acc]
+                end
+              end
+            , []
+            , List) ).
+
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+% The function "randmerge(L,R)" should be fair - that is, it should
+% produce all interleavings of L and R with equal likelihood, but this
+% is not true with the coin-flip version.
+
+% To see why, consider computing randmerge([1,3], [2,4])
+% At each step, randmerge can choose the left list or the right list.
+% Therefore the choices are:
+
+% L L - 1,3,2,4
+% L R L - 1,2,3,4
+% L R R - 1,2,4,3
+% R L L - 2,1,3,4
+% R L R - 2,1,4,3
+% R R - 2,4,1,3
+
+% (note, after "L L" the left list is empty so there is no further random choice.
+%  similarly for "R R")
+
+% When using a coin-flip, the top and bottom cases both have probability
+% 1/4. All the other cases have probability 1/8. Therefore coin-flip randmerge is
+% not fair.
+
+
+-spec randmerge( [T], [T] ) -> [T].
+
+randmerge(L1, L2)
+    when  is_list(L1)
+        , is_list(L2)  ->
+    randmerge(L1, length(L1), L2, length(L2)).
+
+
+randmerge([], 0, L2, _) -> L2;
+randmerge(L1, _, [], 0) -> L1;
+   
+randmerge(L1, L1_len, L2, L2_len) ->
+    case random:uniform(L1_len + L2_len) of
+        N when N =< L1_len  ->
+            [hd(L1) | randmerge(tl(L1), L1_len - 1, L2, L2_len)]
+            
+    ;   _                   ->
+            [hd(L2) | randmerge(L1, L1_len, tl(L2), L2_len - 1)]
+    end.
+    
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
 -spec shuffle( [T] ) -> [T].
 
-shuffle(L) when is_list(L) -> shuffle(L, []).
+shuffle(L) when is_list(L) ->
+    shuffle(L, length(L)).
+    
 
+shuffle(L, Len) when Len < 2  -> L;
 
-shuffle([], Acc) -> Acc;
-shuffle([X], Acc) -> [X | Acc];
-shuffle(List, Acc) ->
-	N = length(List),
-	{Leading, [H, T]} = lists:split(random:uniform(N) - 1, List),
-	{Leading, H, T, Leading ++ T}.
-%	shuffle( Leading ++ T, [H | Acc]).
-	
-
-shuffle2(L) ->
-	shuffle2(length(L), L, [], [], 0).
-
-
-shuffle2(0, [], [], Acc, Steps) -> {Acc, Steps};
-shuffle2(N, [], Over, Acc, Steps) -> shuffle2(N, Over, [], Acc, Steps);
-shuffle2(1, [X], [], Acc, Steps) -> shuffle2(0, [], [], [X | Acc], Steps + 1);
-shuffle2(N, [H | T], Over, Acc, Steps) ->
-	case random:uniform(N) of
-		1	-> shuffle2(N - 1, T, Over, [H | Acc], Steps + 1)
-	;	_ 	-> shuffle2(N, T, [H | Over], Acc, Steps + 1)
-	end.
-		
-
-
-
+shuffle(L, Len) ->
+    L1_len = Len div 2,
+    L2_len = Len - L1_len,
+    
+    {L1, L2} = lists:split(L1_len, L),
+    
+    randmerge( shuffle(L1, L1_len), L1_len
+             , shuffle(L2, L2_len), L2_len ).
 
