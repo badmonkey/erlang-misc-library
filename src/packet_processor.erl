@@ -35,16 +35,20 @@
 -type fixed_size() :: 1 | 2 | 4.
 -type pkt_length() :: fixed_size() | varint.
 -type pkt_scheme() :: pkt_length()
-                    | line
                     | {chunk, N :: pos_integer()}
+                    | line  % ending in nl or cr
+                    | {line, EOL :: binary()}
                     | {start_tag, Tag :: binary()}.
 
--type packet_mode() :: raw | udp
-                     | pkt_scheme()
-                     | {zlib, CompressedPkt :: pkt_scheme(), FullSize :: pkt_length()}
-                     | {zstream, Mode :: raw | pkt_scheme()}.
+-type simple_pkt_mode() :: raw | pkt_scheme().
 
--export_type([fixed_size/0, pkt_length/0, pkt_scheme/0, packet_mode/0]).
+-type packet_mode() :: simple_pkt_mode()
+                     | udp
+                     | {zlib, CompressedPkt :: pkt_scheme()}
+                     | {zlib, CompressedPkt :: pkt_length(), FullSize :: pkt_length()}
+                     | {zstream, Mode :: simple_pkt_mode()}.    % uncompress and then break data using Mode
+
+-export_type([fixed_size/0, pkt_length/0, pkt_scheme/0, simple_pkt_mode/0, packet_mode/0]).
 
 
 -callback init(Socket :: inet:socket(), Args :: term()) ->

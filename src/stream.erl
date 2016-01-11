@@ -28,7 +28,7 @@ stddev_new() ->
     #stream_stddev{}.
     
     
-% Based on Welford's method for calculating stardard deviations.
+% Based on Welford's method for calculating standard deviations.
     
 -spec stddev_push( number(), #stream_stddev{} ) -> #stream_stddev{}.
     
@@ -163,6 +163,7 @@ minmax_push( X
                            , estmedian = undefined }) ->
     #stream_minmax{ n = 1, min = X, max = X, estmedian = X };
     
+    
 minmax_push( X
            , #stream_minmax{ n = 0
                            , estmedian = Est }) ->
@@ -191,10 +192,7 @@ minmax_push( X
     #stream_minmax{ n = N + 1, min = NwMin, max = NwMax, estmedian = NwEst }.
 
          
-minmax_values( #stream_minmax{ min = Min, max = Max } ) ->                       
-    {Min, Max}.
-    
-    
+minmax_values( #stream_minmax{ min = Min, max = Max } ) -> {Min, Max}.
 minmax_median( #stream_minmax{ estmedian = Est } ) -> Est.        
 minmax_samples( #stream_minmax{ n = N } ) -> N.    
     

@@ -94,3 +94,31 @@ unprotect_file(File)->
 }.
 
 
+    Dispatch = cowboy_router:compile(
+        [ { '_'
+          , [ { "/:top/[...]", cowboy_debug_handler, ["Bind test"] }
+            , { '_', cowboy_debug_handler, ["Catch All"] }
+            ]
+          }
+        ]),
+    
+
+    {ok, _} = cowboy:start_http( http
+                               , 16
+                               , [ {port, 8080} ]
+                               , [ {env, [{dispatch, Dispatch}]} ]
+                               ),
+    
+    %PrivDir = xcode:priv_dir(erlx_frontloader),
+    %lager:info("priv_dir: ~s", [PrivDir]),
+    %{ok, _} = cowboy:start_https( https
+    %                            , 16
+    %                            , [ {port, 8443}
+    %                              , {cacertfile, PrivDir ++ "/ssl/cowboy-ca.crt"}
+    %                              , {certfile, PrivDir ++ "/ssl/server.crt"}
+    %                              , {keyfile, PrivDir ++ "/ssl/server.key"}
+    %                              ]
+    %                            , [ {env, [{dispatch, Dispatch}]} ]
+    %                            ),
+    
+

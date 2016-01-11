@@ -4,8 +4,10 @@
 -include_lib("erlangx/include/constants.hrl").
 
 
--export([is_format/1, pluralize/2, pluralize/3, pluralize/4]).
--export([short_duration/1, long_duration/3, timesince/1, timesince/2]).
+-export([ is_format/1, is_number/1
+        , pluralize/2, pluralize/3, pluralize/4
+        , short_duration/1, long_duration/3
+        , timesince/1, timesince/2]).
 
 
 -define(DEFAULT_PRECISION, 2).
@@ -28,7 +30,34 @@ guess_formatting(Number, String) ->
     ;   false when is_float(Number)     -> "~f" ++ String
     ;   _Else                           -> String
     end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+is_number(X) when is_integer(X) -> true;
+is_number(Bin)
+        when is_binary(Bin) ->
+    is_number(Bin, false);
+is_number(L)
+        when is_list(L) ->
+    false.
     
+
+is_number(<<>>, Flag)               -> Flag;
+is_number(<<$0, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$1, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$2, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$3, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$4, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$5, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$6, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$7, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$8, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(<<$9, Rest/binary>>, _)   -> is_number(Rest, true);
+is_number(Bin, _)
+    when is_binary(Bin)             -> false.
+
     
 %%%%% ------------------------------------------------------- %%%%%
 

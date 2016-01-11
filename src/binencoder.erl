@@ -1,6 +1,6 @@
 
 -module(binencoder).
-
+%zigzag/1, 
 -export([buffer/2, varint/1, utf16_string/1, utf16_list/1, utf8/1, json_buffer/1]).
 
 

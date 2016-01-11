@@ -1,0 +1,19 @@
+{application, erlx_orient,
+[
+    {description, "erlx_orient"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ erlx_orient
+        , erlx_orient_app, erlx_orient_sup
+        ] },
+    {registered,
+        [ erlx_orient
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+    {mod, { erlx_orient_app, []}},
+    {env, []}
+]}.
+

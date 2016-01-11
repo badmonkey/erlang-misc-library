@@ -1,19 +1,32 @@
 
 -module(xrandom).
 
--export([pidseed/0, hwaddr/0, bits/1]).
+-export([seed/0, seed/1, hwaddr/0, bits/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec pidseed() -> {pos_integer(), pos_integer(), pos_integer()}.
+-spec seed() -> random:ran().
+seed() -> seed(pid).
 
-pidseed() ->
+
+-spec seed( stddoc | crypto | pid ) -> random:ran().
+    
+seed(pid) ->
     PidSum = erlang:phash2(self()),
     <<N0:32, N1:32, N2:32>> = crypto:rand_bytes(12),
-    {N0 bxor PidSum, N1 bxor PidSum, N2 bxor PidSum}.
-    
+    random:seed(N0 bxor PidSum, N1 bxor PidSum, N2 bxor PidSum);
+
+seed(crypto) ->
+    <<A:32, B:32, C:32>> = crypto:rand_bytes(12),
+    random:seed(A, B, C);
+
+seed(stddoc) ->
+    random:seed( erlang:phash2([node()])
+               , erlang:monotonic_time()
+               , erlang:unique_integer()).
+               
     
 %%%%% ------------------------------------------------------- %%%%%
     
@@ -32,7 +45,6 @@ hwaddr() ->
 -spec bits( pos_integer() ) -> bitstring().
     
 bits(N) ->    
-    _ = random:seed( pidseed() ),
     Rnd = random:uniform(2 bsl N - 1),
     <<Rnd:N>>.
 

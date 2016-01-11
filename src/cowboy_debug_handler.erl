@@ -22,15 +22,8 @@ init(Req, Opts) ->
                                 "Peer: ~p~n"
                                 "Headers: ~p~n"
                                 "Bindings: ~p~n"
-                         , [ Opts
-                           , Host
-                           , Port
-                           , Path
-                           , Url
-                           , PathInfo
-                           , Peer
-                           , Headers
-                           , Bindings
+                         , [ Opts, Host, Port, Path, Url
+                           , PathInfo, Peer, Headers, Bindings
                            ]),
     
     BinText = erlang:list_to_binary(Text),

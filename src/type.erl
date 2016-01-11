@@ -3,7 +3,7 @@
 
 -export([get/1, throw_if_error/1]).
 
--export_type([ error/0, ok_or_error/0, value_or_error/1
+-export_type([ error/0, ok_or_error/0, type_or_error/1, value_or_error/1
              , endpoint/0
              , start_result/0, server_name/0, server_from/0
              , one_or_many/1, atomlist/0, format/0
@@ -16,6 +16,7 @@
 
 -type error() :: { error, _ }.
 -type ok_or_error() :: ok | error().
+-type type_or_error(T) :: T | error().
 -type value_or_error(T) :: { ok, T } | error().
 
 
@@ -23,7 +24,7 @@
                  | { inet:port_number() }
                  | { localhost | addr_any | inet:ip_address()
                    , inet:port_number() }.
-
+                   
 
 -type start_result() :: ignore | value_or_error( pid() ).
 

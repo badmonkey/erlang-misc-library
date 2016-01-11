@@ -2,7 +2,7 @@
 -module(xets).
 -extends(ets).
 
--export([match_delete/2, foreach/2]).
+-export([match_delete/2, foreach/2, foreachx/2]).
 
 
 
@@ -31,3 +31,16 @@ foreach(Fun, Table) ->
         , Table),
     ok.
         
+
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+-spec foreachx( fun((_) -> type:ok_or_error()), ets:tab() ) -> type:ok_or_error().
+
+foreachx(Fun, Table) ->
+    ets:foldl(
+          fun(X, ok)            -> Fun(X)
+          ;  (_, {error, E})    -> {error, E}
+          end
+        , ok
+        , Table).

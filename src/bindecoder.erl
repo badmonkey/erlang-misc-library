@@ -1,6 +1,6 @@
 
 -module(bindecoder).
-
+%, zigzag/1
 -export([byte/1, ushort/1, ulong/1, varint/1]).
 -export([sequence/2, nbytes/2, packet_N/2]).
 -export([match_sequence/1, match_nbytes/1, match_packet_N/1, match_utf16_string/0]).
@@ -10,6 +10,11 @@
 %       {ok, Value, Rest}
 %       {more, Length}
 %       {error, Reason}
+
+
+%-type result() :: {ok, _, binary()}
+%		| {more, pos_integer()}
+%		| type:error().
 %
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -136,4 +141,12 @@ match_sequence(List) ->
     
 
 %%%%% ------------------------------------------------------- %%%%%
-    
+   
+
+%-type decode_item() :: {atom(), fun(( binary() ) -> decode_result() ) }.
+%-type decode_scheme() :: [ decode_item() ].
+
+%-spec decode_to_map( decode_scheme(), binary() ) -> map().
+%decode_to_map(Scheme, Bytes) ->
+%	ok.
+ 

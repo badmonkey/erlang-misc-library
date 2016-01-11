@@ -33,8 +33,8 @@
 
 -record(state,
     { name
-    , site_order                :: [host_match()]
-    , sites                     :: #{ host_match() => #site{} }
+    , site_order                :: [smart_routes:host_match()]
+    , sites                     :: #{ smart_routes:host_match() => #site{} }
     }).
 
          
@@ -52,12 +52,13 @@ child_spec(Id, _Args) -> ?SERVICE_SPEC(Id, ?MODULE, []).
 %%%%% ------------------------------------------------------- %%%%%
 
 
-load(App) ->
-    load(App, "frontloader.routes").
+listener(Name, Scheme, Port, Acceptors) ->
+    ok.
     
 
-load(App, Filename) ->
-    gen_server:call(?SERVER, {load, App, Filename}).
+update_dispatch(Name, Dispatch) ->
+    ok.
+
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -65,43 +66,14 @@ load(App, Filename) ->
 
 
 init(_Args) ->
-    Dispatch = cowboy_router:compile(
-        [ { '_'
-          , [ { "/:top/[...]", cowboy_debug_handler, ["Bind test"] }
-            , { '_', cowboy_debug_handler, ["Catch All"] }
-            ]
-          }
-        ]),
-    
-
-    {ok, _} = cowboy:start_http( http
-                               , 16
-                               , [ {port, 8080} ]
-                               , [ {env, [{dispatch, Dispatch}]} ]
-                               ),
-    
-    %PrivDir = xcode:priv_dir(erlx_frontloader),
-    %lager:info("priv_dir: ~s", [PrivDir]),
-    %{ok, _} = cowboy:start_https( https
-    %                            , 16
-    %                            , [ {port, 8443}
-    %                              , {cacertfile, PrivDir ++ "/ssl/cowboy-ca.crt"}
-    %                              , {certfile, PrivDir ++ "/ssl/server.crt"}
-    %                              , {keyfile, PrivDir ++ "/ssl/server.key"}
-    %                              ]
-    %                            , [ {env, [{dispatch, Dispatch}]} ]
-    %                            ),
+    net_kernel:monitor_nodes(true),
+    Nodes = erlang:nodes(), 
     
     {ok, #state{}}.
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
-
-handle_call({load, App, Filename}, _From, State) ->
-    Path = xcode:app_subdir(App, Filename),
-    {reply, ok, State};
-    
     
 handle_call(_Request, _From, State) ->
     lager:info("frontloader:call stopped ~p", [_Request]),
@@ -119,6 +91,7 @@ handle_cast(_Msg, State) ->
 %%%%% ------------------------------------------------------- %%%%%
 
     
+% {nodeup, Node} | {nodedown, Node}    
 handle_info(_Info, State) ->
     lager:info("frontloader:info stopped ~p", [_Info]),
     {stop, invalid_info_request, State}.
