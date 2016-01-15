@@ -1,7 +1,8 @@
 
 -module(binencoder).
-%zigzag/1, 
--export([buffer/2, varint/1, utf16_string/1, utf16_list/1, utf8/1, json_buffer/1]).
+
+-export([buffer/2, varint/1, zigzag/1]).
+-export([utf16_string/1, utf16_list/1, utf8/1, json_buffer/1]).
 
 
 
@@ -42,6 +43,19 @@ encode_varint(I, Acc) ->
     encode_varint(First_X_Bits, [With_Leading_Bit|Acc]).
     
     
+%%%%% ------------------------------------------------------- %%%%%
+
+
+zigzag(Value) when is_integer(Value) ->
+	encode_varint( enzagint(Value), [] ).
+
+
+-spec enzagint( integer() ) -> non_neg_integer().
+
+enzagint(I) when I >= 0 -> I * 2;
+enzagint(I) when I < 0  -> - (I * 2) - 1.	
+
+
 %%%%% ------------------------------------------------------- %%%%%
 
 

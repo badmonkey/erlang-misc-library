@@ -1,7 +1,7 @@
 
 -module(bindecoder).
-%, zigzag/1
--export([byte/1, ushort/1, ulong/1, varint/1]).
+
+-export([byte/1, ushort/1, ulong/1, varint/1, zigzag/1]).
 -export([sequence/2, nbytes/2, packet_N/2]).
 -export([match_sequence/1, match_nbytes/1, match_packet_N/1, match_utf16_string/0]).
 
@@ -53,6 +53,22 @@ decode_varint(<<0:1, I:7, Rest/binary>>, Acc) ->
     {ok, Result, Rest}.
 
     
+%%%%% ------------------------------------------------------- %%%%%
+
+
+zigzag(Bytes) when is_binary(Bytes) ->
+	case decode_varint(Bytes, []) of
+		{ok, Value, Rest}	-> {ok, dezigint(Value), Rest}
+	;	X					-> X
+	end.
+
+
+-spec dezigint( non_neg_integer() ) -> integer().
+
+dezigint(I) when I >= 0, I rem 2 == 0 -> I div 2;
+dezigint(I) when I >= 0, I rem 2 == 1 -> - (I div 2) - 1.
+
+
 %%%%% ------------------------------------------------------- %%%%%
 
 
