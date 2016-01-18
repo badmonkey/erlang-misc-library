@@ -45,6 +45,9 @@
 -type natural() :: non_neg_integer().
 
 
+-type property() :: #{ atom() => term() } | proplists:property().
+
+
 
 %%%%% ------------------------------------------------------- %%%%%
 
