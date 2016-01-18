@@ -11,8 +11,8 @@
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
 % replace all entries Key by single entry {Key, Value}
+
 
 -spec update( atom(), term(), type:property() ) -> type:property().
 
@@ -24,8 +24,8 @@ update(Key, Value, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
 % Add new value to Key, if not a multivalue make it a multivalue
+
 
 -spec append( atom(), term(), type:property() ) -> type:property().
 
@@ -46,8 +46,8 @@ append(Key, Value, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
+% delete all entries for Key
 
-% delete all entries Key
 
 -spec delete( atom(), type:property() ) -> type:property().
 
@@ -82,7 +82,7 @@ is_multivalue(Key, Prop) when is_map(Prop) ->
     end;										   
 
 is_multivalue(Key, Prop) when is_list(Prop) ->
-	false.
+	false. % todo how do we do this?
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -98,8 +98,8 @@ get_bool(Key, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
 % return Value associated with Key, or first Value of multivalue
+
 
 get_value(Key, Prop) -> get_value(Key, Prop, undefined).
 
@@ -129,7 +129,7 @@ keys(Prop) when is_list(Prop) ->
 	
 
 %%%%% ------------------------------------------------------- %%%%%
-
+% return all values of a multivalue or single value as list.
 
 -spec get_all_values( atom(), type:property() ) -> [ term() ].
 
@@ -143,18 +143,4 @@ get_all_values(Key, Prop) when is_map(Prop) ->
 get_all_values(Key, Prop) when is_list(Prop) ->
 	proplists:get_all_values(Key, Prop).
 
-
-%
-% [{value1, 1}
-% ,{value2, [a, b, c, d]}
-% ,{value1, 2}
-% ]
-%
-% #{
-%   value1 => {[1, 2]}
-% , value2 => [a, b, c, d]
-% }
-%	
-%   value1 = {'property$multivalue', [1, 2]}
-%
 
