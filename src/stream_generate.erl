@@ -63,7 +63,7 @@ thuemorse_1() ->    % 1-0-0-1
 thuemorse_new() ->
     { generator
     , fun thuemorse_pop/1
-    , #thuemorse{ bitqueue = queue:in(true, queue:new()) }
+    , #thuemorse{ data = thuemorse_0(), bitqueue = queue:in(true, queue:new()) }
     }.
     
 

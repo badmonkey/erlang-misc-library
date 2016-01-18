@@ -1,14 +1,14 @@
 
 -module(type).
 
--export([get/1, throw_if_error/1]).
+-export([get/1, throw_if_error/1, throw_error/1]).
 
 -export_type([ error/0, ok_or_error/0, value_or_error/1, okvalue_or_error/1
              , endpoint/0
              , start_result/0, server_name/0, server_from/0
              , one_or_many/1, atomlist/0, format/0
              , match_any/0, searchable/1
-             , exception/0, natural/0]).
+             , exception/0, natural/0, properties/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -45,7 +45,7 @@
 -type natural() :: non_neg_integer().
 
 
--type property() :: #{ atom() => term() } | [ atom() | { atom(), term() } ]
+-type properties() :: #{ atom() => term() } | [ atom() | { atom(), term() } ].
 
 
 
@@ -74,10 +74,18 @@ get(_X)                     -> undefined.
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec throw_if_error( {error,_} ) 	-> exception()
-				   ;( term() ) 		-> term().
+-spec throw_if_error( {error,_} )   -> exception()
+                   ;( term() )      -> term().
 
 throw_if_error({error, X})  -> throw( {error, X} );
 throw_if_error(X)           -> X.
 
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec throw_error( error() | term() ) -> exception().
+
+throw_error({error, X}) -> throw( {error, X} );
+throw_error(Reason)     -> throw( {error, Reason} ).
 

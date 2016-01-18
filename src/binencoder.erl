@@ -47,7 +47,7 @@ encode_varint(I, Acc) ->
 
 
 zigzag(Value) when is_integer(Value) ->
-	encode_varint( enzagint(Value), [] ).
+    encode_varint( enzagint(Value), [] ).
 
 
 -spec enzagint( integer() ) -> non_neg_integer().

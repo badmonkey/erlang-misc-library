@@ -25,7 +25,7 @@
               | { Path::route_match(), cowboy:fields(), Handler::route_handler(), Opts::opts()}
               .
               
--type routes() :: [path()].              
+-type routes() :: [ path() ].              
         
     
 -type rule() :: { Host::host_match(), Paths::routes() }

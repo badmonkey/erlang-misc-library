@@ -5,17 +5,13 @@
 -export([sequence/2, nbytes/2, packet_N/2]).
 -export([match_sequence/1, match_nbytes/1, match_packet_N/1, match_utf16_string/0]).
 
-%
-% decoder(Bytes) ->
-%       {ok, Value, Rest}
-%       {more, Length}
-%       {error, Reason}
 
+-type result() :: {ok, _, binary()}
+                | {more, pos_integer()}
+                | type:error().
+                
+-export_type([result/0]).
 
-%-type result() :: {ok, _, binary()}
-%		| {more, pos_integer()}
-%		| type:error().
-%
 
 %%%%% ------------------------------------------------------- %%%%%
 
@@ -57,10 +53,10 @@ decode_varint(<<0:1, I:7, Rest/binary>>, Acc) ->
 
 
 zigzag(Bytes) when is_binary(Bytes) ->
-	case decode_varint(Bytes, []) of
-		{ok, Value, Rest}	-> {ok, dezigint(Value), Rest}
-	;	X					-> X
-	end.
+    case decode_varint(Bytes, []) of
+        {ok, Value, Rest}   -> {ok, dezigint(Value), Rest}
+    ;   X                   -> X
+    end.
 
 
 -spec dezigint( non_neg_integer() ) -> integer().
@@ -159,10 +155,10 @@ match_sequence(List) ->
 %%%%% ------------------------------------------------------- %%%%%
    
 
-%-type decode_item() :: {atom(), fun(( binary() ) -> decode_result() ) }.
-%-type decode_scheme() :: [ decode_item() ].
+%-type field() :: {atom(), fun(( binary() ) -> result() ) }.
+%-type scheme() :: [ field() ].
 
 %-spec decode_to_map( decode_scheme(), binary() ) -> map().
 %decode_to_map(Scheme, Bytes) ->
-%	ok.
+%   ok.
  
