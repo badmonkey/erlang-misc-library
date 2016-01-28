@@ -158,7 +158,7 @@ interval(Fir, Sec) -> lists:seq(Fir, Sec, -1).
 %%%%% ------------------------------------------------------- %%%%%
 
              
--spec mutate( fun((V) -> remove | V ) , [V] ) -> [V].
+-spec mutate( fun((V) -> remove | {value, V} ) , [V] ) -> [V].
 
 mutate(Pred, List)
         when is_function(Pred,1), is_list(List)  ->
@@ -166,8 +166,8 @@ mutate(Pred, List)
         lists:foldl(
               fun(Xin, Acc) ->
                 case Pred(Xin) of
-                    remove  -> Acc
-                ;   Xout    -> [Xout | Acc]
+                    remove          -> Acc
+                ;   {value, Xout}   -> [Xout | Acc]
                 end
               end
             , []

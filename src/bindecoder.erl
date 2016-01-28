@@ -2,7 +2,7 @@
 -module(bindecoder).
 
 -export([byte/1, ushort/1, ulong/1, varint/1, zigzag/1]).
--export([sequence/2, nbytes/2, packet_N/2]).
+-export([arrayof/3, sequence/2, nbytes/2, packet_N/2]).
 -export([match_sequence/1, match_nbytes/1, match_packet_N/1, match_utf16_string/0]).
 
 
@@ -87,6 +87,26 @@ match_nbytes(N) ->
         nbytes(N, Bytes)
     end.
 
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+arrayof(N, ElemFun, Bytes)
+        when  is_integer(N)
+            , is_function(ElemFun, 1)
+            , is_binary(Bytes)  ->
+    decode_arrayof(N, ElemFun, [], Bytes).
+    
+    
+decode_arrayof(0, _, Acc, Rest) ->
+    {ok, lists:reverse(Acc), Rest};
+    
+decode_arrayof(N, ElemFun, Acc, Data) ->
+    case ElemFun(Data) of
+        {ok, Value, Rest}   -> decode_arrayof(N - 1, ElemFun, [Value | Acc], Rest)
+    ;   _ = Else            -> Else
+    end.
+    
     
 %%%%% ------------------------------------------------------- %%%%%
 

@@ -53,7 +53,7 @@ takepairs(N, Map)
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec mutate( fun((K, V) -> remove | V ) , #{ K => V } ) -> #{ K => V }.
+-spec mutate( fun((K, V) -> remove | {value, V} | {value, K, V} ) , #{ K => V } ) -> #{ K => V }.
 
 mutate(Pred, Map)
         when is_function(Pred,2), is_map(Map)  ->
@@ -65,7 +65,8 @@ mutate(_, Acc, []) ->
     
 mutate(Pred, Acc, [{K, V} | Rest]) ->   
     case Pred(K, V) of
-        remove  -> mutate(Pred, Acc, Rest)
-    ;   X       -> mutate(Pred, [{K, X} | Acc], Rest)
+        remove          -> mutate(Pred, Acc, Rest)
+    ;   {value, X}      -> mutate(Pred, [{K, X} | Acc], Rest)
+    ;   {value, Kn, X}  -> mutate(Pred, [{Kn, X} | Acc], Rest)
     end.
     

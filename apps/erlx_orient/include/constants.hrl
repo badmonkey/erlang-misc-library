@@ -1,6 +1,8 @@
 
 
-
+%
+% Byte layout macros
+%
 -define(ODB_BOOLEAN, 1/big-signed-unit:8).
 -define(ODB_BYTE, 1/big-signed-unit:8).
 -define(ODB_SHORT, 1/big-signed-unit:16).
