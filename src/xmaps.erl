@@ -2,7 +2,7 @@
 -module(xmaps).
 -extends(maps).
 
--export([takekeys/2, takepairs/2, mutate/2]).
+-export([takekeys/2, takepairs/2, mutate/2, with/2, without/2]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -70,3 +70,20 @@ mutate(Pred, Acc, [{K, V} | Rest]) ->
     ;   {value, Kn, X}  -> mutate(Pred, [{Kn, X} | Acc], Rest)
     end.
     
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec with( [K], #{ K => V } ) -> #{ K => V }.
+
+with(Keys, Map) when is_list(Keys), is_map(Map) ->
+	maps:from_list( xlists:keywith(Keys, 1, maps:to_list(Map) ) ).
+
+
+-spec without( [K], #{ K => V } ) -> #{ K => V }.
+
+without(Keys, Map) when is_list(Keys), is_map(Map) ->
+	maps:from_list( xlists:keywithout(Keys, 1, maps:to_list(Map) ) ).
+
+
+

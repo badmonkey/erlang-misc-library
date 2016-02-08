@@ -5,7 +5,8 @@
 -export([ sorted_member/2, sorted_insert/2, subsets/2, unique/1
         , drop/2, take/2, foldl/2, filter_fold/2, filter_fold/3
         , mapx/3, minmax/1, minmax/2, interval/2, mutate/2
-        , randmerge/2, shuffle/1]).
+        , randmerge/2, shuffle/1
+		, keypartition/3, keywith/3, keywithout/3]).
 
 
 
@@ -53,6 +54,50 @@ subsets(N, [Hd | Tl] ) -> [ [Hd | T] || T <- subsets(N - 1, Tl) ] ++ subsets(N, 
 
 unique(List) when is_list(List) ->
     sets:to_list( sets:from_list(List) ).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec keypartition( list(), pos_integer(), [tuple()] ) -> {[tuple()], [tuple()]}.
+
+keypartition(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
+	keypartition(Ks, N, Tuples, []).
+
+
+keypartition([], _, Tuples, With) ->
+	{With, Tuples};
+
+keypartition([Hd | Rest] = Keys, N, Tuples, With) ->
+	case lists:keytake(Hd, N, Tuples) of
+		false					-> keypartition(Rest, N, Tuples, With)
+	;	{value, X, TupleRest}	-> keypartition(Keys, N, TupleRest, [X | With])
+	end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec keywith( list(), pos_integer(), [tuple()] ) -> [tuple()].
+
+keywith(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
+	{With, _} = keypartition(Ks, N, Tuples).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec keywithout( list(), pos_integer(), [tuple()] ) -> [tuple()].
+
+keywithout([], _, Tuples) -> Tuples;
+
+keywithout([Hd | Rest] = Keys, N, Tuples)
+  		when is_list(Ks), is_list(Tuples) ->
+	case lists:keytake(Hd, N, Tuples) of
+		false					-> keywithout(Rest, N, Tuples)
+	;	{value, X, TupleRest}	-> keywithout(Keys, N, TupleRest)
+	end.
+
 
 
 %%%%% ------------------------------------------------------- %%%%%

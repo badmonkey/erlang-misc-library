@@ -1,7 +1,8 @@
 
 -module(property).
 
--export([ update/3, append/3, delete/2
+-export([ update/3, set_multi/3, append/3, delete/2
+		, select/2, select/3, merge/2
         , is_defined/2, is_multivalue/2
         , get_bool/2, get_value/2, get_value/3
         , keys/1, get_all_values/2 ]).
@@ -16,11 +17,35 @@
 
 -spec update( atom(), term(), type:properties() ) -> type:properties().
 
-update(Key, Value, Prop) when is_map(Prop) ->
+update(Key, Value, Prop)
+  		when is_atom(Key), is_map(Prop) ->
     maps:put(Key, Value, Prop);
 
-update(Key, Value, Prop) when is_list(Prop) ->
+update(Key, Value, Prop)
+  		when is_atom(Key), is_list(Prop) ->
     proplists:delete(Key, Prop) ++ [{Key, Value}].
+
+
+%%%%% ------------------------------------------------------- %%%%%
+% replace all entries Key by multivalue entry or single entry 
+
+
+-spec set_multi( atom(), list(), type:properties() ) -> type:properties().
+
+set_multi(Key, Values, Prop)
+		when is_atom(Key), is_list(Values), is_map(Prop) ->
+	case Values of
+		[X]		-> update(Key, X, Prop)
+	;	_ 		-> Prop2 = delete(Key, Prop),
+				   set_impl(Key, Values, Prop2)
+	end.
+
+
+set_impl(Key, Values, Prop) when is_map(Prop) ->		   
+	maps:put(Key, {?MULTIVALUE_TAG, Values}, Prop);
+
+set_impl(Key, Values, Prop) when is_list(Prop) ->
+    Prop ++ [{Key, X} || X <- Values].
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -29,7 +54,8 @@ update(Key, Value, Prop) when is_list(Prop) ->
 
 -spec append( atom(), term(), type:properties() ) -> type:properties().
 
-append(Key, Value, Prop) when is_map(Prop) ->
+append(Key, Value, Prop)
+  		when is_atom(Key), is_map(Prop) ->
     case maps:get(Key, Prop, undefined) of
         {?MULTIVALUE_TAG, Vals}     ->
             maps:put(Key, {?MULTIVALUE_TAG, Vals ++ [Value]}, Prop)
@@ -41,7 +67,8 @@ append(Key, Value, Prop) when is_map(Prop) ->
             maps:put(Key, {?MULTIVALUE_TAG, [X, Value]}, Prop)
     end;
 
-append(Key, Value, Prop) when is_list(Prop) ->
+append(Key, Value, Prop)
+  		when is_atom(Key), is_list(Prop) ->
     Prop ++ [{Key, Value}].
 
 
@@ -51,10 +78,12 @@ append(Key, Value, Prop) when is_list(Prop) ->
 
 -spec delete( atom(), type:properties() ) -> type:properties().
 
-delete(Key, Prop) when is_map(Prop) ->
+delete(Key, Prop)
+  		when is_atom(Key), is_map(Prop) ->
     maps:remove(Key, Prop);
 
-delete(Key, Prop) when is_list(Prop) ->
+delete(Key, Prop)
+  		when is_atom(Key), is_list(Prop) ->
     proplists:delete(Key, Prop).
 
 
@@ -147,4 +176,39 @@ get_all_values(Key, Prop) when is_map(Prop) ->
 get_all_values(Key, Prop) when is_list(Prop) ->
     proplists:get_all_values(Key, Prop).
 
+
+%%%%% ------------------------------------------------------- %%%%%
+% return a subset of a property by keys
+
+
+select(Keys, Prop) ->
+	select(Keys, with, Prop).
+
+
+-spec select( [atom()], all | with | without, type:properties() ) -> type:value_or_error( type:properties() ).
+
+select(Keys, with, Prop) when is_map(Prop) ->
+	xmaps:with(Keys, Prop);
+
+select(Keys, without, Prop) when is_map(Prop) ->
+	xmaps:without(Keys, Prop);
+
+select(Keys, all, Prop) when is_map(Prop) ->
+	Prop;
+
+
+select(Keys, with, Prop) when is_list(Prop) ->
+	xproplists:with(Keys, Prop);
+
+select(Keys, without, Prop) when is_list(Prop) ->
+	xproplists:without(Keys, Prop);
+
+select(Keys, all, Prop) when is_list(Prop) ->
+	Prop.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+%merge
 

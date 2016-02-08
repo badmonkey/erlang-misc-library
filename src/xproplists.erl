@@ -2,7 +2,7 @@
 -module(xproplists).
 -extends(proplists).
 
--export([merge/2, sort/1, delete_append/3]).
+-export([merge/2, sort/1, delete_append/3, with/2, without/2]).
 
 -export_type([property/0, proplist/0]).
 
@@ -48,7 +48,7 @@ merge(PropsIn, Atom)
 
 sort(Props)
         when is_list(Props)  ->
-    proplists:compact(lists:keysort(1, proplists:unfold(Props))).
+    proplists:compact( lists:keysort(1, proplists:unfold(Props)) ).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -56,14 +56,36 @@ sort(Props)
 
 -spec delete_append( [atom()], proplist(), proplist() ) -> proplist().
 
-delete_append([], Append, List)
+delete_append([], Append, Props)
         when  is_list(Append)
-            , is_list(List)  ->
+            , is_list(Props)  ->
     merge(List, Append);
 
 
-delete_append([Hd | Rest], Append, List)
+delete_append([Hd | Rest], Append, Props)
         when  is_list(Append)
-            , is_list(List)  ->
+            , is_list(Props)  ->
     delete_append(Rest, Append, proplists:delete(Hd, List)).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec with( [atom()], proplist() ) -> proplist().
+
+with(Keys, Props)
+  		when  is_list(Keys)
+			, is_list(Props)  ->
+	proplists:compact( xlists:keywith(Keys, 1, proplists:unfold(List) ) ).
+
+
+
+-spec without( [atom()], proplist() ) -> proplist().
+
+without(Keys, Props)
+  		when  is_list(Keys)
+			, is_list(Props)  ->
+	proplists:compact( xlists:keywithout(Keys, 1, proplists:unfold(List) ) ).
+
+
 
