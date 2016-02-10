@@ -1,7 +1,7 @@
 
 -module(type).
 
--export([ get/1 ]).
+-export([ get/1, wrap_okvalue/1, unwrap_okvalue/1 ]).
 
 -export_type([ error/0, ok_or_error/0, value_or_error/1, okvalue_or_error/1
              , endpoint/0
@@ -69,4 +69,20 @@ get(X) when is_atom(X)      -> atom;
 get(X) when is_map(X)       -> map;
 
 get(_X)                     -> undefined.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec wrap_okvalue( okvalue_or_error(T) | T ) -> okvalue_or_error(T).
+
+wrap_okvalue({error, _}) = E)   -> E;
+wrap_okvalue({ok, _}) = Ok)     -> Ok;
+wrap_okvalue(X)                 -> {ok, X}.
+
+
+-spec unwrap_okvalue( okvalue_or_error(T) ) -> T | type:exception().
+
+unwrap_okvalue({ok, X}) -> X;
+unwrap_okvalue(_)       -> error:throw_error(invalid_okvalue).
 
