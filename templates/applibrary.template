@@ -14,7 +14,7 @@
 {dir, "apps/{{name}}/priv"}.
 
 
-{template, "erlangx.app.src",       "apps/{{name}}/src/{{name}}.app.src"}.
+{template, "library.app.src",       "apps/{{name}}/src/{{name}}.app.src"}.
 {template, "module.erl",            "apps/{{name}}/src/{{moduleid}}.erl"}.
 {template, "library_app.erl",       "apps/{{name}}/src/{{applicationid}}.erl"}.
 {template, "project_priv.config",   "apps/{{name}}/priv/{{name}}.config"}.

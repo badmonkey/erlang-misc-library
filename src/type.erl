@@ -45,7 +45,8 @@
 -type natural() :: non_neg_integer().
 
 
--type properties() :: #{ atom() => term() } | [ atom() | { atom(), term() } ].
+-type properties() :: #{ atom() => term() }
+                    | [ atom() | { atom(), term() } ].
 
 
 
@@ -76,8 +77,8 @@ get(_X)                     -> undefined.
 
 -spec wrap_okvalue( okvalue_or_error(T) | T ) -> okvalue_or_error(T).
 
-wrap_okvalue({error, _}) = E)   -> E;
-wrap_okvalue({ok, _}) = Ok)     -> Ok;
+wrap_okvalue({error, _} = E)    -> E;
+wrap_okvalue({ok, _} = Ok)      -> Ok;
 wrap_okvalue(X)                 -> {ok, X}.
 
 

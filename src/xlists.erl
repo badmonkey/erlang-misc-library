@@ -6,7 +6,7 @@
         , drop/2, take/2, foldl/2, filter_fold/2, filter_fold/3
         , mapx/3, minmax/1, minmax/2, interval/2, mutate/2
         , randmerge/2, shuffle/1
-		, keypartition/3, keywith/3, keywithout/3]).
+        , keypartition/3, keywith/3, keywithout/3]).
 
 
 
@@ -62,17 +62,17 @@ unique(List) when is_list(List) ->
 -spec keypartition( list(), pos_integer(), [tuple()] ) -> {[tuple()], [tuple()]}.
 
 keypartition(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
-	keypartition(Ks, N, Tuples, []).
+    keypartition(Ks, N, Tuples, []).
 
 
 keypartition([], _, Tuples, With) ->
-	{With, Tuples};
+    {With, Tuples};
 
 keypartition([Hd | Rest] = Keys, N, Tuples, With) ->
-	case lists:keytake(Hd, N, Tuples) of
-		false					-> keypartition(Rest, N, Tuples, With)
-	;	{value, X, TupleRest}	-> keypartition(Keys, N, TupleRest, [X | With])
-	end.
+    case lists:keytake(Hd, N, Tuples) of
+        false                   -> keypartition(Rest, N, Tuples, With)
+    ;   {value, X, TupleRest}   -> keypartition(Keys, N, TupleRest, [X | With])
+    end.
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -81,7 +81,7 @@ keypartition([Hd | Rest] = Keys, N, Tuples, With) ->
 -spec keywith( list(), pos_integer(), [tuple()] ) -> [tuple()].
 
 keywith(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
-	{With, _} = keypartition(Ks, N, Tuples).
+    {With, _} = keypartition(Ks, N, Tuples).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -92,11 +92,11 @@ keywith(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
 keywithout([], _, Tuples) -> Tuples;
 
 keywithout([Hd | Rest] = Keys, N, Tuples)
-  		when is_list(Ks), is_list(Tuples) ->
-	case lists:keytake(Hd, N, Tuples) of
-		false					-> keywithout(Rest, N, Tuples)
-	;	{value, X, TupleRest}	-> keywithout(Keys, N, TupleRest)
-	end.
+        when is_list(Keys), is_list(Tuples) ->
+    case lists:keytake(Hd, N, Tuples) of
+        false                   -> keywithout(Rest, N, Tuples)
+    ;   {value, X, TupleRest}   -> keywithout(Keys, N, TupleRest)
+    end.
 
 
 

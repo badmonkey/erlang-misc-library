@@ -25,7 +25,7 @@ init(erlx_orient_sup) ->
     { ok
     , { {one_for_one, 2, 5}
       , supervisor_child:build_specs(
-            [ erlx_orient
+            [ orient
             ] )      
       }
     }.

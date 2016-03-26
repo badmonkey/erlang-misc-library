@@ -19,7 +19,7 @@ match_delete(Table, Spec) ->
 %%%%% ------------------------------------------------------- %%%%%
 
     
--spec foreach( fun((_) -> term()), ets:tab() ) -> ok.
+-spec foreach( fun((_) -> _), ets:tab() ) -> ok.
 
 foreach(Fun, Table) ->
     ets:foldl(
@@ -44,3 +44,4 @@ foreachx(Fun, Table) ->
           end
         , ok
         , Table).
+

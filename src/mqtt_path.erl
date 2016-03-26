@@ -117,7 +117,7 @@ is_valid_name(root)         -> true;
 is_valid_name(match_one)    -> true;
 is_valid_name(match_star)   -> true;
 
-% TODO work out how to check for valid chars in binary
+% TODO work out how to check for valid chars in binary string
 is_valid_name(B) when is_binary(B)  -> true;
 
 is_valid_name(ID)           ->

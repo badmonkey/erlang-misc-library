@@ -59,13 +59,13 @@ sort(Props)
 delete_append([], Append, Props)
         when  is_list(Append)
             , is_list(Props)  ->
-    merge(List, Append);
+    merge(Props, Append);
 
 
 delete_append([Hd | Rest], Append, Props)
         when  is_list(Append)
             , is_list(Props)  ->
-    delete_append(Rest, Append, proplists:delete(Hd, List)).
+    delete_append(Rest, Append, proplists:delete(Hd, Props)).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -74,18 +74,18 @@ delete_append([Hd | Rest], Append, Props)
 -spec with( [atom()], proplist() ) -> proplist().
 
 with(Keys, Props)
-  		when  is_list(Keys)
-			, is_list(Props)  ->
-	proplists:compact( xlists:keywith(Keys, 1, proplists:unfold(List) ) ).
+        when  is_list(Keys)
+            , is_list(Props)  ->
+    proplists:compact( xlists:keywith(Keys, 1, proplists:unfold(Props) ) ).
 
 
 
 -spec without( [atom()], proplist() ) -> proplist().
 
 without(Keys, Props)
-  		when  is_list(Keys)
-			, is_list(Props)  ->
-	proplists:compact( xlists:keywithout(Keys, 1, proplists:unfold(List) ) ).
+        when  is_list(Keys)
+            , is_list(Props)  ->
+    proplists:compact( xlists:keywithout(Keys, 1, proplists:unfold(Props) ) ).
 
 
 
