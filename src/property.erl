@@ -35,17 +35,15 @@ update(Key, Value, Prop)
 set_multi(Key, Values, Prop)
 		when is_atom(Key), is_list(Values), is_map(Prop) ->
 	case Values of
-		[X]		-> update(Key, X, Prop)
-	;	_ 		-> Prop2 = delete(Key, Prop),
-				   set_impl(Key, Values, Prop2)
+		[X]						->
+			update(Key, X, Prop)
+
+	;	_ when is_map(Prop)		->
+			maps:put(Key, {?MULTIVALUE_TAG, Values}, delete(Key, Prop))
+
+	;	_ when is_list(Prop)	->
+			delete(Key, Prop) ++ [{Key, X} || X <- Values]
 	end.
-
-
-set_impl(Key, Values, Prop) when is_map(Prop) ->		   
-	maps:put(Key, {?MULTIVALUE_TAG, Values}, Prop);
-
-set_impl(Key, Values, Prop) when is_list(Prop) ->
-    Prop ++ [{Key, X} || X <- Values].
 
 
 %%%%% ------------------------------------------------------- %%%%%
