@@ -1,6 +1,5 @@
 
 -module(xcode).
--extends(code).
 
 -export([ search_for_file/3, find_all_files/3]).
 -export([ ebin_dir/0, ebin_dir/1, priv_dir/0, priv_dir/1
@@ -80,11 +79,12 @@ is_app_file(App, Name) ->
 % App/
 %  |-- ebin/
 %  |-- priv/
-%        |-- bin/
-%        |-- config/
-%        |-- data/
-%              |-- Type1/
-%              |-- TypeN/
+%  |     |-- bin/
+%  |     |-- config/
+%  |-- data/
+%        |-- mnesia/
+%        |-- log/
+%        |-- otherX/
 %
 
 
@@ -97,12 +97,12 @@ priv_dir(App)   -> app_base_dir(App).
 config_dir()    -> app_subdir(application:get_application(), config).
 config_dir(App) -> app_subdir(App, config).
 
-data_dir()      -> app_subdir(application:get_application(), data).
-data_dir(App)   -> app_subdir(App, data).
+data_dir()      -> app_dir(application:get_application(), data).
+data_dir(App)   -> app_dir(App, data).
 
 data_dir_for(Type)
         when is_atom(Type)  ->
-    app_subdir(application:get_application(), [data, Type]).
+    filename:join([data_dir(), Type]).
 
 
 %%%%% ------------------------------------------------------- %%%%%

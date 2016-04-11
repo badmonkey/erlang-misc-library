@@ -3,11 +3,11 @@
     {description, "erlx_orient"},
     {vsn, "1.0.0"},
     {modules,
-        [ erlx_orient
+        [ orient
         , erlx_orient_app, erlx_orient_sup
         ] },
     {registered,
-        [ erlx_orient
+        [ orient
         ] },
     {applications,
         [ kernel, stdlib, crypto

@@ -1,6 +1,5 @@
 
 -module(xos).
--extends(os).
 
 -export([get_if_hwaddr/1, get_first_hwaddr/0, find_executable/1, find_executable/2]).
 

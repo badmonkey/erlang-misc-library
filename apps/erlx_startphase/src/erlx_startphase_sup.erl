@@ -1,5 +1,5 @@
 
--module(erlx_orient_sup).
+-module(erlx_startphase_sup).
 -vsn("1.0.0").
 
 -behaviour(supervisor).
@@ -14,18 +14,18 @@
     
     
 start_link() ->
-    ?START_SUPERVISOR( erlx_orient_sup ).
+    ?START_SUPERVISOR( erlx_startphase_sup ).
     
     
 %%%%% ------------------------------------------------------- %%%%%
 % Initialise Supervisor
 
     
-init(erlx_orient_sup) ->
+init(erlx_startphase_sup) ->
     { ok
     , { {one_for_one, 2, 5}
       , supervisor_child:build_specs(
-            [ orient
+            [ erlx_phase_server
             ] )      
       }
     }.

@@ -1,6 +1,5 @@
 
 -module(xpg2).
--extends(pg2).
 
 -export([get_best_pid/1, get_best_pid/2]).
 

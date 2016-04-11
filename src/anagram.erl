@@ -28,7 +28,7 @@ endings(Word) ->
                 ;   _           -> Acc ++ [X]
                 end
             end,
-            [], [ has_suffix(Letters, X) || X <- suffixes() ] ),
+            [], [ has_suffix(Letters, S) || S <- suffixes() ] ),
     erlang:display(Result).
 
 

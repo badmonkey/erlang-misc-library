@@ -19,8 +19,8 @@
 
 -type pointer() :: integer().
 
--type field() :: { field, binary(), pointer(), fieldtype() }.
--type property() :: { property, integer(), pointer(), fieldtype() | undefined }.
+-type field() :: { field, Name :: binary(), pointer(), Type :: fieldtype() }.
+-type property() :: { property, Id :: integer(), pointer(), Type :: fieldtype() | undefined }.
 
 -type header() :: [ field() | property() ].
 
@@ -30,7 +30,7 @@
 
 -type rid() :: { rid, integer(), integer() }.
 
--type property_schema() :: #{ integer() => { binary(), binary() } }.
+-type property_schema() :: #{ integer() => { Name :: binary(), Type :: fieldtype() } }.
 
 
 -export_type([ classname/0, header/0, field/0, fieldtype/0, property/0, pointer/0
@@ -42,8 +42,8 @@
 
 decode(Data) -> decode(Data, []).
 %
-% {schema, #{ }}
-% {update_map, #{}}
+% {schema, property_schema()}
+% {update_map, as_map() }}
 % {classname_is_field, boolean()} or classname_is_field
 % {convert_keys_to_atoms, boolean()} or convert_keys_to_atoms
 % {as_record, {atom(), list( atom() )}}
@@ -52,14 +52,17 @@ decode(Data) -> decode(Data, []).
     
 -spec decode( binary(), type:properties() ) -> type:okvalue_or_error( odb_record() ).
 
-decode(<<>>, _Opts) -> {error, incomplete_record};
-decode(<<?ODB_RECORD_VER:8, Rest/binary>>, Opts) ->
+decode(<<>>, _Opts)                                 -> {error, incomplete_record};
+decode(<<?ODB_RECORD_VER:8, Rest/binary>>, Opts)    -> decode_document(Rest, Opts).
+
+
+decode_document(Data, Opts) ->
     try
-        {Class, Rest2}  = orient_decode_record:decode_v0_class(Rest),
-        {Header, Rest3} = orient_decode_record:decode_v0_header(Rest2, Class),
+        {Class, Rest}   = orient_decode_record:decode_v0_class(Data),
+        {Header, Rest2} = orient_decode_record:decode_v0_header(Rest, Class),
         Resolved        = resolveHeader(Header, Opts),
         InitialMap      = makeInitialMap(Class, Opts),
-        RecordMap       = orient_decode_record:decode_v0_data(Rest3, Class, Resolved, InitialMap),
+        RecordMap       = orient_decode_record:decode_v0_data(Rest2, Class, Resolved, InitialMap),
         RecordData      = transform_record(RecordMap, Opts),
         {ok, RecordData}
     catch
@@ -87,7 +90,7 @@ encode(Record, Opts) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-% {schema, #{}}
+% {schema, property_schema()}
 
 -spec resolveHeader( header(), type:properties() ) -> header() | type:exception().
 
@@ -113,10 +116,10 @@ resolveProperty({ property, Id, Ptr, undefined }, Schema) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-% {update_map, #{}}
+% {update_map, as_map()}
 % {classname_is_field, boolean()} or classname_is_field
 
--spec makeInitialMap( classname(), type:properties() ) -> #{ binary() => term() }.
+-spec makeInitialMap( classname(), type:properties() ) -> as_map().
 
 makeInitialMap(Classname, Opts) ->
     Map1 =  case property:get_value(update_map, Opts, undefined) of

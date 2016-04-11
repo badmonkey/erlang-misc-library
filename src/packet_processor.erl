@@ -1,6 +1,5 @@
 
 -module(packet_processor).
--extends(gen_server_base).
 
 -behaviour(gen_server).
 

@@ -64,3 +64,87 @@ https://github.com/rabbitmq/erlando
 , {erlcron,              ".*", {git, "https://github.com/erlware/erlcron.git", "master"}}
 , {restc, ".*", {git, "git://github.com/kivra/restclient.git", {tag, "0.1.0"}}}
 
+
+
+chain_apply:first( ok
+                 , if_ok_then( somefunc )
+                 , if_ok_then(
+                        fun() ->
+                        end)
+                 , if_ok_then() )
+                 
+and_then:first( expr
+              , somefun()
+              , fun(input) ->
+                end
+              , otherfun(1, 2) )
+
+              
+              
+via module
+    register_name/2, unregister_name/1, whereis_name/1 and send/2
+
+make_init_return()    
+
+
+delay_startup:start_link(Module, Args, Options) -> Result
+delay_startup:start_link(ServerName, Module, Args, Options) -> Result
+
+
+init(Args) ->
+    startphase:required_names([srv1, srv2, srv3]),
+    
+    startphase:init_return(State, DelayInitMessage)
+    startphase:init_return({error,E}, DelayInitMessage)
+    startphase:continue_init_later()
+    startphase:postpone_init()
+    
+
+    
+    
+{ok,State} | {ok,State,Timeout} | {ok,State,hibernate}
+ | {stop,Reason} | ignore    
+             
+{ok,Pid} | ignore | {error,Error}   from start_link             
+              
+              
+              
+where({global, Name}) -> global:whereis_name(Name);
+where({via, Module, Name}) -> Module:whereis_name(Name);
+where({local, Name})  -> whereis(Name).
+
+name_register({local, Name} = LN) ->
+    try register(Name, self()) of
+        true -> true
+    catch
+        error:_ ->
+            {false, where(LN)}
+    end;
+name_register({global, Name} = GN) ->
+    case global:register_name(Name, self()) of
+        yes -> true;
+        no -> {false, where(GN)}
+    end;
+name_register({via, Module, Name} = GN) ->
+    case Module:register_name(Name, self()) of
+        yes ->
+            true;
+        no ->
+            {false, where(GN)}
+    end.
+    
+
+name({local,Name}) -> Name;
+name({global,Name}) -> Name;
+name({via,_, Name}) -> Name;
+name(Pid) when is_pid(Pid) -> Pid.
+
+unregister_name({local,Name}) ->
+    _ = (catch unregister(Name));
+unregister_name({global,Name}) ->
+    _ = global:unregister_name(Name);
+unregister_name({via, Mod, Name}) ->
+    _ = Mod:unregister_name(Name);
+unregister_name(Pid) when is_pid(Pid) ->
+    Pid.
+    

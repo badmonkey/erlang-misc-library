@@ -1,6 +1,5 @@
 
 -module(table_service).
--extends(gen_server_base).
 
 -behaviour(gen_server).
 

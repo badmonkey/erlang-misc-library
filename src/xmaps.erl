@@ -1,6 +1,5 @@
 
 -module(xmaps).
--extends(maps).
 
 -export([takekeys/2, takepairs/2, mutate/2, with/2, without/2]).
 

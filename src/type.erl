@@ -28,7 +28,7 @@
 
 -type start_result() :: ignore | okvalue_or_error( pid() ).
 
--type server_name() :: undefined | atom() | {local, term()} | {global, term()} | {via, atom(), term()}.
+-type server_name() :: undefined | atom() | pid() | {local, atom()} | {global, term()} | {via, atom(), term()}.
 -type server_from() :: {pid(), term()}.
 
 
@@ -45,7 +45,8 @@
 -type natural() :: non_neg_integer().
 
 
--type properties() :: #{ atom() => term() } | [ atom() | { atom(), term() } ].
+-type properties() :: #{ atom() => term() }
+                    | [ atom() | { atom(), term() } ].
 
 
 
@@ -76,8 +77,8 @@ get(_X)                     -> undefined.
 
 -spec wrap_okvalue( okvalue_or_error(T) | T ) -> okvalue_or_error(T).
 
-wrap_okvalue({error, _}) = E)   -> E;
-wrap_okvalue({ok, _}) = Ok)     -> Ok;
+wrap_okvalue({error, _} = E)    -> E;
+wrap_okvalue({ok, _} = Ok)      -> Ok;
 wrap_okvalue(X)                 -> {ok, X}.
 
 
