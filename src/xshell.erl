@@ -2,10 +2,16 @@
 -module(xshell).
 -compile([{parse_transform, record_info_runtime}]).
 
+-export([test/0]).
 -export([records/0, record_info_fieldtypes/1]).
 -export([dump_record/0, dump_record2/0]).
 -export([test_tuple/0, print_result/1, print_result/2, print_result/3, print_result/4, andthen/2]).
 
+
+test() ->
+    X = [1, 2, 3, 4, 5],
+    xlists:max(X).
+    
 
 -record(coord,
     { x

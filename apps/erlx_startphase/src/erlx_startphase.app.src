@@ -1,0 +1,19 @@
+{application, erlx_startphase,
+[
+    {description, "erlx_startphase"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ startphase, erlx_phase_server
+        , erlx_startphase_app, erlx_startphase_sup
+        ] },
+    {registered,
+        [ erlx_phase_server
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+    {mod, { erlx_startphase_app, []}},
+    {env, []}
+]}.
+

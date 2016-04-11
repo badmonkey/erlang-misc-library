@@ -6,7 +6,8 @@ Library of misc. functions for erlang
 
 
 
-
+xcode - better data_dir, subdirs for mnesia and log
+table_service - use data/mnesia dir
 
 
 -include_lib("kernel/include/file.hrl").

@@ -2,10 +2,11 @@
 -module(property).
 
 -export([ update/3, set_multi/3, append/3, delete/2
-        , select/2, select/3, merge/2
+        , select/2, select/3, merge/2, without/2
         , is_defined/2, is_multivalue/2
         , get_bool/2, get_value/2, get_value/3
-        , keys/1, get_all_values/2 ]).
+        , keys/1, get_all_values/2
+        , as_proplists/1]).
 
 
 -define(MULTIVALUE_TAG, 'property$multivalue').
@@ -194,7 +195,7 @@ select(Keys, without, Prop) when is_map(Prop) ->
     xmaps:without(Keys, Prop);
 
 select(Keys, all, Prop) when is_map(Prop) ->
-    Prop;
+    Prop;   % @todo check that all of Keys are in Prop
 
 
 select(Keys, with, Prop) when is_list(Prop) ->
@@ -204,11 +205,48 @@ select(Keys, without, Prop) when is_list(Prop) ->
     xproplists:without(Keys, Prop);
 
 select(Keys, all, Prop) when is_list(Prop) ->
-    Prop.
+    Prop.   % @todo check that all of Keys are in Prop
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-%merge
-merge(A, _) -> A.
+-spec merge( type:properties(), type:properties() ) -> type:properties().
+
+% merge(P1, P2) = P1 + P2 where P1 entries override P2 entries eg  merge(Overrides, Defaults)
+
+merge(Prop1, Prop2) when is_map(Prop1), is_map(Prop2)   -> xmaps:merge(Prop1, Prop2);
+merge(Prop1, Prop2) when is_map(Prop1), is_list(Prop2)  -> Prop1;   % @todo implement this
+merge(Prop1, Prop2) when is_list(Prop1), is_map(Prop2)  -> xproplists:merge(Prop1, as_proplists(Prop2));
+merge(Prop1, Prop2) when is_list(Prop1), is_list(Prop2) -> xproplists:merge(Prop1, Prop2).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec without( [atom()], type:properties() ) -> type:properties().
+
+without([], Prop) ->
+    Prop;
+    
+without([X | Rest], Prop) ->
+    without(Rest, delete(X, Prop)).
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec as_proplists( type:properties() ) -> [ atom() | { atom(), term() } ].
+
+as_proplists(Prop) when is_list(Prop) ->
+    Prop;
+    
+as_proplists(Prop) when is_map(Prop) ->
+    Data = maps:to_list(Prop),
+    lists:foldl(
+        fun ({K, {?MULTIVALUE_TAG, Vals}}, Acc) ->
+                Acc ++ [{K,X} || X <- Vals]
+        ;   (KV, Acc)                           ->
+                [KV | Acc]
+        end, [], Data).
+        

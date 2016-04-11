@@ -1,6 +1,5 @@
 
 -module(xproplists).
--extends(proplists).
 
 -export([merge/2, sort/1, delete_append/3, with/2, without/2]).
 
@@ -15,6 +14,8 @@
 
 
 -spec merge( proplist(), property() | proplist() ) -> proplist().
+
+% merge(P1, P2) = P1 + P2 where P1 entries override P2 entries eg  merge(Overrides, Defaults)
 
 merge(PropsIn, NewProps)
         when  is_list(PropsIn)

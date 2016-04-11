@@ -1,6 +1,5 @@
 
 -module(xlists).
--extends(lists).
 
 -export([ sorted_member/2, sorted_insert/2, subsets/2, unique/1
         , drop/2, take/2, foldl/2, filter_fold/2, filter_fold/3

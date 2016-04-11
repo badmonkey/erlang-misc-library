@@ -28,7 +28,7 @@
 
 -type start_result() :: ignore | okvalue_or_error( pid() ).
 
--type server_name() :: undefined | atom() | {local, term()} | {global, term()} | {via, atom(), term()}.
+-type server_name() :: undefined | atom() | pid() | {local, atom()} | {global, term()} | {via, atom(), term()}.
 -type server_from() :: {pid(), term()}.
 
 

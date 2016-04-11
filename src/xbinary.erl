@@ -1,7 +1,5 @@
 
 -module(xbinary).
--extends(binary).
-
 
 -export([copy_if_large_ref/1, partition/2]).
 

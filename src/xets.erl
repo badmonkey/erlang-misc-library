@@ -1,6 +1,5 @@
 
 -module(xets).
--extends(ets).
 
 -export([match_delete/2, foreach/2, foreachx/2]).
 

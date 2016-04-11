@@ -1,6 +1,5 @@
 
 -module(xsets).
--extends(sets).
 
 -export([take/2]).
 

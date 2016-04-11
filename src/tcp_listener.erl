@@ -1,6 +1,5 @@
 
 -module(tcp_listener).
--extends(gen_server_base).
 
 -behaviour(gen_server).
 

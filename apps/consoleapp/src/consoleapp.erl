@@ -2,6 +2,9 @@
 -module(consoleapp).
 
 -export([build/1, build/2, process/2, application_halt/2, usage/1, usage/2, usage/3]).
+-export([get_global_options/1, get_options/1, get_unused_args/1, get_appname/1, get_command/1, get_version/1]).
+
+%set_unused_args()
 
 
 -define(CONSOLE_COMMAND, 'consoleapp$command').
@@ -367,6 +370,7 @@ handle_command( Name, Module
               , #consoleapp_state{} = State )
         when is_atom(Module) ->
     NewState = push_new_command(State, Name),
+    %erlang:function_exported(Module, Function, Arity) -> boolean
     case apply(Module, main, [NewState, State#consoleapp_state.unused_args]) of
         #consoleapp_state{} = S -> pop_command(State, S)
     ;   _                       -> State
@@ -521,3 +525,28 @@ split_args([X | Tail], Commands, WorkingArgs) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+get_global_options( #consoleapp_state{} = State ) ->
+    (State#consoleapp_state.global_options).
+    
+    
+get_options( #consoleapp_state{} = State ) ->
+    (State#consoleapp_state.options).
+    
+    
+get_unused_args( #consoleapp_state{} = State ) ->
+    (State#consoleapp_state.unused_args).
+    
+    
+get_appname( #consoleapp_state{} = State ) ->
+    (State#consoleapp_state.appname).
+    
+    
+get_command( #consoleapp_state{} = State ) ->
+    (State#consoleapp_state.command).
+    
+    
+get_version( #consoleapp_state{} = State ) ->
+    (State#consoleapp_state.version).
+    
+    
