@@ -40,7 +40,9 @@ merge(PropsIn, Atom)
     PropsIn2 = lists:keysort(1, proplists:unfold(PropsIn)),
     OutProps = lists:keymerge(1, PropsIn2, [{Atom, true}]),
     proplists:compact(OutProps).
-    
+
+
+%merge(F, Prop1, Prop2) ->    
 
 %%%%% ------------------------------------------------------- %%%%%
 

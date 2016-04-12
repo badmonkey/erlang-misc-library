@@ -220,6 +220,7 @@ merge(Prop1, Prop2) when is_map(Prop1), is_list(Prop2)  -> Prop1;   % @todo impl
 merge(Prop1, Prop2) when is_list(Prop1), is_map(Prop2)  -> xproplists:merge(Prop1, as_proplists(Prop2));
 merge(Prop1, Prop2) when is_list(Prop1), is_list(Prop2) -> xproplists:merge(Prop1, Prop2).
 
+%merge(F, Prop1, Prop2) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 

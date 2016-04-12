@@ -85,4 +85,21 @@ without(Keys, Map) when is_list(Keys), is_map(Map) ->
 	maps:from_list( xlists:keywithout(Keys, 1, maps:to_list(Map) ) ).
 
 
+%%%%% ------------------------------------------------------- %%%%%
+
+
+%merge(F, Map1, Map2) ->
+%	lists:foldl(
+%	  	fun(Y, X) ->
+%				maps:merge(X, maps:map(fun(Key, Value) ->
+%                           case maps:find(Key, X) of
+%                              {ok, V} -> F(Key, V, Value);
+%                              error    -> Value
+%                           end
+%                    end,
+%                Y))
+%        end,
+%        Map1,
+%        Map2).
+
 
