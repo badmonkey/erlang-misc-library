@@ -1,5 +1,5 @@
 %% The fun_chain parse transform.
-%% Original https://github.com/sasa1977/fun_chain
+%% based on https://github.com/sasa1977/fun_chain
 
 -module(chain_apply).
 -export([parse_transform/2]).

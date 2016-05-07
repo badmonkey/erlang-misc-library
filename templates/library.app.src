@@ -13,7 +13,7 @@
         [ kernel, stdlib, crypto
         , erlangx, lager
         ] },
-    {mod, { {{applicationid}}, []}},
+%    {mod, { {{applicationid}}, []}},
     {env, []}
 ]}.
 

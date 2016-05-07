@@ -8,7 +8,8 @@
              , start_result/0, server_name/0, server_from/0
              , one_or_many/1, atomlist/0, format/0
              , match_any/0, searchable/1
-             , exception/0, natural/0, properties/0]).
+             , exception/0, natural/0, cardinal/0, properties/0
+             , map_function/0, map_function/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -43,10 +44,14 @@
 -type exception() :: no_return().
 
 -type natural() :: non_neg_integer().
+-type cardinal() :: non_neg_integer().
 
 
 -type properties() :: #{ atom() => term() }
                     | [ atom() | { atom(), term() } ].
+                    
+-type map_function(X) :: fun( (X) -> X ).
+-type map_function() :: map_function( term() ).
 
 
 

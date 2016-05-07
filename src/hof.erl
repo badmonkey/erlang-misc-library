@@ -2,14 +2,15 @@
 -module(hof).
 
 -export([ repeat/2
+        , if_then/2, if_then/3
         , if_ok_then/2, if_ok_then/3, if_ok_then/4 ]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec repeat( type:natural(), fun(() -> _) ) -> ok | type:exception();
-            ( type:natural(), fun(( type:natural() ) -> _) ) -> ok | type:exception().
+-spec repeat( type:natural(), fun( () -> _ ) ) -> ok | type:exception();
+            ( type:natural(), fun( ( type:natural() ) -> _ ) ) -> ok | type:exception().
 
 repeat(0, _) -> ok;
 
@@ -25,6 +26,29 @@ repeat(N, ElemFun)
     repeat(N - 1, ElemFun).
 
     
+%%%%% ------------------------------------------------------- %%%%%
+
+
+% if_then(E or _, fun() -> end)
+% if_then(E or _, fun(X) -> end)
+% if_then(E or _, module, funcname)
+
+
+-spec if_then( type:value_or_error(T), fun( () -> X )|fun( (T) -> X ) ) -> type:value_or_error(X).
+
+if_then({error, _} = Err, Func) when is_function(Func)  -> Err;
+if_then(Value, Func) when is_function(Func, 0)          -> Func();
+if_then(Value, Func) when is_function(Func, 1)          -> Func(Value).
+
+
+-spec if_then( type:value_or_error(_), module(), atom() ) -> type:value_or_error(_).
+
+if_then({error, _} = Err, _, _)             -> Err;
+if_then(Value, Module, Func)
+        when is_atom(Module), is_atom(Func) ->
+    erlang:apply(Module, Func, [Value]).
+    
+
 %%%%% ------------------------------------------------------- %%%%%
 
 %

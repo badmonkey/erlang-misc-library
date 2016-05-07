@@ -5,9 +5,13 @@
 
 
 -record(publisher,
-    { router
-    , wrapper
+    { router        :: router:routerid()
+    , wrapper       :: type:map_function()
     }).
+    
+-type publisher() :: #publisher{}.
+
+-export_type([publisher/0]).
     
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -19,7 +23,7 @@ new(Router) ->
     new(Router, fun(X) -> X end).
     
     
--spec new( atom(), fun( (term()) -> term() ) ) -> #publisher{}.
+-spec new( atom(), type:map_function() ) -> #publisher{}.
 
 new(Router, Wrapper) ->
     router:new(Router),

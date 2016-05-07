@@ -14,7 +14,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 -export([ register_dependencies/1, defer_startup_for_later/1
-        , ready_for_registration/2, cleanup_unused/1 ]).
+        , ready_for_registration/2, cleanup_unused/1
+        , service_info/1]).
 
 
 -type name_type() :: atom().
@@ -99,6 +100,11 @@ ready_for_registration(Pid, ServerName) ->
 cleanup_unused(Pid) ->
     gen_server:call(?SERVER, {cleanup_unused_pid, Pid}, infinity).
     
+    
+-spec service_info( type:server_name() ) -> #vertex_label{}.
+
+service_info(Name) ->
+    gen_server:call(?SERVER, {service_info, Name}, infinity).
     
 test_for_ready(V) ->
     gen_server:cast(?SERVER, {check_for_ready, V}).
@@ -186,6 +192,25 @@ handle_call( {cleanup_unused_pid, Pid}
             end
             
     end;
+
+
+handle_call( {service_info, Name}
+           , _From
+           , #state{ deps_graph = G } = State) ->  
+    case gen_server_base:is_alias_name(Name) of
+        true    ->
+            case ets:lookup(name2vertex_table, Name) of
+                []                          -> {reply, false, State}
+            ;   [{name_to_vertex, Name, V}] ->
+                    case get_vertex_label(G, V) of
+                        false   -> {reply, {error, unlabelled_vertex}, State}
+                    ;   L       -> {reply, L, State}
+                    end
+            end
+            
+    ;   false   ->
+            {reply, {error, badarg}, State}
+    end;
     
 
 handle_call(_Request, _From, State) ->
@@ -221,7 +246,7 @@ handle_cast( {check_for_ready, V}
                             lists:foreach( fun(X) -> test_for_ready(X) end
                                          , digraph:out_neighbours(G, V)),
                                          
-                            notify_up(G, V)
+                            notify_up(G, V, L#vertex_label.name)
                     end
             end,
             {noreply, State}
@@ -247,11 +272,11 @@ handle_info( {'DOWN', _Ref, process, Pid, _Reason}
             case Info#pid_info.vertex of
                 undefined   -> ok
             ;   V           ->
-                    update_vertex_label(G, V,
-                        fun(L) ->
-                            L#vertex_label{ process = undefined, status = dead }
-                        end),
-                    notify_down(G, V)
+                    Label = update_vertex_label(G, V,
+                                fun(L) ->
+                                    L#vertex_label{ process = undefined, status = dead }
+                                end),
+                    notify_down(G, V, Label#vertex_label.name)
             end,
             xets:match_delete(pidinfo_table, #pid_info{ process = Pid, _ = '_' }),
             {noreply, State}
@@ -275,22 +300,6 @@ code_change(_OldVsn, State, _Extra) ->
     
 %%%%% ------------------------------------------------------- %%%%%
 % Private Functions
-
-
--spec resolve_name( digraph:graph(), name_type() ) -> false | {name_type(), digraph:vertex(), undefined | pid()}.
-
-resolve_name(G, Name) ->
-    case ets:lookup(name2vertex_table, Name) of
-        []                          -> false
-    ;   [{name_to_vertex, Name, V}] ->
-            case get_vertex_label(G, V) of
-                false   -> {Name, V, undefined}
-            ;   L       -> {Name, V, L#vertex_label.process}
-            end
-    end.
-    
-
-%%%%% ------------------------------------------------------- %%%%%
 
 
 -spec get_pid_info( undefined | pid() ) -> false | #pid_info{}.
@@ -402,11 +411,11 @@ is_vertex_ready(G, V) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
-notify_up(G, V) ->
+notify_up(G, V, Name) ->
     ok.
     
     
-notify_down(G, V) ->
+notify_down(G, V, Name) ->
     ok.
     
     
