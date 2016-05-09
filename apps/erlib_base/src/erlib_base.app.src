@@ -1,0 +1,19 @@
+{application, erlib_base,
+[
+    {description, "erlib_base"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ erlib_base_app
+        , erlib_base
+        ] },
+    {registered,
+        [
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+%    {mod, { erlib_base_app, []}},
+    {env, []}
+]}.
+

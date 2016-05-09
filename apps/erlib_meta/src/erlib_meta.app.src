@@ -1,0 +1,19 @@
+{application, erlib_meta,
+[
+    {description, "erlib_meta"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ erlib_meta_app
+        , erlib_meta
+        ] },
+    {registered,
+        [
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+%    {mod, { erlib_meta_app, []}},
+    {env, []}
+]}.
+

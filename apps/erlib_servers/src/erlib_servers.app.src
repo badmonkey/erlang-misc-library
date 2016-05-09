@@ -1,0 +1,19 @@
+{application, erlib_servers,
+[
+    {description, "erlib_servers"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ erlib_servers_app
+        , erlib_servers
+        ] },
+    {registered,
+        [
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , erlangx, lager
+        ] },
+%    {mod, { erlib_servers_app, []}},
+    {env, []}
+]}.
+
