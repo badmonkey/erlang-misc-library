@@ -76,13 +76,13 @@ mutate(Pred, Acc, [{K, V} | Rest]) ->
 -spec with( [K], #{ K => V } ) -> #{ K => V }.
 
 with(Keys, Map) when is_list(Keys), is_map(Map) ->
-	maps:from_list( xlists:keywith(Keys, 1, maps:to_list(Map) ) ).
+    maps:from_list( xlists:keywith(Keys, 1, maps:to_list(Map) ) ).
 
 
 -spec without( [K], #{ K => V } ) -> #{ K => V }.
 
 without(Keys, Map) when is_list(Keys), is_map(Map) ->
-	maps:from_list( xlists:keywithout(Keys, 1, maps:to_list(Map) ) ).
+    maps:from_list( xlists:keywithout(Keys, 1, maps:to_list(Map) ) ).
 
 
 %%%%% ------------------------------------------------------- %%%%%

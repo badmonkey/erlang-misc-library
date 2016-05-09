@@ -3,17 +3,16 @@
     {description, "erlib_misc"},
     {vsn, "1.0.0"},
     {modules,
-        [ erlib_misc_app
-        , erlib_misc
+        [ anagram, stream, stream_generate
+        , publisher, mqtt_path, packet_processor
+        , frequency
         ] },
     {registered,
         [
         ] },
     {applications,
         [ kernel, stdlib, crypto
-        , erlangx, lager
         ] },
-%    {mod, { erlib_misc_app, []}},
     {env, []}
 ]}.
 

@@ -3,17 +3,17 @@
     {description, "erlib_std"},
     {vsn, "1.0.0"},
     {modules,
-        [ erlib_std_app
-        , erlib_std
+        [ xlists, xmaths, xmaps, xproplists, xerlang
+        , xtime, xos, xrandom, xstring, xcode, xtree, xshell
+        , xpg2, xets, xsets, xdigraph, xbinary
         ] },
     {registered,
         [
         ] },
     {applications,
         [ kernel, stdlib, crypto
-        , erlangx, lager
+        , lager
         ] },
-%    {mod, { erlib_std_app, []}},
     {env, []}
 ]}.
 

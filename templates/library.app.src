@@ -3,15 +3,15 @@
     {description, "{{name}}"},
     {vsn, "{{version}}"},
     {modules,
-        [ {{applicationid}}
-        , {{moduleid}}
+        [ {{moduleid}}
+%        , {{applicationid}}
         ] },
     {registered,
         [
         ] },
     {applications,
         [ kernel, stdlib, crypto
-        , erlangx, lager
+        , lager
         ] },
 %    {mod, { {{applicationid}}, []}},
     {env, []}

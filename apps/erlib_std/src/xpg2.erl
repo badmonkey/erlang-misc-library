@@ -19,7 +19,7 @@ get_best_pid(Group, Info) ->
                         [{Info, Value}] = erlang:process_info(Pid, [Info]),
                         {Pid, Value}
                     end, Members),
-    case lists:keysort(2, Ranking) of
+    case lists:keysort(2, Ranking) of   % @todo change to lists:keymin()
         [{Pid, _} | _] -> Pid;
         [] -> {error, empty_process_group}
     end.

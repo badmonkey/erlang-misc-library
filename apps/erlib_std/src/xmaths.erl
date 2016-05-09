@@ -15,7 +15,7 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
-% [ SqSum, Sum, Len }
+% returns { SqSum, Sum, Len }
 list_sums(List) when is_list(List) ->
     lists:foldl(
         fun (X, {K,S,N}) ->
@@ -29,11 +29,11 @@ list_sums(List) when is_list(List) ->
 
 list_partial_sums(List) when is_list(List) ->
     {Result, _} = lists:mapfoldl(
-        fun(X, Sum) ->
-            NewSum = Sum + X,
-            {NewSum, NewSum}
-        end,
-        0, List),
+                        fun(X, Sum) ->
+                            NewSum = Sum + X,
+                            {NewSum, NewSum}
+                        end,
+                        0, List),
     Result.
 
         
@@ -42,10 +42,10 @@ list_partial_sums(List) when is_list(List) ->
 
 list_differences(List) when is_list(List) ->
     {Result,_} = lists:mapfoldl(
-        fun(X, Prev) ->
-            { X - Prev, X }
-        end,
-        0, List),
+                        fun(X, Prev) ->
+                            { X - Prev, X }
+                        end,
+                        0, List),
     Result.
 
 

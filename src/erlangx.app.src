@@ -3,26 +3,16 @@
     {description, ""},
     {vsn, "1.0.0"},
     {modules,
-        [ erlangx, xlists, xmaths, xmaps, xproplists, xerlang
-        , xtime, xos, xrandom, xstring, xcode, xtree, xshell
-        , xpg2, xets, xsets
-        
-        , anagram, bindecoder, binencoder, uuid, type, udp_server
-        , tcp_listener, packet_processor, port_server, table_server
-        , gen_server_base, supervisor_child, behaviour, typed_property
-        , record_info_runtime, text, publisher, mqtt_path
-        
-        , router
+        [
         ] },
     {registered,
-        [ router
+        [
         ] },
     {applications,
         [ kernel, stdlib, lager
         , crypto, public_key, ssl
         , ranch, cowlib, asn1, gun
         ] },
-    {mod, { erlangx, []}},
     {env, []}
 ]}.
 

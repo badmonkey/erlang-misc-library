@@ -1,5 +1,5 @@
 
--module(xshell).
+-module(test_record).
 -compile([{parse_transform, record_info_runtime}]).
 
 -export([test/0]).

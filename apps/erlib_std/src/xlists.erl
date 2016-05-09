@@ -119,6 +119,8 @@ take(N, List) when is_list(List) ->
 
 -spec foldl( fun((T, T) -> T), nonempty_list(T) ) -> T.
 
+foldl(_, [Hd])      -> Hd;
+
 foldl(F, [Hd | Tl]) ->
     lists:foldl(F, Hd, Tl).
 
@@ -126,22 +128,22 @@ foldl(F, [Hd | Tl]) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), {A, [V]} ) -> {[V], A}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), {A, [V]} ) -> {A, [V]}.
 
 filter_fold(F, {Acc, List}) when is_list(List) ->
     filter_fold(F, Acc, [], List).
 
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V] ) -> {[V], A}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V] ) -> {A, [V]}.
 
 filter_fold(F, Acc, List) when is_list(List) ->
     filter_fold(F, Acc, [], List).
     
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V], [V] ) -> {[V], A}.
+-spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V], [V] ) -> {A, [V]}.
 
 filter_fold(_, Acc, Result, []) ->
-    {lists:reverse(Result), Acc};
+    {Acc, lists:reverse(Result)};
 
 filter_fold(F, Acc, Result, [Hd | Tl]) ->
     case F(Hd, Acc) of
@@ -152,6 +154,9 @@ filter_fold(F, Acc, Result, [Hd | Tl]) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+% mapx(F, [A1, A2, ...], [V1, V2, ...])
+% returns [ F(V1, A1, A2, ...), F(V2, A1, A2, ...), ...]
 
 -spec mapx( fun((...) -> R), list(), list() ) -> [R].
 

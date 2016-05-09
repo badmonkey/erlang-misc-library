@@ -3,17 +3,14 @@
     {description, "erlib_meta"},
     {vsn, "1.0.0"},
     {modules,
-        [ erlib_meta_app
-        , erlib_meta
+        [ chain_apply, record_info_runtime
         ] },
     {registered,
         [
         ] },
     {applications,
         [ kernel, stdlib, crypto
-        , erlangx, lager
         ] },
-%    {mod, { erlib_meta_app, []}},
     {env, []}
 ]}.
 
