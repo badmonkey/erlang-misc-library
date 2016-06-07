@@ -34,7 +34,7 @@
     , depends       = sets:new()    :: sets:set( name_type() ) | type:match_any()
     }).
     
--type pid_info_updater() :: fun(( #pid_info{} ) -> #pid_info{} ).    
+-type pid_info_transform() :: type:transform( #pid_info{} ).    
 
     
 -record(name_to_vertex,
@@ -50,7 +50,7 @@
     , notify        = true          :: boolean()
     }).
     
--type label_updater() :: fun(( #vertex_label{} ) -> #vertex_label{} ).    
+-type label_transform() :: type:transform( #vertex_label{} ).    
     
     
 -record(state,
@@ -325,7 +325,7 @@ getcreate_pid_info(Pid) ->
     end.
 
 
--spec update_pid_info( pid(), pid_info_updater() ) -> #pid_info{}.
+-spec update_pid_info( pid(), pid_info_transform() ) -> #pid_info{}.
 
 update_pid_info(Pid, Updater) ->
     Info = getcreate_pid_info(Pid),
@@ -363,7 +363,7 @@ get_vertex_label(G, V) ->
     end.
 
 
--spec update_vertex_label( digraph:graph(), digraph:vertex(), label_updater() ) -> type:exception() | #vertex_label{}.
+-spec update_vertex_label( digraph:graph(), digraph:vertex(), label_transform() ) -> type:exception() | #vertex_label{}.
 
 update_vertex_label(G, V, Updater) ->
     case get_vertex_label(G, V) of

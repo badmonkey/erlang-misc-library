@@ -20,8 +20,9 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec takekeys( pos_integer(), #{ K => _ } ) -> [K].
+-spec takekeys( type:cardinal(), #{ K => _ } ) -> [K].
     
+takekeys(0, _)            -> [];
 takekeys(N, Map)
         when is_map(Map)  ->
     {_, R} =    maps:fold(
@@ -36,8 +37,9 @@ takekeys(N, Map)
 %%%%% ------------------------------------------------------- %%%%%
     
 
--spec takepairs( pos_integer(), #{ K => V } ) -> [{K, V}].
+-spec takepairs( type:cardinal(), #{ K => V } ) -> [{K, V}].
     
+takepairs(0, _)           -> [];
 takepairs(N, Map)
         when is_map(Map)  ->
     {_, R} =    maps:fold(
@@ -52,7 +54,7 @@ takepairs(N, Map)
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec mutate( fun((K, V) -> remove | {value, V} | {value, K, V} ) , #{ K => V } ) -> #{ K => V }.
+-spec mutate( type:mutator(K, V), #{ K => V } ) -> #{ K => V }.
 
 mutate(Pred, Map)
         when is_function(Pred,2), is_map(Map)  ->

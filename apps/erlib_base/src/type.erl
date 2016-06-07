@@ -7,9 +7,10 @@
              , endpoint/0
              , start_result/0, server_name/0, server_from/0
              , one_or_many/1, atomlist/0, format/0
-             , match_any/0, searchable/1
-             , exception/0, natural/0, cardinal/0, properties/0
-             , map_function/0, map_function/1]).
+             , match_any/0, searchable/1, exception/0
+             , natural/0, cardinal/0, ordinal/0, properties/0
+             , map_function/0, map_function/1
+             , predicate/1, predicate/2, mutator/1, mutator/2, transform/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -44,7 +45,8 @@
 -type exception() :: no_return().
 
 -type natural() :: non_neg_integer().
--type cardinal() :: non_neg_integer().
+-type cardinal() :: non_neg_integer().  % quantity of things numbers ie 0, 1, ...
+-type ordinal() :: pos_integer().       % order of things numbers 1st, 2nd, 3rd
 
 
 -type properties() :: #{ atom() => term() }
@@ -52,6 +54,14 @@
                     
 -type map_function(X) :: fun( (X) -> X ).
 -type map_function() :: map_function( term() ).
+
+-type predicate(T) :: fun( (T) -> boolean() ).
+-type predicate(K, V) :: fun( (K, V) -> boolean() ).
+
+-type mutator(T) :: fun( (T) -> remove | {value, T} ).
+-type mutator(K, V) :: fun( (K, V) -> remove | {value, V} | {value, K, V} ).
+
+-type transform(T) :: fun( (T) -> T ).
 
 
 

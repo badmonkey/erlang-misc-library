@@ -58,7 +58,7 @@ unique(List) when is_list(List) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec keypartition( list(), pos_integer(), [tuple()] ) -> {[tuple()], [tuple()]}.
+-spec keypartition( list(), type:ordinal(), [tuple()] ) -> {[tuple()], [tuple()]}.
 
 keypartition(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
     keypartition(Ks, N, Tuples, []).
@@ -77,7 +77,7 @@ keypartition([Hd | Rest] = Keys, N, Tuples, With) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec keywith( list(), pos_integer(), [tuple()] ) -> [tuple()].
+-spec keywith( list(), type:ordinal(), [tuple()] ) -> [tuple()].
 
 keywith(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
     {With, _} = keypartition(Ks, N, Tuples).
@@ -86,7 +86,7 @@ keywith(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec keywithout( list(), pos_integer(), [tuple()] ) -> [tuple()].
+-spec keywithout( list(), type:ordinal(), [tuple()] ) -> [tuple()].
 
 keywithout([], _, Tuples) -> Tuples;
 
@@ -102,14 +102,16 @@ keywithout([Hd | Rest] = Keys, N, Tuples)
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec drop( pos_integer(), [T] ) -> [T].
+-spec drop( type:cardinal(), [T] ) -> [T].
 
+drop(0, List) when is_list(List) -> List;
 drop(N, List) when is_list(List) ->
     lists:nthtail(N, List).
 
     
--spec take( pos_integer(), [T] ) -> [T].
+-spec take( type:cardinal(), [T] ) -> [T].
     
+take(0, _)                       -> [];
 take(N, List) when is_list(List) ->
     lists:sublist(List, N).
 
@@ -177,7 +179,7 @@ minmax(_, []) -> undefined;
 minmax(F, [H | Rest]) -> minmax(F, Rest, {H, H}).
 
 
--spec minmax( fun((T, T) -> boolean()), [T], {T, T} ) -> {T, T}.
+-spec minmax( type:predicate(T,T), [T], {T, T} ) -> {T, T}.
 
 minmax(_, [], Acc) -> Acc;
 
@@ -207,7 +209,7 @@ interval(Fir, Sec) -> lists:seq(Fir, Sec, -1).
 %%%%% ------------------------------------------------------- %%%%%
 
              
--spec mutate( fun((V) -> remove | {value, V} ) , [V] ) -> [V].
+-spec mutate( type:mutator(V), [V] ) -> [V].
 
 mutate(Pred, List)
         when is_function(Pred,1), is_list(List)  ->

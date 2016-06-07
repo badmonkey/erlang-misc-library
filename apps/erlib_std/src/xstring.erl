@@ -26,7 +26,7 @@ format(S, P) ->
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec token_map( fun((string()) -> string()), string(), string() ) -> string().
+-spec token_map( type:transform(string()), string(), string() ) -> string().
 
 token_map(F, S, Sep)
         when  is_function(F, 1)

@@ -9,7 +9,7 @@ ebin
 rel/example_project
 .concrete/DEV_MODE
 .rebar
-src/config_lexer.erl
-src/config_parser.erl
+apps/erlx_sysconfig/src/config_lexer.erl
+apps/erlx_sysconfig/src/config_parser.erl
 log/
 database/

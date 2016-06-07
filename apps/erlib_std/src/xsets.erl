@@ -7,8 +7,9 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec take( pos_integer(), sets:set(T) ) -> [T].
+-spec take( type:cardinal(), sets:set(T) ) -> [T].
 
+take(0, _) -> [];
 take(N, S) ->
     lists:sublist(sets:to_list(S), N).
 
