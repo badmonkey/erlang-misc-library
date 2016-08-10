@@ -28,9 +28,11 @@
     , options           = []        :: [option_value()]
     , unused_args       = []        :: [term()]
     , callbacks         = #{}       :: #{ atom => arg_callback_spec() }
+    , command_ids       = []        :: [string()]
     , command_names     = []        :: [string()]
+    , command_alias     = #{}       :: #{ Alias :: string() => Cmd :: string() }
     , command_map       = #{}       :: #{ Cmd :: undefined | string() => arg_command_spec() }
-    , command_info      = #{}       :: #{ Cmd :: string() => {Help :: string(), Alias :: [string()]} }
+    , command_info      = #{}       :: #{ CmdId :: string() => {Help :: string(), Alias :: [string()]} }
     , global_options    = []        :: [option_value()]
     }).
 
@@ -89,6 +91,7 @@ build(CmdlineSpec) ->
             ;   {_, _}  -> application_halt(State, "Can't have both positional and command options")
             end,
     
+    SortedIds = lists:sort(State#consoleapp_state.command_ids),
     SortedNames = lists:sort(State#consoleapp_state.command_names),
     SortedOptions = lists:keysort(1, State#consoleapp_state.getopt_spec),
     
@@ -96,6 +99,7 @@ build(CmdlineSpec) ->
             mode = Mode,
             getopt_spec = SortedOptions,
             command = State#consoleapp_state.appname,
+            command_ids = SortedIds,
             command_names = SortedNames
         }.
     
@@ -155,6 +159,7 @@ build_item( {option, Id, Type, Name, Help, Callback}
                     ;   S when is_integer(S)    -> {S, undefined}
                     ;   L when is_list(L)       -> {undefined, L}
                     end,
+    % @todo what about auto_help/auto_version?
     State#consoleapp_state{
             getopt_spec = [{Id, Short, Long, map_type(Type), Help} | Spec],
             callbacks = maps:put(Id, Callback, State#consoleapp_state.callbacks)
@@ -190,27 +195,34 @@ build_item( {command, [], _, _}
         
 build_item( {command, CmdName, Command, Help}
           , #consoleapp_state{ command_map = Cmds
+                             , command_ids = Ids
                              , command_names = Names
+                             , command_alias = Alias
                              , command_info = Info } = State)       ->
     case hd(CmdName) of
-        X when is_integer(X)    ->
+        X when is_integer(X)        ->
             State#consoleapp_state{
                     command_map = maps:put(CmdName, Command, Cmds),
+                    command_ids = [CmdName | Ids],
                     command_names = [CmdName | Names],
+                    command_alias = maps:put(CmdName, CmdName, Alias),
                     command_info = maps:put(CmdName, {Help, []}, Info)
                 }
         
-    ;   L when is_list(L)       ->
-            NewCmds =   lists:foldl(
+    ;   TheCmd when is_list(TheCmd) ->
+            NewAlias =   lists:foldl(
                               fun(X, M) ->
-                                maps:put(X, Command, M)
+                                maps:put(X, TheCmd, M)
                               end
-                            , Cmds, CmdName),
+                            , Alias
+                            , CmdName),
                                 
             State#consoleapp_state{
-                    command_map = NewCmds,
-                    command_names = [L | Names],
-                    command_info = maps:put(L, {Help, tl(CmdName)}, Info)
+                    command_map = maps:put(TheCmd, Command, Cmds),
+                    command_ids = [TheCmd | Ids],
+                    command_names = CmdName ++ Names,
+                    command_alias = NewAlias,
+                    command_info = maps:put(TheCmd, {Help, tl(CmdName)}, Info)
                 }
     
     ;   _Something              -> application_halt(State, "invalid argument for {command}: ~p", [CmdName])
@@ -301,6 +313,7 @@ process_basic( Options, Unused
     
     
 process_extended( #consoleapp_state{ options = Options
+                                   , command_alias = Alias
                                    , command_map = Commands } = State ) ->
     case proplists:get_value(?CONSOLE_COMMAND, Options) of
         undefined   ->
@@ -314,13 +327,14 @@ process_extended( #consoleapp_state{ options = Options
             end
             
     ;   CmdName     ->
-            case maps:get(CmdName, Commands, undefined) of
+            RealCmd = maps:get(CmdName, Alias, undefined),
+            case maps:get(RealCmd, Commands, undefined) of
                 undefined   ->
                     usage(State, "Invalid command ~s", [CmdName]),
                     application_halt(State, 1)
                     
             ;   Cmd         ->
-                    handle_command(CmdName, Cmd, State)
+                    handle_command(RealCmd, Cmd, State)
             end
     end.
     
@@ -391,6 +405,10 @@ handle_command( Name, Func
 
 
 -spec application_halt( #consoleapp_state{}, integer() | abort | string() ) -> no_return().
+
+application_halt( #consoleapp_state{} = _State, Return ) when is_list(Return) ->
+    io:format(Return ++ "~n"),
+    erlang:halt(1);
     
 application_halt( #consoleapp_state{} = _State, Return ) ->
     erlang:halt(Return).
@@ -411,7 +429,7 @@ usage( #consoleapp_state{ mode = basic } = State ) ->
 
                 
 usage( #consoleapp_state{ mode = extended
-                        , command_names = Names
+                        , command_ids = Ids
                         , command_info = Info } = State ) ->
 
     CommandHelp =   lists:foldl(
@@ -427,7 +445,7 @@ usage( #consoleapp_state{ mode = extended
                                         end,
                             [HelpItem | Acc]
                           end
-                        , [{"--------", ""}, {"Commands", ""}, {"\n\n", ""}], Names),
+                        , [{"--------", ""}, {"Commands", ""}, {"\n\n", ""}], Ids),
                         
     getopt:usage( make_auto_options(State) ++ State#consoleapp_state.getopt_spec
                 , State#consoleapp_state.command
@@ -458,7 +476,7 @@ make_getopt_spec( #consoleapp_state{ mode = basic } = State ) ->
     make_auto_options(State) ++ State#consoleapp_state.getopt_spec ++ State#consoleapp_state.positional_spec;
     
 make_getopt_spec( #consoleapp_state{ mode = extended } = State ) ->
-    make_auto_options(State) ++ State#consoleapp_state.getopt_spec ++ [{?CONSOLE_COMMAND, undefined, undefined, string, undefined}].
+    make_auto_options(State) ++ State#consoleapp_state.getopt_spec ++ [{?CONSOLE_COMMAND, undefined, undefined, undefined, undefined}].
     
     
 make_auto_options( #consoleapp_state{ auto_help = AutoHelp

@@ -56,6 +56,11 @@ http://amtal.github.io/2011/09/24/monads-in-erlang.html
 
 https://github.com/rabbitmq/erlando
 
+https://github.com/NetComposer/nkdocker
+
+https://github.com/NetComposer/nkdist
+
+
 
 
 
@@ -148,3 +153,98 @@ unregister_name({via, Mod, Name}) ->
 unregister_name(Pid) when is_pid(Pid) ->
     Pid.
     
+    
+    
+    
+public class Hexbin {
+    private static final double thirdPi = Math.PI/3.0;
+
+    private double dx;
+    private double dy;
+
+    public Hexbin(double radius) {
+        this.dx = 2 * radius * Math.sin(thirdPi);
+        this.dy = 1.5 * radius;
+    }
+
+    public double[] bin(double x, double y) {
+        double py = y/dy;
+        double pj = Math.round(py);
+        double px = x/dx - ( (int)pj & 1) / 2.0;
+        double pi = Math.round(px);
+        double py1 = py - pj;
+
+        if (3*Math.abs(py1) > 1) {
+            double px1 = px - pi;
+            double pi2 = pi + (px < pi ? -1 : 1) / 2.0;
+            double pj2 = pj + (py < pj ? -1 : 1);
+            double px2 = px - pi2;
+            double py2 = py - pj2;
+
+            if (px1*px1 + py1*py1 > px2*px2 + py2*py2) {
+                pi = pi2 + ( ( (int)pj & 1) != 0 ? 1 : -1) / 2.0;
+                pj = pj2;
+            }
+        }
+        return new double[] {
+                (pi + ( (int)pj & 1) / 2.0) * dx,
+                pj * dy
+        };
+    }
+}
+
+
+headers4(Delivery) ->
+    catch lists:foldl(fun (_, undefined) -> throw(undefined);
+                          (F, Acc) -> F(Acc)
+                      end,
+                      Delivery,
+                      [fun get_msg/1, fun get_content/1,
+                       fun get_props/1, fun get_headers/1]).
+                       
+
+
+child_spec includes supervisor entry for anon sups (to help build tree)
+
+
+[ { supervisor
+  , [ {child_specs}
+    ]
+  }
+]
+
+
+{unique_gen_id, {supevisor, start_link, [super_child, [ChildSpecs]]} }
+
+
+super_child:init(ChildSpecs) ->
+	super_beaviour:build_specs(ChildSpecs).
+
+
+
+Module
+{supervisor, ChildSpecList}
+{supervisor, IdAtom, ChildSpecList}
+{Module, Args}
+{IdAtom, Module}
+{IdAtom, Module, Args}
+{IdAtom, Module, Args, Restart, SpecType}
+Spec :: tuple()
+
+
+
+
+child_spec() = 
+    #{id := child_id(),
+      start := mfargs(),
+      restart => restart(),
+      shutdown => shutdown(),
+      type => worker(),
+      modules => modules()} |
+    {Id :: child_id(),
+     StartFunc :: mfargs(),
+     Restart :: restart(),
+     Shutdown :: shutdown(),
+     Type :: worker(),
+     Modules :: modules()}
+
