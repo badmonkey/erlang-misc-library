@@ -1,0 +1,20 @@
+{application, frontloader,
+[
+    {description, "frontloader"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ frontloader, frontloader_appsup
+        , smart_routes, cowboy_remote_proxy
+        ] },
+    {registered,
+        [ erlx_frontloader
+        ] },
+    {applications,
+        [ kernel, stdlib, lager, highgarden
+        , crypto, public_key, ssl, asn1
+        , cowboy
+        ] },
+    {mod, { frontloader_appsup, []}},
+    {env, []}
+]}.
+

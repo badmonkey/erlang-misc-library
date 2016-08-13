@@ -1,0 +1,18 @@
+{application, snowflakes,
+[
+    {description, "Snowflake server"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ snowflake, snowflakes_appsup
+        ] },
+    {registered,
+        [ snowflake
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , lager, highgarden
+        ] },
+    {mod, { snowflakes_appsup, []}},
+    {env, []}
+]}.
+

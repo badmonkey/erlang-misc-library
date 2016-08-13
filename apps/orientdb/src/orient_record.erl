@@ -5,7 +5,7 @@
 -export([decode/1, decode/2, encode/1, encode/2]).
 
 
--include_lib("erlx_orient/include/record.hrl").
+-include_lib("orientdb/include/record.hrl").
 
 
 %%%%% ------------------------------------------------------- %%%%%

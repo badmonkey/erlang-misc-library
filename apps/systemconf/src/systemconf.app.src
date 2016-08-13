@@ -1,0 +1,18 @@
+{application, systemconf,
+[
+    {description, "systemconf"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ sysconfig, config_lexer, config_parser, systemconf_appsup
+        ] },
+    {registered,
+        [ sysconfig
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , lager, highgarden
+        ] },
+    {mod, { systemconf_appsup, []}},
+    {env, []}
+]}.
+

@@ -38,7 +38,7 @@ start_link(ServerName, Module, Args, Options) ->
 register_started_service(undefined, StartLinkResult) ->
     case StartLinkResult of
         {ok, Pid}   ->
-            erlx_phase_server:cleanup_unused(Pid),
+            phase_server:cleanup_unused(Pid),
             {ok, Pid}
             
     ;   _ = Err     -> Err
@@ -47,7 +47,7 @@ register_started_service(undefined, StartLinkResult) ->
 register_started_service(ServerName, StartLinkResult) ->
     case StartLinkResult of
         {ok, Pid}   ->
-            case erlx_phase_server:ready_for_registration(Pid, ServerName) of
+            case phase_server:ready_for_registration(Pid, ServerName) of
                 ok                  -> {ok, Pid}
             ;   {error, _} = Err    -> Err
             end
@@ -60,11 +60,11 @@ register_started_service(ServerName, StartLinkResult) ->
 
 
 required(Name) when is_atom(Name) ->
-    erlx_phase_server:register_dependencies([Name]);
+    phase_server:register_dependencies([Name]);
     
     
 required(Names) when is_list(Names) ->
-    erlx_phase_server:register_dependencies(Names).
+    phase_server:register_dependencies(Names).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -78,6 +78,6 @@ defer_startup({error,_} = E, _)         ->
     {stop, E};
 
 defer_startup(State, StartupMessage)    ->
-    ok = erlx_phase_server:defer_startup_for_later(StartupMessage),
+    ok = phase_server:defer_startup_for_later(StartupMessage),
     {ok, State}.
 

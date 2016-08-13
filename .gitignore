@@ -1,15 +1,12 @@
 .eunit
-deps
+_build
 *.o
 *.d
 *.beam
 *.plt
 *.dump
-ebin
 rel/example_project
 .concrete/DEV_MODE
 .rebar
-apps/erlx_sysconfig/src/config_lexer.erl
-apps/erlx_sysconfig/src/config_parser.erl
 log/
 database/

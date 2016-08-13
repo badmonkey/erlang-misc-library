@@ -1,0 +1,20 @@
+{application, orientdb,
+[
+    {description, "orientdb interface"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ orient, orientdb_appsup
+        , orient_record, orient_record_types, orient_client
+        , orient_decode_record, orient_protocol, orient_encode_record
+        ] },
+    {registered,
+        [ orient
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , highgarden, lager
+        ] },
+    {mod, { orientdb_appsup, []}},
+    {env, []}
+]}.
+

@@ -1,0 +1,18 @@
+{application, fswatcher,
+[
+    {description, "fswatcher"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ fswatcher, fswatcher_appsup
+        ] },
+    {registered,
+        [ fswatcher
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , highgarden, lager
+        ] },
+    {mod, { fswatcher_appsup, []}},
+    {env, []}
+]}.
+

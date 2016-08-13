@@ -7,7 +7,7 @@
 
 -define(SERVER, ?MODULE).
 
--include_lib("erlangx/include/supervisors.hrl").
+-include_lib("highgarden/include/supervisors.hrl").
 
 
 -export([wait_for_service/0, exists/1, new/0, new/1, free/1, add/3, remove/3, dump_all/0]).

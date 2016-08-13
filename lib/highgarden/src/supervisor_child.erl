@@ -3,7 +3,7 @@
 
 -export([build_specs/1, build_specs/2]).
 
--include_lib("erlangx/include/supervisors.hrl").
+-include_lib("highgarden/include/supervisors.hrl").
 
 -define(BEHAVIOURS, [supervisor_child, supervisor, gen_server, port_server, tcp_listener]).
 

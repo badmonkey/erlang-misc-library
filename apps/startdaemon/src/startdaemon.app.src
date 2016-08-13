@@ -1,0 +1,18 @@
+{application, startdaemon,
+[
+    {description, "Startdaemon for handling intra App server loading"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ startphase, phase_server, startdaemon_appsup
+        ] },
+    {registered,
+        [ snowflake
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , lager, highgarden
+        ] },
+    {mod, { startdaemon_appsup, []}},
+    {env, []}
+]}.
+

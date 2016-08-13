@@ -1,0 +1,18 @@
+{application, morestd,
+[
+    {description, "like stdlib only more"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ xlists, xmaths, xmaps, xproplists, xerlang
+        , xtime, xos, xrandom, xstring, xcode, xtree, xshell
+        , xpg2, xets, xsets, xdigraph, xbinary, xssl, xbinary
+        ] },
+    {registered,
+        [
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        ] },
+    {env, []}
+]}.
+

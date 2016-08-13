@@ -5,8 +5,8 @@
 -export([decode_v0_class/1, decode_v0_header/2, decode_v0_data/4]).
 
 
--include_lib("erlx_orient/include/constants.hrl").
--include_lib("erlx_orient/include/record.hrl").
+-include_lib("orientdb/include/constants.hrl").
+-include_lib("orientdb/include/record.hrl").
 
 
 %%%%% ------------------------------------------------------- %%%%%

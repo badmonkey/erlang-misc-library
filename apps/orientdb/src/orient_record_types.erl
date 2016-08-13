@@ -10,7 +10,7 @@
         , decode_varint/1, decode_pointer/1, decode_type/2, decode_typeid/1, decode_typestring/1 ]).
 
         
--include_lib("erlx_orient/include/constants.hrl").
+-include_lib("orientdb/include/constants.hrl").
 
 
 

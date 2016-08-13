@@ -1,7 +1,7 @@
 
 -module(text).
 
--include_lib("erlangx/include/constants.hrl").
+-include_lib("highgarden/include/constants.hrl").
 
 
 -export([ is_format/1, is_number/1
