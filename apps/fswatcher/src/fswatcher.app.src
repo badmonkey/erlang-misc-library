@@ -10,7 +10,7 @@
         ] },
     {applications,
         [ kernel, stdlib, crypto
-        , highgarden, lager
+        , highgarden, lager, postoffice
         ] },
     {mod, { fswatcher_appsup, []}},
     {env, []}
