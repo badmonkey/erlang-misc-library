@@ -3,6 +3,10 @@
  {<<"getopt">>,{pkg,<<"getopt">>,<<"0.8.2">>},0},
  {<<"goldrush">>,{pkg,<<"goldrush">>,<<"0.1.8">>},1},
  {<<"gun">>,{pkg,<<"gun">>,<<"1.0.0-pre.1">>},0},
+ {<<"jiffy">>,
+  {git,"https://github.com/badmonkey/jiffy.git",
+       {ref,"3e2d8792ca52d375f6bd7d891faf20d28085424e"}},
+  0},
  {<<"lager">>,{pkg,<<"lager">>,<<"3.2.1">>},0},
  {<<"parse_trans">>,{pkg,<<"parse_trans">>,<<"3.0.0">>},0},
  {<<"ranch">>,{pkg,<<"ranch">>,<<"1.2.1">>},1}].

@@ -376,3 +376,28 @@ https://github.com/oinksoft/dtl/
     %                            ),
     
 
+
+
+
+Version
+major.minor[.patch][-stage][/feature[-feature]*[-buildnum]]
+
+major, minor: 0|patch
+patch: [1-9][0-9]*
+ident: [a-zA-Z][a-zA-Z0-9_]*
+buildnum: YYYYMMdd[HH[mm[ss]]]
+
+
+1.0.alpha-debug
+1.0.alpha-debug-201608221507
+1.0.alpha-debug
+1.0-debug-201608221507
+1.0-debug
+1.0-201608221507
+1.0
+
+
+1.0.1-beta/debug-win32-m64-build20160822
+
+1.0.alpha
+
