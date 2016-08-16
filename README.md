@@ -12,8 +12,14 @@ apps/
     systemconf
 
 lib/
-    consoleapp
-    gen_service
+    consoletools/
+        consoleapp
+    gen_service/
+        tcp_listener
+        websock_client
+        udp_server
+        table_service
+        port_server
     highgarden
     morestd
     postoffice

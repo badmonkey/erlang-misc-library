@@ -1,5 +1,5 @@
 
--module(consoleapp).
+-module(cmdline).
 
 -export([build/1, build/2, process/2, application_halt/2, usage/1, usage/2, usage/3]).
 -export([get_global_options/1, get_options/1, get_unused_args/1, get_appname/1, get_command/1, get_version/1]).
@@ -7,7 +7,7 @@
 %set_unused_args()
 
 
--define(CONSOLE_COMMAND, 'consoleapp$command').
+-define(CMDLINE_COMMAND, 'cmdline$command').
 
 
 
@@ -155,7 +155,7 @@ build_item( {option, Id, Type, Name, Help}
 build_item( {option, Id, Type, Name, Help, Callback}
           , #consoleapp_state{ getopt_spec = Spec } = State)        ->
     {Short, Long} = case Name of
-                        {_, _} = SL             -> SL
+                        {_, _} = SL             -> SL       % @todo help formatting is no so good
                     ;   S when is_integer(S)    -> {S, undefined}
                     ;   L when is_list(L)       -> {undefined, L}
                     end,
@@ -292,7 +292,7 @@ process_basic( Options, Unused
                     global      ->
                             State#consoleapp_state {
                                 options = Options,
-                                global_options = proplists:delete(?CONSOLE_COMMAND, Options),
+                                global_options = proplists:delete(?CMDLINE_COMMAND, Options),
                                 unused_args = Unused
                             }
 
@@ -315,7 +315,7 @@ process_basic( Options, Unused
 process_extended( #consoleapp_state{ options = Options
                                    , command_alias = Alias
                                    , command_map = Commands } = State ) ->
-    case proplists:get_value(?CONSOLE_COMMAND, Options) of
+    case proplists:get_value(?CMDLINE_COMMAND, Options) of
         undefined   ->
             case maps:get(undefined, Commands, undefined) of
                 undefined   ->
@@ -476,19 +476,19 @@ make_getopt_spec( #consoleapp_state{ mode = basic } = State ) ->
     make_auto_options(State) ++ State#consoleapp_state.getopt_spec ++ State#consoleapp_state.positional_spec;
     
 make_getopt_spec( #consoleapp_state{ mode = extended } = State ) ->
-    make_auto_options(State) ++ State#consoleapp_state.getopt_spec ++ [{?CONSOLE_COMMAND, undefined, undefined, undefined, undefined}].
+    make_auto_options(State) ++ State#consoleapp_state.getopt_spec ++ [{?CMDLINE_COMMAND, undefined, undefined, undefined, undefined}].
     
     
 make_auto_options( #consoleapp_state{ auto_help = AutoHelp
                                     , auto_version = AutoVersion
                                     , version = Version
-                                    , appname = Appname } ) ->
+                                    , command = CmdName } ) ->
     case AutoHelp of
         true    -> [{help, undefined, "help", undefined, "Display this information"}]
     ;   false   -> []
     end ++  case {AutoVersion, Version} of
                 {true, undefined}   -> []
-            ;   {true, _}           -> [{version, undefined, "version", undefined, "Display " ++ Appname ++ " version information"}]
+            ;   {true, _}           -> [{version, undefined, "version", undefined, "Display " ++ CmdName ++ " version information"}]
             ;   {false, _}          -> []
             end.
     

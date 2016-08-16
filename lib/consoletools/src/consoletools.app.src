@@ -1,9 +1,9 @@
-{application, consoleapp,
+{application, consoletools,
 [
-    {description, "consoleapp"},
+    {description, "consoletools"},
     {vsn, "1.0.0"},
     {modules,
-        [ consoleapp
+        [ cmdline
         ] },
     {registered,
         [ 

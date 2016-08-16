@@ -26,7 +26,7 @@ public:
     typedef unsigned char  byte;
     
     
-    master(asio::io_service&  io_service, dispatch_type  disp)
+        master(asio::io_service&  io_service, dispatch_type  disp)
     : input_(io_service, ::dup(STDIN_FILENO))
     , output_(io_service, ::dup(STDOUT_FILENO))
     , dispatch_(disp)
@@ -56,6 +56,8 @@ public:
                                       , this
                                       , asio::placeholders::error
                                       , data) );
+                                      
+        // Don't delete data, handle_write will take care of it
     } // send_to_erlang()
     
     

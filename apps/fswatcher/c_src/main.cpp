@@ -60,6 +60,7 @@ bool handle_remove_msg( const eixx::eterm& a_pattern
 
 void handle_inotify(const inotify_event& evt)
 {
+    get_master().send_to_erlang( eixx::am_ok );
 } // handle_inotify()
 
 

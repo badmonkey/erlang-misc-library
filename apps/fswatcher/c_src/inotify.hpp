@@ -61,7 +61,7 @@ public:
     
     
     
-    inotify(asio::io_service&  io_service, event_handler_type  handler)
+        inotify(asio::io_service&  io_service, event_handler_type  handler)
     : fd_( init_fd() )
     , master_(io_service, fd_)
     , handler_(handler)
