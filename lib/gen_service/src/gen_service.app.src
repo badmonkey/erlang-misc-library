@@ -11,7 +11,7 @@
         ] },
     {applications,
         [ kernel, stdlib, crypto
-        , lager, highgarden
+        , lager, highgarden, winterfell
         ] },
     {env, []}
 ]}.

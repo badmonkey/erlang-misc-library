@@ -37,7 +37,7 @@ repeat(N, ElemFun)
 -spec if_then( type:value_or_error(T), fun( () -> X )|fun( (T) -> X ) ) -> type:value_or_error(X).
 
 if_then({error, _} = Err, Func) when is_function(Func)  -> Err;
-if_then(Value, Func) when is_function(Func, 0)          -> Func();
+if_then(_Value, Func) when is_function(Func, 0)         -> Func();
 if_then(Value, Func) when is_function(Func, 1)          -> Func(Value).
 
 
@@ -52,15 +52,15 @@ if_then(Value, Module, Func)
 %%%%% ------------------------------------------------------- %%%%%
 
 %
-% if_ok_then(C, fun(X) -> end)
-% if_ok_then(C, fun() -> end)
+% if_ok_then(okV, fun(X) -> end)
+% if_ok_then(okV, fun() -> end)
 % if_ok_then(ok, fun() -> end)
 %
-% if_ok_then(C, module, funcname)
-% if_ok_then(C, fun(x, ...) -> end, [arg1, arg2,...])
+% if_ok_then(okV, module, funcname)
+% if_ok_then(okV, fun(x, ...) -> end, [arg1, arg2,...])
 % if_ok_then(ok, fun(x, ...) -> end, [arg1, arg2,...])
 %
-% if_ok_then(C, module, funcname, [arg1, arg2,...])
+% if_ok_then(okV, module, funcname, [arg1, arg2,...])
 % if_ok_then(ok, module, funcname, [arg1, arg2,...])
 %
 % @TODO how do we handle exceptions (or don't handle them and update spec)?
@@ -73,15 +73,15 @@ if_ok_then({error, _} = Cond, _) ->
     
 if_ok_then({ok, Value}, Func)
         when is_function(Func, 1) ->    
-    type:wrap_okvalue( erlang:apply(Func, [Value]) );
+    type:wrap_okvalue( Func(Value) );
     
 if_ok_then(ok, Func)
         when is_function(Func, 0) ->    
-    type:wrap_okvalue( erlang:apply(Func, []) );
+    type:wrap_okvalue( Func() );
     
 if_ok_then({ok, _}, Func)
         when is_function(Func, 0) ->    
-    type:wrap_okvalue( erlang:apply(Func, []) ).
+    type:wrap_okvalue( Func() ).
     
   
     

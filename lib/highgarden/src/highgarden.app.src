@@ -3,17 +3,16 @@
     {description, "misc erlang modules"},
     {vsn, "1.0.0"},
     {modules,
-        [ behaviour, supervisor_child, jsonx, jsonx_search, jsonx_replace
+        [ supervisor_child, jsonx, jsonx_search, jsonx_replace
         , binencoder, bindecoder, property, typed_property, frequency
-        , uuid, router, error, type, hof, text, packet_processor
-        , stream_generate, stream, anagram, publisher, mqtt_path
+        , uuid, router, text, packet_processor, stream_generate, stream
+        , anagram, publisher, mqtt_path
         ] },
     {registered,
         [ router
         ] },
     {applications,
-        [ kernel, stdlib, crypto
-        , lager, morestd
+        [ kernel, stdlib, morestd, winterfell
         ] },
     {env, []}
 ]}.

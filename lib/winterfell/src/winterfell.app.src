@@ -1,0 +1,16 @@
+{application, winterfell,
+[
+    {description, "Some basic bits"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ behaviour, type, hof, error
+        ] },
+    {registered,
+        [
+        ] },
+    {applications,
+        [ kernel, stdlib
+        ] },
+    {env, []}
+]}.
+

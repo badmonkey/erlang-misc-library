@@ -11,7 +11,8 @@
         [
         ] },
     {applications,
-        [ kernel, stdlib, crypto
+        [ kernel, stdlib
+        , winterfell
         ] },
     {env, []}
 ]}.
