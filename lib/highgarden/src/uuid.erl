@@ -118,7 +118,7 @@ new_v3(_, _) ->
 -spec new_v4() -> {uuid, 4, uuid_binary()}.
 
 new_v4() ->
-    <<U0:32, U1:16, _:4, U2:12, _:2, U3:30, U4:32>> = crypto:rand_bytes(16),
+    <<U0:32, U1:16, _:4, U2:12, _:2, U3:30, U4:32>> = crypto:strong_rand_bytes(16),
 
     {uuid, 4, <<U0:32, U1:16, ?UUIDv4:4, U2:12, ?VARIANT10:2, U3:30, U4:32>>}.
     

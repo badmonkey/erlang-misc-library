@@ -7,18 +7,12 @@
 
 -include_lib("highgarden/include/supervisors.hrl").
 
--export([start/0, start/2, stop/1]).
+-export([start/2, stop/1]).
 -export([start_link/0, init/1]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 % Application API
-
-
-start() ->
-    application:ensure_all_started(snowflakes),
-    lager:info("Started snowflakes server"),
-    application:load(snowflakes).
     
 
 start(_StartType, _StartArgs) ->
