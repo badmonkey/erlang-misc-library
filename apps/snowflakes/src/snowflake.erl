@@ -5,7 +5,7 @@
 -define(SERVER, ?MODULE).
 
 
--export([start_link/1, start_link/2, get_id/0]).
+-export([start_link/0, start_link/1, start_link/2, get_id/0]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -36,7 +36,12 @@
 get_id() ->
     gen_server:call(?SERVER, {get_id}).
 
-    
+
+start_link() ->
+	<<WorkerId:48/integer, _/binary>> = erlang:md5( erlang:node() ),
+	start_link(WorkerId).
+
+
 start_link(WorkerId) ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [WorkerId], []).
 
@@ -52,7 +57,9 @@ start_link(Name, WorkerId) when is_atom(Name) ->
 init([WorkerId])
         when  is_integer(WorkerId)
             , WorkerId > 0  ->
-    {ok, #state{max_time = xtime:in_milliseconds(), worker_id = WorkerId, sequence = 0}}.
+    {ok, #state{ max_time = xtime:in_milliseconds()
+		 	   , worker_id = WorkerId
+			   , sequence = 0 } }.
 
     
 %%%%% ------------------------------------------------------- %%%%%
