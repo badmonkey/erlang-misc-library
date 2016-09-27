@@ -22,12 +22,12 @@ take(N, {generator,_,_} = Generator) ->
     take_impl(N, Generator, []).
     
 
-take_impl(0, Generator, Accum) ->
-    { lists:reverse(Accum), Generator };
+take_impl(0, GenOrErr, Accum) ->
+    { lists:reverse(Accum), GenOrErr };
     
 take_impl(N, {generator, Pop, State}, Accum) ->
     case Pop(State) of
-        { {value, X}, State2 }      -> take_impl(N - 1 , {generator, Pop, State2}, [X | Accum])
+        { {value, X}, State2 }      -> take_impl(N - 1, {generator, Pop, State2}, [X | Accum])
     ;   { end_sequence, State2 }    -> take_impl(0, {generator, Pop, State2}, Accum)
     ;   { error, _ } = Err          -> take_impl(0, Err, Accum)
     end.
@@ -39,7 +39,7 @@ take_impl(N, {generator, Pop, State}, Accum) ->
 
 -record(thuemorse,
     { data      = thuemorse_0() :: binary()
-    , bitqueue  = queue:new()   :: queue:queue(boolean())
+    , bitqueue                  :: queue:queue(boolean())
     }).
     
     

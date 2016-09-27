@@ -2,10 +2,14 @@
 -module(xlists).
 
 -export([ sorted_member/2, sorted_insert/2, subsets/2, unique/1
-        , drop/2, take/2, foldl/2, filter_fold/2, filter_fold/3
-        , mapx/3, minmax/1, minmax/2, interval/2, mutate/2
+        , drop/2, take/2, foldl1/2, foldr1/2
+        , filterfold/2, filterfold/3
+        , mapfoldl/2, mapfoldr/2
+        , mapapply/3, minmax/1, minmax/2, interval/2, mutate/2
         , randmerge/2, shuffle/1
-        , keypartition/3, keywith/3, keywithout/3]).
+        , keypartition/3, keywith/3, keywithout/3
+        , select/3, prependall/2, zigzagI/2, zigzagU/2, unzagzig/1
+        , zipI/2, zip3I/3, zipwithI/3, zipwith3I/4 ]).
 
 
 
@@ -117,55 +121,94 @@ take(N, List) when is_list(List) ->
 
     
 %%%%% ------------------------------------------------------- %%%%%
+    
+
+%drop_every(N, L)
+%take_every(N, L)
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
 
 
--spec foldl( fun((T, T) -> T), nonempty_list(T) ) -> T.
+% unfoldr
+% scanl/scanr scanl1/scanr1
 
-foldl(_, [Hd])      -> Hd;
 
-foldl(F, [Hd | Tl]) ->
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec foldl1( type:transform2f(T), nonempty_list(T) ) -> T.
+
+foldl1(_, [Hd])      -> Hd;
+
+foldl1(F, [Hd | Tl]) ->
     lists:foldl(F, Hd, Tl).
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), {A, [V]} ) -> {A, [V]}.
+-spec foldr1( type:transform2f(T), nonempty_list(T) ) -> T.
 
-filter_fold(F, {Acc, List}) when is_list(List) ->
-    filter_fold(F, Acc, [], List).
+foldr1(_, [Hd])      -> Hd;
+
+foldr1(F, [Hd | Tl]) ->
+    lists:foldr(F, Hd, Tl). % @todo fix should be (F, last(), droplast())
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
 
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V] ) -> {A, [V]}.
+-spec filterfold( type:filterfoldf(T, Acc), type:accumulation(T, Acc) ) -> type:accumulation(T, Acc).
 
-filter_fold(F, Acc, List) when is_list(List) ->
-    filter_fold(F, Acc, [], List).
+filterfold(F, {List, Acc}) when is_list(List) ->
+    filterfold_1(F, Acc, [], List).
+
+
+-spec filterfold( type:filterfoldf(T, Acc), Acc, [T] ) -> type:accumulation(T, Acc).
+
+filterfold(F, Acc, List) when is_list(List) ->
+    filterfold_1(F, Acc, [], List).
     
 
--spec filter_fold( fun((V, A) -> {boolean(), A}), A, [V], [V] ) -> {A, [V]}.
+    
+-spec filterfold_1( type:filterfoldf(T, Acc), Acc, [T], [T] ) -> type:accumulation(T, Acc).
 
-filter_fold(_, Acc, Result, []) ->
-    {Acc, lists:reverse(Result)};
+filterfold_1(_, Acc, Result, []) ->
+    { lists:reverse(Result), Acc };
 
-filter_fold(F, Acc, Result, [Hd | Tl]) ->
+filterfold_1(F, Acc, Result, [Hd | Tl]) ->
     case F(Hd, Acc) of
-        {true, Acc1}    -> filter_fold(F, Acc1, [Hd | Result], Tl)
-    ;   {false, Acc1}   -> filter_fold(F, Acc1, Result, Tl)
+        {true, Acc1}    -> filterfold_1(F, Acc1, [Hd | Result], Tl)
+    ;   {false, Acc1}   -> filterfold_1(F, Acc1, Result, Tl)
     end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+    
+
+-spec mapfoldl( type:mapfoldf(T, T2, Acc), type:reduction(T, Acc) ) -> type:reduction(T2, Acc).
+
+mapfoldl(F, {List, Acc}) -> lists:mapfoldl(F, Acc, List).
+
+
+-spec mapfoldr( type:mapfoldf(T, T2, Acc), type:reduction(T, Acc) ) -> type:reduction(T2, Acc).
+
+mapfoldr(F, {List, Acc}) -> lists:mapfoldr(F, Acc, List).
 
 
 %%%%% ------------------------------------------------------- %%%%%
 
 
-% mapx(F, [A1, A2, ...], [V1, V2, ...])
+% mapapply(F, [A1, A2, ...], [V1, V2, ...])
 % returns [ F(V1, A1, A2, ...), F(V2, A1, A2, ...), ...]
 
--spec mapx( fun((...) -> R), list(), list() ) -> [R].
+-spec mapapply( fun((...) -> R), list(), list() ) -> [R].
 
-mapx(_Fun, _, []) -> [];
+mapapply(_Fun, _, []) -> [];
     
-mapx(Fun, Args, [Head | Tail]) ->
-    [ apply(Fun, [Head | Args]) | mapx(Fun, Args, Tail) ].
+mapapply(Fun, Args, [Head | Tail]) ->
+    [ apply(Fun, [Head | Args]) | mapapply(Fun, Args, Tail) ].
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -175,15 +218,17 @@ minmax(L) when is_list(L) ->
     minmax(fun(X,Y) -> X < Y end, L).
     
 
+-spec minmax( type:predicate(T,T), [T] ) -> {T, T}.
+    
 minmax(_, []) -> undefined;
-minmax(F, [H | Rest]) -> minmax(F, Rest, {H, H}).
+minmax(F, [H | Rest]) -> minmax_1(F, Rest, {H, H}).
 
 
--spec minmax( type:predicate(T,T), [T], {T, T} ) -> {T, T}.
+-spec minmax_1( type:predicate(T,T), [T], {T, T} ) -> {T, T}.
 
-minmax(_, [], Acc) -> Acc;
+minmax_1(_, [], Acc) -> Acc;
 
-minmax(F, [H | Rest], {Min, Max} = Res)
+minmax_1(F, [H | Rest], {Min, Max} = Res)
         when is_function(F,2)  ->
     Acc =   case F(H, Min) of
                 true    -> {H, Max}
@@ -193,7 +238,7 @@ minmax(F, [H | Rest], {Min, Max} = Res)
                     ;   false   -> Res
                     end
             end,
-    minmax(F, Rest, Acc).
+    minmax_1(F, Rest, Acc).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -209,7 +254,7 @@ interval(Fir, Sec) -> lists:seq(Fir, Sec, -1).
 %%%%% ------------------------------------------------------- %%%%%
 
              
--spec mutate( type:mutator(V), [V] ) -> [V].
+-spec mutate( type:mutatef(V), [V] ) -> [V].
 
 mutate(Pred, List)
         when is_function(Pred,1), is_list(List)  ->
@@ -217,8 +262,9 @@ mutate(Pred, List)
         lists:foldl(
               fun(Xin, Acc) ->
                 case Pred(Xin) of
-                    remove          -> Acc
-                ;   {value, Xout}   -> [Xout | Acc]
+                    false           -> Acc
+                ;   true            -> [Xin | Acc]
+                ;   {true, Xout}    -> [Xout | Acc]
                 end
               end
             , []
@@ -262,7 +308,7 @@ randmerge([], 0, L2, _) -> L2;
 randmerge(L1, _, [], 0) -> L1;
    
 randmerge(L1, L1_len, L2, L2_len) ->
-    case random:uniform(L1_len + L2_len) of
+    case rand:uniform(L1_len + L2_len) of
         N when N =< L1_len  ->
             [hd(L1) | randmerge(tl(L1), L1_len - 1, L2, L2_len)]
             
@@ -291,3 +337,107 @@ shuffle(L, Len) ->
     randmerge( shuffle(L1, L1_len), L1_len
              , shuffle(L2, L2_len), L2_len ).
 
+             
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec select( type:predicate(T), T, {[T], [T]} ) -> {[T], [T]}.
+
+select(P, X, {Tlist, Flist}) ->
+    case P(X) of
+        true    -> {[X | Tlist], Flist}
+    ;   false   -> {Tlist, [X | Flist]}
+    end.
+             
+             
+%%%%% ------------------------------------------------------- %%%%%
+
+
+prependall(_, []) -> [];
+prependall(Sep, [Hd|Tl]) -> [Sep, Hd | prependall(Sep, Tl)].
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+zigzagI([], L2) -> [];
+zigzagI(L1, []) -> [];
+zigzagI([Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ Hd1, Hd2 | zigzagI(Tl1, Tl2) ].
+
+    
+zigzagU([], L2) -> L2;
+zigzagU(L1, []) -> L1;
+zigzagU([Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ Hd1, Hd2 | zigzagU(Tl1, Tl2) ].
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec unzagzig([T]) -> {[T], [T]}.
+
+unzagzig(L) when is_list(L) ->
+    unzagzig_1({[], []}, L).
+    
+    
+unzagzig_1(Acc, []) -> Acc;    
+unzagzig_1({A, B}, [X]) -> {[X | A], B};
+unzagzig_1({A, B}, [Hd1, Hd2 | Tl]) ->
+    unzagzig_1( {[Hd1 | A], [Hd2 | B]}, Tl ).
+
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec zipI( [A], [B] ) -> [{A, B}].
+
+zipI([], _) -> [];
+zipI(_, []) -> [];
+zipI([Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ {Hd1, Hd2} | zipI(Tl1, Tl2) ].
+
+
+-spec zip3I( [A], [B], [C] ) -> [{A, B, C}].
+
+zip3I([], _, _) -> [];
+zip3I(_, [], _) -> [];
+zip3I(_, _, []) -> [];
+zip3I([Hd1 | Tl1], [Hd2 | Tl2], [Hd3 | Tl3]) ->
+    [ {Hd1, Hd2, Hd3} | zip3I(Tl1, Tl2, Tl3) ].
+    
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+-spec zipwithI( fun( (A, B) -> T ), [A], [B] ) -> [T].    
+
+zipwithI(_F, [], _) -> [];
+zipwithI(_F, _, []) -> [];
+zipwithI(F, [Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ F(Hd1, Hd2) | zipwithI(F, Tl1, Tl2) ].
+
+
+-spec zipwith3I( fun( (A, B, C) -> T ), [A], [B], [C] ) -> [T].
+
+zipwith3I(_F, [], _, _) -> [];
+zipwith3I(_F, _, [], _) -> [];
+zipwith3I(_F, _, _, []) -> [];
+zipwith3I(F, [Hd1 | Tl1], [Hd2 | Tl2], [Hd3 | Tl3]) ->
+    [ F(Hd1, Hd2, Hd3) | zipwith3I(F, Tl1, Tl2, Tl3) ].
+
+    
+%%%%% ------------------------------------------------------- %%%%%
+
+
+
+% https://hackage.haskell.org/package/base-4.9.0.0/docs/Data-List.html
+
+
+% intersperse
+
+% span/break
+% group
+% inits/tails
+
+% unzip_irregular

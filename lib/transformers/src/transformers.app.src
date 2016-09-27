@@ -3,7 +3,7 @@
     {description, "Only those parse_transforms"},
     {vsn, "1.0.0"},
     {modules,
-        [ chain_apply, record_info_runtime, cut
+        [ stdforms, pt_record_info, pt_rebind, pt_chain, pt_codegen
         ] },
     {registered,
         [

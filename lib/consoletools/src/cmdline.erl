@@ -3,6 +3,7 @@
 
 -export([build/1, build/2, process/2, application_halt/2, usage/1, usage/2, usage/3]).
 -export([get_global_options/1, get_options/1, get_unused_args/1, get_appname/1, get_command/1, get_version/1]).
+-export([set_option/3, loop_forever/1]).
 
 %set_unused_args()
 
@@ -40,7 +41,7 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--type arg_type() :: getopt:arg_type().
+-type arg_type() :: getopt:arg_type().      % 'atom' | 'binary' | 'boolean' | 'float' | 'integer' | 'string'
 -type arg_value() :: getopt:arg_value().
 
 -type option_value() :: atom() | {atom(), arg_value()}.
@@ -566,5 +567,20 @@ get_command( #consoleapp_state{} = State ) ->
     
 get_version( #consoleapp_state{} = State ) ->
     (State#consoleapp_state.version).
+    
+    
+-spec set_option( atom(), arg_value(), #consoleapp_state{} ) -> #consoleapp_state{}.
+
+set_option(Key, Value, #consoleapp_state{ options = Options } = State ) ->
+    State#consoleapp_state{ options = proplists:delete(Key, Options) ++ [{Key, Value}]
+                          }.
+    
+
+%%%%% ------------------------------------------------------- %%%%%    
+    
+    
+loop_forever( #consoleapp_state{} = State ) ->
+    io:format("Awake/Preparing to hibernate~n"),
+    erlang:hibernate(cmdline, loop_forever, [State]).
     
     

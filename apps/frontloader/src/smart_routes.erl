@@ -8,19 +8,20 @@
 
 
 %% parts copied from cowboy_router.erl
--type route_match() :: '_' | iodata().
--type host_match() :: '_' | iodata().
+-type route_match() :: '_' | '*' | iodata().
+-type host_match() :: '_' | any | iodata().
 
 -type opts() :: tuple() | #{} | list() | undefined.
 
 -type route_handler() :: module().
--type route_provider() :: module() | { module(), via, node() }.
+-type route_provider() ::   module()
+                        | { module(), Opts::opts() }
+                        | { module(), via, node() }
+                        | { module(), via, node(), Opts::opts }
+                        .
                     
--type path() ::   route_provider()
-              | { route_provider(), Opts::opts() }
-              
-              | { Path::route_match(), Paths::routes() }
-              
+-type path() :: { Path::route_match(), Paths::routes() }
+              | { Path::route_match(), forward, route_provider() }
               | { Path::route_match(), Handler::route_handler(), Opts::opts() }
               | { Path::route_match(), cowboy:fields(), Handler::route_handler(), Opts::opts()}
               .
@@ -29,8 +30,8 @@
         
     
 -type rule() :: { Host::host_match(), Paths::routes() }
-              | { Host::host_match(), route_provider(), opts() }
-              | { Host::host_match(), cowboy:fields(), Paths::routes() }    %% ambiguous?
+              | { Host::host_match(), forward, route_provider() }
+              | { Host::host_match(), cowboy:fields(), Paths::routes() }
               .
 
 -type sites() :: [ rule() ].
@@ -71,26 +72,25 @@ resolve_routes(Prefix, Modules, Opts) ->
 %    , {"/stream", person_api_handler, ["some params"]}
 %    , {"/game/:game_id", {notempty, ":game_id"}, cowboy_static, {file, "www/game.html"}}
 %    , {"/assets/[...]", cowboy_static, {dir, "www/assets"}}
-%    , warbeard_status_handler
-%    , {"/overlay", include, "somefile.cfg"}
+%    , {"/user", forward, user_provider}
 %    ]
 %  }
 %  
 %, { ":subdomain.monolith.org"
-%  , [ {"/", xcowboy_server_status}
-%    , {some_module, via, 'remote@node1'}
+%  , [ {"/", server_status_handler, undefined}
 %    , { "/:subdomain"
-%      , [ { xcowboy_virthost_status, [":subdomain"]}
-%        , { "/api", {some_remote_module, via, 'remote@node2'}, [some_value, "red"]}
+%      , [ { "/", virthost_status_handler, [":subdomain"]}
+%        , { "/api", forward, {remote_provider, [a, b], via, 'remote@node2'}}
 %        ]
 %      }
-%    , {magic_module, []}
 %    ]
 %  }
+%
+%, { "www.host1.org", forward, {host1_module, via, 'remote@node3'}
+%  }
 %  
-%, { any
-%  , [ xcowboy_404_handler
-%    ]
+%, { anyhost
+%  , {'*', page404_handler, undefined}
 %  }
 %}
 %

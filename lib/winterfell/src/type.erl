@@ -9,8 +9,10 @@
              , one_or_many/1, atomlist/0, format/0
              , match_any/0, searchable/1, exception/0
              , natural/0, cardinal/0, ordinal/0, properties/0
-             , map_function/0, map_function/1
-             , predicate/1, predicate/2, mutator/1, mutator/2, transform/1]).
+             , mapping/0, mapping/2, transformf/1, transform2f/1
+             , predicate/1, predicate/2, reducerf/2
+             , mutatef/1, mutatef/2, mapfoldf/2, mapfoldf/3
+             , filterfoldf/2, accumulation/2]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -51,18 +53,43 @@
 
 -type properties() :: #{ atom() => term() }
                     | [ atom() | { atom(), term() } ].
-                    
--type map_function(X) :: fun( (X) -> X ).
--type map_function() :: map_function( term() ).
 
+
+% higher order functions
+                   
+% maps 
+-type mapping() :: mapping( term(), term() ).
+-type mapping(X, Y) :: fun( (X) -> Y ).
+
+-type transformf(T) :: mapping(T,T).
+-type transform2f(T) :: fun( (T, T) -> T ).
+
+
+% filters
 -type predicate(T) :: fun( (T) -> boolean() ).
 -type predicate(K, V) :: fun( (K, V) -> boolean() ).
 
--type mutator(T) :: fun( (T) -> remove | {value, T} ).
--type mutator(K, V) :: fun( (K, V) -> remove | {value, V} | {value, K, V} ).
 
--type transform(T) :: fun( (T) -> T ).
+% folds
+-type reducerf(T, Acc) :: fun( (T, Acc) -> Acc ).
 
+
+% filtermap
+-type mutatef(T) :: fun( (T) -> boolean() | {true, T} ).
+-type mutatef(K, V) :: fun( (K, V) -> boolean() | {true, V} | {true, K, V} ).
+
+
+% mapfold
+-type mapfoldf(T, Acc) :: mapfoldf(T, T, Acc).
+-type mapfoldf(T, T2, Acc) :: fun( (T, Acc) -> {T2, Acc} ).
+
+
+% filterfold
+-type filterfoldf(T, Acc) :: fun( (T, Acc) -> {boolean(), Acc} ).
+
+
+% accumulation
+-type accumulation(T, Acc) :: {[T], Acc}.
 
 
 %%%%% ------------------------------------------------------- %%%%%

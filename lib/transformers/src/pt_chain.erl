@@ -1,7 +1,7 @@
 %% The fun_chain parse transform.
 %% based on https://github.com/sasa1977/fun_chain
 
--module(chain_apply).
+-module(pt_chain).
 -export([parse_transform/2]).
 
 
@@ -13,10 +13,7 @@ deep_walk({function, _, _, _, _} = FunctionDeclaration) ->
     result_or_error(deep_walk_tuple(FunctionDeclaration));
 
 % fun_chain call
-deep_walk({call, Line, {remote, _, {atom, _, Keyword}, {atom, _, ArgumentPosition}}, Clauses})
-        when Keyword =:= fun_chain
-           ; Keyword =:= fun_train
-           ; Keyword =:= chain_apply ->
+deep_walk({call, Line, {remote, _, {atom, _, chain}, {atom, _, ArgumentPosition}}, Clauses}) ->
     chain_calls(Line, ArgumentPosition, Clauses);
 
 deep_walk(List) when is_list(List) -> deep_walk_list(List);
@@ -44,11 +41,13 @@ deep_walk_list([H|T], Acc) ->
 chain_calls(Line, _, []) -> make_parse_error(Line, "clauses are empty");
 
 chain_calls(_, ArgumentPosition, [Initial | Rest]) 
-  when (ArgumentPosition =:= first orelse ArgumentPosition =:= last) -> 
-  do_chain_calls(ArgumentPosition, Rest, deep_walk(Initial));
+        when ArgumentPosition =:= first
+           ; ArgumentPosition =:= last
+           ; ArgumentPosition =:= apply  -> 
+    do_chain_calls(ArgumentPosition, Rest, deep_walk(Initial));
   
 chain_calls(Line, ArgumentPosition, _) ->
-  make_parse_error(Line, io_lib:format("invalid function ~p", [ArgumentPosition])).
+    make_parse_error(Line, io_lib:format("monad mode not supported yet: ~p", [ArgumentPosition])).
 
 
 do_chain_calls(_, [], LastResult) -> LastResult;
@@ -68,6 +67,10 @@ add_argument(last, {call, Line, Fun, Args}, Argument) ->
   
 add_argument(first, {call, Line, Fun, Args}, Argument) ->
   {call, Line, deep_walk(Fun), [Argument | deep_walk(Args)]};
+
+%% @todo bug if _1 is used more then once
+add_argument(apply, {call, Line, Fun, Args}, Argument) ->
+        {call, Line, deep_walk(Fun), replace_placeholder(Argument, Args) };
   
 add_argument(_, {'fun', Line, _} = F, Argument) ->
   {call, Line, F, [Argument]};
@@ -76,6 +79,21 @@ add_argument(_, {named_fun, Line, _, _} = F, Argument) ->
   {call, Line, F, [Argument]};
   
 add_argument(_, Term, _) -> make_parse_error(element(2, Term), "not a function call").
+
+
+
+replace_placeholder(Argument, Args) ->
+        replace_placeholder(Argument, Args, []).
+
+
+replace_placeholder(_, [], Accum) ->
+        lists:reverse(Accum);
+
+replace_placeholder(Argument, [{var, _, '_1'} | Tail], Accum) ->
+        replace_placeholder(Argument, Tail, [Argument | Accum]);
+
+replace_placeholder(Argument, [Hd | Tail], Accum) ->
+        replace_placeholder(Argument, Tail, [deep_walk(Hd) | Accum]).
 
 
 % Maybe monad style helper which chains two functions. If first function returns parse error, the second

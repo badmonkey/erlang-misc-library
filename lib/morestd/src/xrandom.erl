@@ -1,7 +1,7 @@
 
 -module(xrandom).
 
--export([seed/0, seed/1, hwaddr/0, bits/1]).
+-export([seed/0, seed/1, hwaddr/0, bits/1, string/2]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -34,7 +34,7 @@ seed(stddoc) ->
 -spec hwaddr() -> <<_:48>>.
 
 hwaddr() ->
-    <<RndHi:7, _:1, RndLow:40>> = crypto:rand_bytes(6),
+    <<RndHi:7, _:1, RndLow:40>> = crypto:strong_rand_bytes(6),
     %% Set bit 8 to 1
     <<RndHi:7, 1:1, RndLow:40>>.    
 
@@ -45,10 +45,18 @@ hwaddr() ->
 -spec bits( pos_integer() ) -> bitstring().
     
 bits(N) ->    
-    Rnd = random:uniform(2 bsl N - 1),
+    Rnd = rand:uniform(2 bsl N - 1),
     <<Rnd:N>>.
 
     
 %%%%% ------------------------------------------------------- %%%%%    
     
     
+string(Length, AllowedChars) ->
+    AllowLen = length(AllowedChars),
+    lists:foldl(
+        fun(_, Acc) ->
+            Char = lists:nth(rand:uniform(AllowLen), AllowedChars),
+            [ Char | Acc]
+        end,
+        [], lists:seq(1, Length)).    

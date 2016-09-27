@@ -1,0 +1,17 @@
+{application, envoy,
+[
+    {description, "Fast micro web server for local files"},
+    {vsn, "1.0.0"},
+    {modules,
+        [ envoy
+        ] },
+    {registered,
+        [
+        ] },
+    {applications,
+        [ kernel, stdlib, crypto
+        , consoletools, cowboy
+        ] },
+    {env, []}
+]}.
+

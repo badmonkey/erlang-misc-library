@@ -150,11 +150,12 @@ sample_test() ->
 
     
     
--spec minmax_new( number() ) -> #stream_minmax{}.
+-spec minmax_new( number() | undefined ) -> #stream_minmax{}.
 
-minmax_new() -> minmax_new(0).
+minmax_new() -> minmax_new(undefined).
 
-minmax_new(Est) ->
+minmax_new(Est) when is_number(est)
+                   ; Est =:= undefined ->
     #stream_minmax{ estmedian = Est }.    
     
     
@@ -167,12 +168,9 @@ minmax_push( X
 minmax_push( X
            , #stream_minmax{ n = 0
                            , estmedian = Est }) ->
-    NwEst =     if
-                    X > Est -> Est + 1
-                ;   X < Est -> Est - 1
-                ;   true    -> Est
-                end,
-    #stream_minmax{ n = 1, min = X, max = X, estmedian = NwEst };
+    #stream_minmax{ n = 1
+                  , min = X, max = X
+                  , estmedian = minmax_slide_median(X, Est) };
     
                            
 minmax_push( X
@@ -184,17 +182,22 @@ minmax_push( X
                         ;   X > Max     -> {Min, X}
                         ;   true        -> {Min, Max}
                         end,
-    NwEst =     if
-                    X > Est -> Est + 1
-                ;   X < Est -> Est - 1
-                ;   true    -> Est
-                end,
-    #stream_minmax{ n = N + 1, min = NwMin, max = NwMax, estmedian = NwEst }.
+    #stream_minmax{ n = N + 1
+                  , min = NwMin, max = NwMax
+                  , estmedian = minmax_slide_median(X, Est) }.
 
          
 minmax_values( #stream_minmax{ min = Min, max = Max } ) -> {Min, Max}.
 minmax_median( #stream_minmax{ estmedian = Est } ) -> Est.        
 minmax_samples( #stream_minmax{ n = N } ) -> N.    
+
+
+minmax_slide_median(X, Est) ->
+    if
+        X > Est -> Est + 1
+    ;   X < Est -> Est - 1
+    ;   true    -> Est
+    end.
     
     
 %%%%% ------------------------------------------------------- %%%%%

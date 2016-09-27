@@ -54,7 +54,7 @@
 %%% @version 1.0.0 {@date} {@time}
 %%%------------------------------------------------------------------------
 
--module(record_info_runtime).
+-module(pt_record_info).
 -author('mjtruog [at] gmail (dot) com').
 
 -export([parse_transform/2]).

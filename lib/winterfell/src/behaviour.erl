@@ -59,17 +59,7 @@ is_any_of(Module, Behaviours)
 
 gather_behaviours(Module) when is_atom(Module) ->
     check_for_module(Module),
-    gather_behaviours( Module:module_info(attributes), [] ).
-    
-
-gather_behaviours([], Acc) ->
-    Acc;
-
-gather_behaviours([Hd | Rest], Acc) ->
-    case Hd of
-        {behaviour, Entries}    -> gather_behaviours(Rest, Acc ++ Entries)
-    ;   _                       -> gather_behaviours(Rest, Acc)
-    end.
+    [ Entry || {behaviour, Entry} <- Module:module_info(attributes) ].
 
 
 %%%%% ------------------------------------------------------- %%%%%

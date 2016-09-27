@@ -12,18 +12,17 @@
 -spec repeat( type:natural(), fun( () -> _ ) ) -> ok | type:exception();
             ( type:natural(), fun( ( type:natural() ) -> _ ) ) -> ok | type:exception().
 
-repeat(0, _) -> ok;
-
 repeat(N, ElemFun)
-        when is_function(ElemFun, 0) ->
-    ElemFun(),
-    repeat(N - 1, ElemFun);
-    
+        when  N >= 1
+            , is_function(ElemFun, 0) ->
+    [ ElemFun() || _X <- lists:seq(1, N) ],
+    ok;
     
 repeat(N, ElemFun)
-        when is_function(ElemFun, 1) ->
-    ElemFun(N),
-    repeat(N - 1, ElemFun).
+        when  N >= 1
+            , is_function(ElemFun, 1) ->
+    [ ElemFun(X) || X <- lists:seq(1, N) ],
+    ok.
 
     
 %%%%% ------------------------------------------------------- %%%%%
