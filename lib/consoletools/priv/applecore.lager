@@ -1,0 +1,58 @@
+
+{ lager
+, [ { crash_log, false }
+  , { colored, true }
+
+  , { handlers
+    , [ { lager_console_backend, error }
+      ]
+    }
+
+  , { extra_sinks
+    , [ { console_lager_event 
+        , [ { handlers
+            , [ { lager_console_backend
+                , [ info
+                  , { lager_default_formatter
+                    , [ color, message, "\r\n" ]
+                    }
+                  ]
+                }
+              ]
+            }
+          , {async_threshold, 150}
+          , {async_threshold_window, 5}
+          ]
+        }
+        
+      , { audit_lager_event
+        , [ { handlers
+            , [ { lager_console_backend
+                , [ critical
+                  , { lager_default_formatter
+                    , [ date, "#", time, "#", severity, "#", node, "#", pid, "#"
+                      , module, "#", function, "#", file, "#", line, "#", message
+                      , "\r\n"
+                      ]
+                    }
+                  ]
+                } 
+              ]
+            }
+          , {async_threshold, 50}
+          , {async_threshold_window, 5}
+          ]
+        }
+        
+      , { error_logger_lager_event
+        , [ { handlers
+            , [ { lager_console_backend, critical }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}.
+
