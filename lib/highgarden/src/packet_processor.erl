@@ -35,19 +35,24 @@
 -type pkt_length() :: fixed_size() | varint.
 -type pkt_scheme() :: pkt_length()
                     | {chunk, N :: pos_integer()}
-                    | line  % ending in nl or cr
+                    | line  % ending in (nl|cr)
                     | {line, EOL :: binary()}
-                    | {start_tag, Tag :: binary()}.
+                    | {start_tag, Tag :: binary()}
+					| {start_tag, StartTag :: binary(), EndTag :: binary()}.
+
+-type validation_mode() :: {test, bindecoder:validatorf()}
+						 | {decode, bindecoder:decoderf()}.
 
 -type simple_pkt_mode() :: raw | pkt_scheme().
 
 -type packet_mode() :: simple_pkt_mode()
+					 | validation_mode()
                      | udp
                      | {zlib, CompressedPkt :: pkt_scheme()}
                      | {zlib, CompressedPkt :: pkt_length(), FullSize :: pkt_length()}
                      | {zstream, Mode :: simple_pkt_mode()}.    % uncompress and then break data using Mode
 
--export_type([fixed_size/0, pkt_length/0, pkt_scheme/0, simple_pkt_mode/0, packet_mode/0]).
+-export_type([fixed_size/0, pkt_length/0, pkt_scheme/0, simple_pkt_mode/0, validation_mode/0, packet_mode/0]).
 
 
 -callback init(Socket :: inet:socket(), Args :: term()) ->
@@ -59,6 +64,7 @@
     
 -type data_type() :: {raw, Bytes :: binary()}
                    | {packet, Bytes :: binary()}
+				   | {object, Data :: term()}
                    | {closed, Bytes :: binary()}
                    | {error, Reason :: term(), Bytes :: binary()}.
 
@@ -222,7 +228,7 @@ handle_info( {udp, Socket, _, _, _}
     {stop, {error, udp_invalid_in_this_mode, Mode}, State#state{}};
     
 
-%% handle data but wait_size and we haven't got that much data yet
+%% handle data but wait_size > 0 and we haven't got that much data yet
 handle_info( {tcp, Socket, Data}
            , #state{buffer = Buffer, wait_size = WaitSize, socket = Socket} = State)
         when   WaitSize > 0

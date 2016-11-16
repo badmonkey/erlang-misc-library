@@ -6,11 +6,15 @@
 -export([match_sequence/1, match_nbytes/1, match_packet_N/1, match_utf16_string/0]).
 
 
--type result() :: {ok, _, binary()}
-                | {more, pos_integer()}
-                | type:error().
+-type result(V) :: {ok, Value :: V, Remaining :: binary()}
+                 | {more, Needed :: pos_integer()}
+                 | type:error().
+
+-type decoderf() :: fun( ( binary() ) -> result(term()) ).
+-type validatorf() :: fun( ( binary() ) -> result(binary()) ).
+
                 
--export_type([result/0]).
+-export_type([result/1, decoderf/0, validatorf/0]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
