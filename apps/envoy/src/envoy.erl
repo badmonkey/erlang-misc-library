@@ -1,7 +1,7 @@
 
 -module(envoy).
 
--export([main/1]).
+-export([main/1, debug_hook/1, custom_404_hook/4]).
 
  
 %%%%% ------------------------------------------------------- %%%%%
@@ -10,7 +10,7 @@
 serve_local(App, Args) ->
     Spec = cmdline:build( App,
             [ {version, "0.1"}
-            , {positional, wwwroot, undefined, "Directory root"}
+            , {positional, wwwroot, string, "Directory root"}
             ]),
     Result = cmdline:process(Spec, Args),
     Global = cmdline:get_global_options(Result),
@@ -23,7 +23,13 @@ serve_local(App, Args) ->
     
     Routes =
         [ { '_'
-          , [ {"/[...]", cowboy_static, {dir, WWWroot}}
+          , [ { "/[...]"
+			  , cowboy_static
+			  , {dir, WWWroot, [ {mimetypes, cow_mimetypes, all}
+							   , {dir_handler, directory_handler}
+							   ]
+				}
+			  }
             ]
           }
         ],
@@ -35,13 +41,44 @@ serve_local(App, Args) ->
     cowboy:start_http( envoy_listener
                      , 16
                      , [ {port, Port} ]
-                     , [ { env
-                         , [ {dispatch, Dispatch}
-                           ]}
-                       ] ),
+                     , [ { env, [ {dispatch, Dispatch}
+								]
+						 }
+					   , {middlewares, [cowboy_router, directory_lister, cowboy_handler]}
+%					   , {onrequest, fun ?MODULE:debug_hook/1}
+%					   , {onresponse, fun ?MODULE:custom_404_hook/4}
+                       ]
+					 ),
     
     cmdline:loop_forever(Result).
  
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+debug_hook(Req) ->
+	erlang:display(Req),
+	Req.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+custom_404_hook(404, Headers, <<>>, Req) ->
+    Body = <<"envoy: 404 Not Found.">>,
+
+    Headers2 = lists:keyreplace( <<"content-length">>, 1, Headers
+							   , { <<"content-length">>
+								 , integer_to_list(byte_size(Body))
+								 }
+							   ),
+
+    {ok, Req2} = cowboy_req:reply(404, Headers2, Body, Req),
+    Req2;
+
+custom_404_hook(_, _, _, Req) ->
+    Req.
+
 
 %%%%% ------------------------------------------------------- %%%%%
 
