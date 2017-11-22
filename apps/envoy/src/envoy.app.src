@@ -4,6 +4,7 @@
     {vsn, "1.0.0"},
     {modules,
         [ envoy
+		, directory_handler, directory_lister
         ] },
     {registered,
         [
