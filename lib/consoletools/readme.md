@@ -25,3 +25,106 @@ init() ->
     erlang:load_nif(SoName, 0).
 
 
+    
+----- applecore.lager -----
+
+[  
+    
+{ lager
+, [ { crash_log, false }
+  , { colored, true }
+  , { colors
+    , [ {info,      "\e[0;38m" }
+      ]
+    }
+},
+
+{ lager_event   
+, [ { handlers
+    , [ { lager_console_backend, error }
+      ]
+    }
+  ]
+},
+
+{ console_lager_event 
+, [ { handlers
+    , [ { lager_console_backend
+        , [ debug
+          , { lager_default_formatter
+            , [ color, message, {eol, "\e[0m\r\n"} ]
+            }
+          ]
+        }
+      ]
+    }
+  , {async_threshold, 150}
+  , {async_threshold_window, 5}
+  ]
+},
+        
+{ audit_lager_event
+, [ { handlers
+    , [ { lager_console_backend
+        , [ critical
+          , { lager_default_formatter
+            , [ date, "#", time, "#", severity, "#", node, "#", pid, "#"
+              , module, "#", function, "#", file, "#", line, "#", message
+              , "\r\n"
+              ]
+            }
+          ]
+        } 
+      ]
+    }
+  , {async_threshold, 50}
+  , {async_threshold_window, 5}
+  ]
+},
+        
+{ error_logger_lager_event
+, [ { handlers
+    , [ { lager_console_backend, critical }
+      ]
+    }
+  ]
+}
+
+]
+
+
+----- applecore.lager -----
+
+
+lager
+{
+    crash_log = false
+    colored = true
+    setcolor = [ {info, "\e[0;38m" } ]
+}
+
+lager_event
+{
+    handlers
+    {
+        lager_console_backend
+        {
+            level = info
+        }
+    }
+}
+
+console_lager_event
+{
+    handlers
+    {
+        lager_console_backend
+        {
+            level = debug
+            lager_default_formatter = [ color, message, {eol, "\e[0m\r\n"} ]
+        }
+    }
+    
+    async_threshold = 150
+    async_threshold_window = 5
+}

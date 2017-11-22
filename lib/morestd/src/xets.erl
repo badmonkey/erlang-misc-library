@@ -21,13 +21,11 @@ match_delete(Table, Spec) ->
 -spec foreach( fun((_) -> _), ets:tab() ) -> ok.
 
 foreach(Fun, Table) ->
-    ets:foldl(
-          fun(X, undefined) ->
-            Fun(X),
-            undefined
-          end
-        , undefined
-        , Table),
+    ets:foldl( fun(X, undefined) ->
+                  Fun(X), undefined
+               end
+             , undefined
+             , Table),
     ok.
         
 
@@ -37,10 +35,9 @@ foreach(Fun, Table) ->
 -spec foreachx( fun((_) -> type:ok_or_error()), ets:tab() ) -> type:ok_or_error().
 
 foreachx(Fun, Table) ->
-    ets:foldl(
-          fun(X, ok)            -> Fun(X)
-          ;  (_, {error, E})    -> {error, E}
-          end
-        , ok
-        , Table).
+    ets:foldl( fun(X, ok)            -> Fun(X)
+               ;  (_, {error, E})    -> {error, E}
+               end
+             , ok
+             , Table).
 

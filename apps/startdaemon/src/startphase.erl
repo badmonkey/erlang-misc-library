@@ -2,7 +2,6 @@
 -module(startphase).
 
 -export([ start_link_name/3, start_link/3, start_link/4
-        , register_started_service/2
         , required/1, defer_startup/1, defer_startup/2]).
 
 

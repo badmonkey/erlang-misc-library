@@ -38,8 +38,8 @@ get_id() ->
 
 
 start_link() ->
-	<<WorkerId:48/integer, _/binary>> = erlang:md5( erlang:node() ),
-	start_link(WorkerId).
+    <<WorkerId:48/integer, _/binary>> = erlang:md5( erlang:node() ),
+    start_link(WorkerId).
 
 
 start_link(WorkerId) ->
@@ -58,8 +58,8 @@ init([WorkerId])
         when  is_integer(WorkerId)
             , WorkerId > 0  ->
     {ok, #state{ max_time = xtime:in_milliseconds()
-		 	   , worker_id = WorkerId
-			   , sequence = 0 } }.
+               , worker_id = WorkerId
+               , sequence = 0 } }.
 
     
 %%%%% ------------------------------------------------------- %%%%%
@@ -108,7 +108,8 @@ get(Time, Time, WorkerId, Seq0, State) ->
     Sequence = Seq0 + 1,
     { ok
     , <<Time:64/integer, WorkerId:48/integer, Sequence:16/integer>>
-    , State#state{sequence=Sequence} };
+    , State#state{sequence=Sequence}
+    };
     
     
 % clock has progressed, reset sequence
@@ -116,7 +117,8 @@ get(CurrTime, MaxTime, WorkerId, _, State)
         when CurrTime > MaxTime  ->
     { ok
     , <<CurrTime:64/integer, WorkerId:48/integer, 0:16/integer>>
-    , State#state{max_time=CurrTime, sequence=0} };
+    , State#state{max_time=CurrTime, sequence=0}
+    };
 
     
 % clock is running backwards
@@ -124,5 +126,6 @@ get(CurrTime, MaxTime, _WorkerId, _Sequence, State)
         when MaxTime > CurrTime  ->
     { error
     , clock_running_backwards
-    , State }.
+    , State
+    }.
   

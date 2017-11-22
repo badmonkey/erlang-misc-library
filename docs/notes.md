@@ -63,6 +63,8 @@ https://github.com/NetComposer/nkdist
 https://github.com/massemanet/gtknode
 
 
+https://github.com/extend/sheriff.git
+
 
 
 
@@ -379,6 +381,27 @@ https://github.com/oinksoft/dtl/
 
 
 
+-module(git).
+
+-export(['$handle_undefined_function'/2]).
+
+'$handle_undefined_function'(Func, Args) ->
+  GitCommand = atom_to_list(Func),
+  GitArgs = [io_lib:format("~p ", [Arg]) || Arg <- Args],
+  Command = ["git ", GitCommand, $\s, GitArgs],
+  Output = os:cmd(Command),
+  io:format("~s~n", [Output]).
+
+
+  
+split(Utf8s, Count) ->
+split(Utf8s, Count, <<>>).
+split(<<>>, _Count, Acc) -> Acc;
+split(_Utf8s, 0, Acc) -> Acc;
+split(<<H/utf8, T/binary>> = _Utf8s, Count, Acc) ->
+    split(T, Count - 1, <<Acc/binary, H/utf8>>).
+
+
 
 Version
 major.minor[.patch][-stage][/feature[-feature]*[-buildnum]]
@@ -401,4 +424,63 @@ buildnum: YYYYMMdd[HH[mm[ss]]]
 1.0.1-beta/debug-win32-m64-build20160822
 
 1.0.alpha
+
+
+
+
+== continuations ==
+    
+-spec make( fun( () -> X ) ) -> X.
+cotask:make(Fun) ->
+    Pid = spawn( fun() -> cotask:loop(Fun) end ),
+    
+
+    
+    
+-type StateFn() :: fun( ( lexer() ) -> StateFn() ) | done.
+
+
+lex_loop(done) -> ok;
+lex_loop(Lexer, State) ->
+    lex_loop(Lexer, State(Lexer) ).
+
+
+def nextItem(self):
+    while self.state:
+        if self.items:
+            return self.items.pop(0)
+        else:
+            self.state = self.state()    
+        #end
+    #end
+    if self.items:
+        return self.items.pop(0)
+    #end
+    return undefined
+    
+    
+
+choice([G|Gs]) ->
+    case G() of
+        {succeed,Value} -> {succeed,Value}
+    ;   fail            -> choice(Gs)
+    end;
+choice([]) -> fail.    
+
+next([N|Ns]) -> N(Ns).
+
+
+a(Next) ->
+    do_stuff(),
+    OurNext = fun () -> even_more_stuff(Next) end,
+    more_stuff(OurNext).
+
+b(Next) ->
+    foo([fun (Ns) -> bar(Ns) end,
+         fun (Ns) -> baz(Ns) end | Next]).
+         
+choice([fun() -> do_stuff_a(Next) end,
+        fun() -> do_stuff_b(Next) end,
+        fun() -> do_stuff_c(Next) end,
+        ...]).    
 

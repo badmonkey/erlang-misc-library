@@ -7,15 +7,17 @@
         , mapfoldl/2, mapfoldr/2
         , mapapply/3, minmax/1, minmax/2, interval/2, mutate/2
         , randmerge/2, shuffle/1
-        , keypartition/3, keywith/3, keywithout/3
-        , select/3, prependall/2, zigzagI/2, zigzagU/2, unzagzig/1
-        , zipI/2, zip3I/3, zipwithI/3, zipwith3I/4 ]).
+        , keyselect/3, keywith/3, keywithout/3
+        , select/3, prependall/2
+        , zigzag/2, zigzag_x/2, unzagzig/1, unzagzig_x/1
+        , zip_x/2, zip3_x/3, zipwith_x/3, zipwith3_x/4 ]).
 
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
+% Search for an element in a list that has been sorted
+%
 -spec sorted_member(T, [T]) -> boolean().
 
 sorted_member(_X, []) -> false;
@@ -25,8 +27,9 @@ sorted_member(X, [_Hd | Tl]) -> sorted_member(X, Tl).
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
+% Insert an element into a sorted list keeping the list sorted
+%
 -spec sorted_insert(T, [T]) -> [T].
 
 sorted_insert(X, []) -> [X];
@@ -38,10 +41,10 @@ sorted_insert(X, [Hd | Rest] = L) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
 % returns list of all sublists of L of size N
--spec subsets( non_neg_integer(), [T] ) -> [[T]].
+%
+-spec subsets( type:cardinal(), [T] ) -> [[T]].
 
 subsets(_N, []) -> [[]];
 subsets(0, _L) -> [[]];
@@ -51,8 +54,9 @@ subsets(N, [Hd | Tl] ) -> [ [Hd | T] || T <- subsets(N - 1, Tl) ] ++ subsets(N, 
     
     
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
+% Remove duplicate elements, the order of the return list will change
+%
 -spec unique([T]) -> [T].
 
 unique(List) when is_list(List) ->
@@ -60,23 +64,30 @@ unique(List) when is_list(List) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
+% 
+%
+-spec keyselect( list(), type:ordinal(), [tuple()] ) -> {[tuple()], [tuple()]}.
+
+keyselect(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
+    keyselect(Ks, N, Tuples, []).
 
 
--spec keypartition( list(), type:ordinal(), [tuple()] ) -> {[tuple()], [tuple()]}.
-
-keypartition(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
-    keypartition(Ks, N, Tuples, []).
-
-
-keypartition([], _, Tuples, With) ->
+keyselect([], _, Tuples, With) ->
     {With, Tuples};
 
-keypartition([Hd | Rest] = Keys, N, Tuples, With) ->
+keyselect([Hd | Rest] = Keys, N, Tuples, With) ->
     case lists:keytake(Hd, N, Tuples) of
-        false                   -> keypartition(Rest, N, Tuples, With)
-    ;   {value, X, TupleRest}   -> keypartition(Keys, N, TupleRest, [X | With])
+        false                   -> keyselect(Rest, N, Tuples, With)
+    ;   {value, X, TupleRest}   -> keyselect(Keys, N, TupleRest, [X | With])
     end.
 
+    
+%%%%% ------------------------------------------------------- %%%%%
+    
+    
+%-spec keypartition( type:predicate(any()), type:ordinal(), [tuple()] ) -> {[tuple()], [tuple()]}.
+    
 
 %%%%% ------------------------------------------------------- %%%%%
 
@@ -84,7 +95,7 @@ keypartition([Hd | Rest] = Keys, N, Tuples, With) ->
 -spec keywith( list(), type:ordinal(), [tuple()] ) -> [tuple()].
 
 keywith(Ks, N, Tuples) when is_list(Ks), is_list(Tuples) ->
-    {With, _} = keypartition(Ks, N, Tuples).
+    {With, _} = keyselect(Ks, N, Tuples).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -187,12 +198,12 @@ filterfold_1(F, Acc, Result, [Hd | Tl]) ->
 %%%%% ------------------------------------------------------- %%%%%
     
 
--spec mapfoldl( type:mapfoldf(T, T2, Acc), type:reduction(T, Acc) ) -> type:reduction(T2, Acc).
+-spec mapfoldl( type:mapfoldf(T, T2, Acc), type:accumulation(T, Acc) ) -> type:accumulation(T2, Acc).
 
 mapfoldl(F, {List, Acc}) -> lists:mapfoldl(F, Acc, List).
 
 
--spec mapfoldr( type:mapfoldf(T, T2, Acc), type:reduction(T, Acc) ) -> type:reduction(T2, Acc).
+-spec mapfoldr( type:mapfoldf(T, T2, Acc), type:accumulation(T, Acc) ) -> type:accumulation(T2, Acc).
 
 mapfoldr(F, {List, Acc}) -> lists:mapfoldr(F, Acc, List).
 
@@ -360,16 +371,15 @@ prependall(Sep, [Hd|Tl]) -> [Sep, Hd | prependall(Sep, Tl)].
 %%%%% ------------------------------------------------------- %%%%%
 
 
-zigzagI([], L2) -> [];
-zigzagI(L1, []) -> [];
-zigzagI([Hd1 | Tl1], [Hd2 | Tl2]) ->
-    [ Hd1, Hd2 | zigzagI(Tl1, Tl2) ].
-
+zigzag([], []) -> [];
+zigzag([Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ Hd1, Hd2 | zigzag(Tl1, Tl2) ].
     
-zigzagU([], L2) -> L2;
-zigzagU(L1, []) -> L1;
-zigzagU([Hd1 | Tl1], [Hd2 | Tl2]) ->
-    [ Hd1, Hd2 | zigzagU(Tl1, Tl2) ].
+
+zigzag_x([], L2) -> [];
+zigzag_x(L1, []) -> [];
+zigzag_x([Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ Hd1, Hd2 | zigzag_x(Tl1, Tl2) ].
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -380,53 +390,76 @@ zigzagU([Hd1 | Tl1], [Hd2 | Tl2]) ->
 unzagzig(L) when is_list(L) ->
     unzagzig_1({[], []}, L).
     
-    
-unzagzig_1(Acc, []) -> Acc;    
-unzagzig_1({A, B}, [X]) -> {[X | A], B};
+unzagzig_1(Acc, []) -> Acc;
 unzagzig_1({A, B}, [Hd1, Hd2 | Tl]) ->
-    unzagzig_1( {[Hd1 | A], [Hd2 | B]}, Tl ).
+    unzagzig_1( {[Hd1 | A], [Hd2 | B]}, Tl ).    
+
+
+-spec unzagzig_x([T]) -> {[T], [T]}.
+
+unzagzig_x(L) when is_list(L) ->
+    unzagzig_x1({[], []}, L).
+    
+unzagzig_x1(Acc, []) -> Acc;    
+unzagzig_x1({A, B}, [X]) -> {[X | A], B};
+unzagzig_x1({A, B}, [Hd1, Hd2 | Tl]) ->
+    unzagzig_x1( {[Hd1 | A], [Hd2 | B]}, Tl ).
 
     
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec zipI( [A], [B] ) -> [{A, B}].
+-spec zip_x( [A], [B] ) -> [{A, B}].
 
-zipI([], _) -> [];
-zipI(_, []) -> [];
-zipI([Hd1 | Tl1], [Hd2 | Tl2]) ->
-    [ {Hd1, Hd2} | zipI(Tl1, Tl2) ].
+zip_x([], _) -> [];
+zip_x(_, []) -> [];
+zip_x([Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ {Hd1, Hd2} | zip_x(Tl1, Tl2) ].
 
 
--spec zip3I( [A], [B], [C] ) -> [{A, B, C}].
+-spec zip3_x( [A], [B], [C] ) -> [{A, B, C}].
 
-zip3I([], _, _) -> [];
-zip3I(_, [], _) -> [];
-zip3I(_, _, []) -> [];
-zip3I([Hd1 | Tl1], [Hd2 | Tl2], [Hd3 | Tl3]) ->
-    [ {Hd1, Hd2, Hd3} | zip3I(Tl1, Tl2, Tl3) ].
+zip3_x([], _, _) -> [];
+zip3_x(_, [], _) -> [];
+zip3_x(_, _, []) -> [];
+zip3_x([Hd1 | Tl1], [Hd2 | Tl2], [Hd3 | Tl3]) ->
+    [ {Hd1, Hd2, Hd3} | zip3_x(Tl1, Tl2, Tl3) ].
     
     
 %%%%% ------------------------------------------------------- %%%%%
 
     
--spec zipwithI( fun( (A, B) -> T ), [A], [B] ) -> [T].    
+-spec zipwith_x( fun( (A, B) -> T ), [A], [B] ) -> [T].    
 
-zipwithI(_F, [], _) -> [];
-zipwithI(_F, _, []) -> [];
-zipwithI(F, [Hd1 | Tl1], [Hd2 | Tl2]) ->
-    [ F(Hd1, Hd2) | zipwithI(F, Tl1, Tl2) ].
+zipwith_x(_F, [], _) -> [];
+zipwith_x(_F, _, []) -> [];
+zipwith_x(F, [Hd1 | Tl1], [Hd2 | Tl2]) ->
+    [ F(Hd1, Hd2) | zipwith_x(F, Tl1, Tl2) ].
 
 
--spec zipwith3I( fun( (A, B, C) -> T ), [A], [B], [C] ) -> [T].
+-spec zipwith3_x( fun( (A, B, C) -> T ), [A], [B], [C] ) -> [T].
 
-zipwith3I(_F, [], _, _) -> [];
-zipwith3I(_F, _, [], _) -> [];
-zipwith3I(_F, _, _, []) -> [];
-zipwith3I(F, [Hd1 | Tl1], [Hd2 | Tl2], [Hd3 | Tl3]) ->
-    [ F(Hd1, Hd2, Hd3) | zipwith3I(F, Tl1, Tl2, Tl3) ].
+zipwith3_x(_F, [], _, _) -> [];
+zipwith3_x(_F, _, [], _) -> [];
+zipwith3_x(_F, _, _, []) -> [];
+zipwith3_x(F, [Hd1 | Tl1], [Hd2 | Tl2], [Hd3 | Tl3]) ->
+    [ F(Hd1, Hd2, Hd3) | zipwith3_x(F, Tl1, Tl2, Tl3) ].
 
     
+%%%%% ------------------------------------------------------- %%%%%
+
+
+-spec indexzip( [A] ) -> [{type:ordinal(), A}].
+
+indexzip([]) -> [];
+indexzip(L) -> indexzip_1(1, L).
+
+
+indexzip_1(_, []) -> [];
+indexzip_1(N, [H | T]) -> [{N, H} | indexzip_1(N + 1, T)].
+
+
+
 %%%%% ------------------------------------------------------- %%%%%
 
 

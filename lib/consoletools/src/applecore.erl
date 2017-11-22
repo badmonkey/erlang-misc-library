@@ -2,8 +2,8 @@
 -module(applecore).
 
 -export([ start/2, archive/0, alldeps/1
-        , halt_success/0, halt_error/2 ]).
-%        , loop_forever/1
+        , halt_success/0, halt_error/2
+        , forever/1 ]).
 
 
 
@@ -54,26 +54,9 @@ start(MainApp, Options) ->
         running     -> ok
     ;   starting    -> halt_error(1, "Impossible!")
     ;   undefined   -> 
-                io:format("APPLECORE:init()~n", []),
                 start_lager(),
-                
-                io:format("LOAD: ~p~n", [ application:loaded_applications() ]),
-                io:format("WHICH: ~p~n", [ application:which_applications() ]),
-                
-                io:format("Handlers:lager_event: ~p~n", [ gen_event:which_handlers(lager_event) ]),
-                io:format("Handlers:console_lager_event: ~p~n", [ gen_event:which_handlers(console_lager_event) ]),
-                io:format("Handlers:audit_lager_event: ~p~n", [ gen_event:which_handlers(audit_lager_event) ]),
-                
-                io:format("State:lager_event: ~p~n", [ sys:get_state(lager_event) ]),
-                io:format("State:console_lager_event: ~p~n", [ sys:get_state(console_lager_event) ]),
-                
-                
-                
-                console:debug("First log in start()"),
-                lager:debug("Begin startup"),
-                
-%                error_logger:tty(false),
-%                application:ensure_all_started(logger),
+%               dump_lager_info(),
+
 
 %                io:format("APPLECORE:init() pre sysconfig merge~n", []),
                 
@@ -84,10 +67,11 @@ start(MainApp, Options) ->
 
 %                io:format("APPLECORE:init() post config merge~n", []),
 
-                io:format("APPLECORE:init() START: ~p~n", [ application:ensure_all_started(MainApp) ]),
+                audit:info("Starting ~p", [ MainApp, application:ensure_all_started(MainApp) ]),
                 process_flag(trap_exit, true),  
-                io:format("APPLECORE:init() done~n", []),
-                erlang:put(applecore_STATUS, running)
+
+                erlang:put(applecore_STATUS, running),
+                audit:info("done")
     end.
     
 
@@ -114,8 +98,26 @@ start_lager() ->
     
     % Now load startup/lager.config
     
-    {ok, _} = application:ensure_all_started(lager).
+    {ok, _} = application:ensure_all_started(lager),
+    
+    audit:info("Completed monkey patching lager config"),
+    ok.
 
+
+
+dump_lager_info() ->
+    io:format("LOAD: ~p~n", [ application:loaded_applications() ]),
+    io:format("WHICH: ~p~n", [ application:which_applications() ]),
+                
+    io:format("Handlers:lager_event: ~p~n", [ gen_event:which_handlers(lager_event) ]),
+    io:format("Handlers:console_lager_event: ~p~n", [ gen_event:which_handlers(console_lager_event) ]),
+    io:format("Handlers:audit_lager_event: ~p~n", [ gen_event:which_handlers(audit_lager_event) ]),
+                
+    io:format("State:lager_event: ~p~n", [ sys:get_state(lager_event) ]),
+    io:format("State:console_lager_event: ~p~n", [ sys:get_state(console_lager_event) ]),
+
+    ok.
+    
     
 %%%%% ------------------------------------------------------- %%%%%
 
@@ -130,6 +132,13 @@ halt_error(Code, Mesg) ->
     %logger:wait_for_logging(),
     application:halt(Code).
 
+
+%%%%% ------------------------------------------------------- %%%%%
+
+    
+forever( State ) ->
+    % @todo something something
+    erlang:hibernate(applecore, forever, [State]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -251,12 +260,6 @@ get_and_then(Key, Map, Then) when is_function(Then, 2) ->
 %                    , {"Deps", sets:to_list( archive:all_deps(test_a_call) ) }
 %                   ] ],
 
-
-
-%loop_forever( #consoleapp_state{} = State ) ->
-%    io:format("Awake/Preparing to hibernate~n"),
-%    logger:wait_for_logging(),
-%    erlang:hibernate(cmdline, loop_forever, [State]).
 
 
 

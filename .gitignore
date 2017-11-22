@@ -1,10 +1,12 @@
 .eunit
-_build
+_build/
+_checkout/
 *.o
 *.d
 *.beam
 *.plt
 *.dump
+rebar3.crashdump
 rel/example_project
 .concrete/DEV_MODE
 .rebar

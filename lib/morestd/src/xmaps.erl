@@ -1,7 +1,7 @@
 
 -module(xmaps).
 
--export([takekeys/2, takepairs/2, mutate/2, with/2, without/2]).
+-export([takekeys/2, takepairs/2, mutate/2, with/2, without/2, get_and_then/3]).
 
 
 %%%%% ------------------------------------------------------- %%%%%
@@ -89,6 +89,26 @@ without(Keys, Map) when is_list(Keys), is_map(Map) ->
 
 %%%%% ------------------------------------------------------- %%%%%
 
+
+-spec get_and_then( K, #{ K => V }, fun( (V) -> T ) | fun( (K, V) -> T ) ) -> undefined | T.
+
+get_and_then(Key, Map, Then)
+        when is_map(Map), is_function(Then, 1) ->
+    case maps:get(Key, Map, undefined) of
+        undefined   -> undefined
+    ;   X           -> Then(X)
+    end;
+
+get_and_then(Key, Map, Then)
+        when is_map(Map), is_function(Then, 2) ->
+    case maps:get(Key, Map, undefined) of
+        undefined   -> undefined
+    ;   X           -> Then(Key, X)
+    end.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+    
 
 %merge(F, Map1, Map2) ->
 %	lists:foldl(

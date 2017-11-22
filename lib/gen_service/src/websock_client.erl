@@ -56,8 +56,7 @@
 
 -callback init(Url :: string(), Args :: type:properties()) ->
       {ok, State :: term()}
-    | {ok, State :: term(), timeout()
-    | hibernate}
+    | {ok, State :: term(), timeout() | hibernate}
     | {stop, Reason :: term()} | ignore.
     
 -callback handle_call( Request :: term()
@@ -74,12 +73,17 @@
     | {stop, Reason :: term(), Reply :: term(), NewState :: term()}
     | {stop, Reason :: term(), NewState :: term()}.
     
+%-callback handle_call(_, gen_type:from(), State) -> gen_type:call_result(State)
+%                                                  | gen_type:send_result(State) when State :: term().
+    
 -callback handle_cast(Request :: term(), State :: term()) ->
       {noreply, NewState :: term()}
     | {noreply, NewState :: term(), timeout() | hibernate}
     | {noreply_send, Msg :: term(), NewState :: term()}
     | {noreply_send, Msg :: term(), NewState :: term(), timeout() | hibernate}
     | {stop, Reason :: term(), NewState :: term()}.
+    
+%-callback handle_cast(_, State) -> gen_type:cast_result(State) | gen_type:noreply_send(State) when State :: term(). 
     
 -callback handle_info(Info :: timeout | term(), State :: term()) ->
       {noreply, NewState :: term()}

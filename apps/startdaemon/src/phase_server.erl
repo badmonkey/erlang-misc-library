@@ -257,7 +257,7 @@ handle_cast( {check_for_ready, V}
 
     
 handle_cast(_Msg, State) ->
-    lager:info("erlx_phase_server:cast stopped ~p", [_Msg]),
+    lager:info("phase_server:cast stopped ~p", [_Msg]),
     {stop, invalid_cast_request, State}.
 
     

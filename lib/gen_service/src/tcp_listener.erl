@@ -31,56 +31,26 @@
 -type listener_type() :: {Endpt :: type:endpoint(), UserData :: term()}.
 -type connection_type() :: {Local :: type:endpoint(), Remote :: type:endpoint(), Socket :: inet:socket()}.
 
--callback handle_connection(Connection :: connection_type(), UserData :: term(), State :: term()) ->
-      type:start_result()
-    | {ok, Pid :: pid(), State1 :: term()}
-    | {ignore, State1 :: term()}
-    | {stop, Reason :: term(), State1 :: term()}.
-    
--callback handle_error(Info :: listener_type() | connection_type(), Reason :: term(), State :: term()) ->
-      {stop, Reason1 :: term(), State1 :: term()}
-    | {noreply, State1 :: term()}.
+
+-callback handle_connection(Conn :: connection_type(), _, State) -> type:start_result()
+                                                                  | gen_type:stop(State) 
+                                                                  | {ok, pid(), State}
+                                                                  | {ignore, State}  when State :: term().
+        
+-callback handle_error(Info :: listener_type() | connection_type(), _, State) -> gen_type:stop(State)
+                                                                               | gen_type:noreply(State) when State :: term().
 
     
 % gen_server callbacks
-
--callback init(Args :: term()) ->
-      {ok, State :: term()}
-    | {ok, State :: term(), timeout()}
-    | hibernate | ignore
-    | {stop, Reason :: term()}.
     
--callback handle_call( Request :: term()
-                     , From :: {pid(), Tag :: term()}
-                     , State :: term()) ->
-      {reply, Reply :: term(), NewState :: term()}
-    | {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} 
-    | {noreply, NewState :: term()}
-    | {noreply, NewState :: term(), timeout() | hibernate}
-    | {stop, Reason :: term(), Reply :: term(), NewState :: term()}
-    | {stop, Reason :: term(), NewState :: term()}.
+-callback init(Args :: term()) -> gen_type:init_result(State) when State :: term().      
+-callback handle_call(_, gen_type:from(), State) -> gen_type:call_result(_, State) when State :: term().    
+-callback handle_cast(_, State) -> gen_type:cast_result(State) when State :: term().
+-callback handle_info(_, State) -> gen_type:info_result(State) when State :: term().
+-callback terminate(gen_type:reason(), State) -> gen_type:terminate_result() when State :: term().
+-callback code_change(gen_type:version(), State, _) -> gen_type:code_change_result(State) when State :: term().
     
--callback handle_cast(Request :: term(), State :: term()) ->
-      {noreply, NewState :: term()}
-    | {noreply, NewState :: term(), timeout() | hibernate}
-    | {stop, Reason :: term(), NewState :: term()}.
     
--callback handle_info(Info :: timeout | term(), State :: term()) ->
-      {noreply, NewState :: term()}
-    | {noreply, NewState :: term(), timeout() | hibernate}
-    | {stop, Reason :: term(), NewState :: term()}.
-    
--callback terminate( Reason :: (normal | shutdown | {shutdown, term()} | term())
-                   , State :: term()) ->
-    term().
-    
--callback code_change( OldVsn :: (term() | {down, term()})
-                     , State :: term()
-                     , Extra :: term()) ->
-      {ok, NewState :: term()}
-    | {error, Reason :: term()}.
-
-
 %%%%% ------------------------------------------------------- %%%%%
 
 

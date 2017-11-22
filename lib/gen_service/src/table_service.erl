@@ -32,10 +32,10 @@
 %%%%% ------------------------------------------------------- %%%%%
 
 
--callback tables() ->
+-callback tables() ->       % type:atomlist().
     [atom()].
     
--callback table_info(Table :: atom()) ->
+-callback table_info(Table :: atom()) ->    % type:properties().
     [proplists:property()].
 
     

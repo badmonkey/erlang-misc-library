@@ -1,8 +1,14 @@
 
 -module(error).
 
--export([ throw_if_error/1, throw_error/1 ]).
+-export([ throw_if_error/1, throw_error/1, badarg/0 ]).
         
+
+%%%%% ------------------------------------------------------- %%%%%
+
+
+badarg() -> erlang:error(badarg).
+
 
 %%%%% ------------------------------------------------------- %%%%%
 

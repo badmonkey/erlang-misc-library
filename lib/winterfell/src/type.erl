@@ -1,10 +1,10 @@
 
 -module(type).
 
--export([ get/1, wrap_okvalue/1, unwrap_okvalue/1 ]).
+-export([ identify/1, check/2, wrap_okvalue/1, unwrap_okvalue/1 ]).
 
 -export_type([ error/0, ok_or_error/0, value_or_error/1, okvalue_or_error/1
-             , endpoint/0
+             , endpoint/0, type_id/0
              , start_result/0, server_name/0, server_from/0
              , one_or_many/1, atomlist/0, format/0
              , match_any/0, searchable/1, exception/0
@@ -92,26 +92,61 @@
 -type accumulation(T, Acc) :: {[T], Acc}.
 
 
+-type type_id() :: integer | float | list | tuple | binary | bitstring
+                 | boolean | function | pid | port | reference | atom | map
+                 | undefined.
+
+
+%%%%% ------------------------------------------------------- %%%%%
+%
+%
+%
+-spec identify( term() ) -> type_id().
+
+identify(X) when is_integer(X)      -> integer;
+identify(X) when is_float(X)        -> float;
+identify(X) when is_list(X)         -> list;
+identify(X) when is_tuple(X)        -> tuple;
+identify(X) when is_binary(X)       -> binary;
+identify(X) when is_bitstring(X)    -> bitstring;
+identify(X) when is_boolean(X)      -> boolean;
+identify(X) when is_function(X)     -> function;
+identify(X) when is_pid(X)          -> pid;
+identify(X) when is_port(X)         -> port;
+identify(X) when is_reference(X)    -> reference;
+identify(X) when is_atom(X)         -> atom;
+identify(X) when is_map(X)          -> map;
+
+identify(_X)                        -> undefined.
+
+
 %%%%% ------------------------------------------------------- %%%%%
 
 
--spec get( term() ) -> atom().
+%get_extended(X, Attr) ->
+% natural, ordinal, cardinal
+% ok, error, okvalue
+% property, propslist
+% tuple( size=, element_types )
+% record
 
-get(X) when is_integer(X)   -> integer;
-get(X) when is_float(X)     -> float;
-get(X) when is_list(X)      -> list;
-get(X) when is_tuple(X)     -> tuple;
-get(X) when is_binary(X)    -> binary;
-get(X) when is_bitstring(X) -> bitstring;
-get(X) when is_boolean(X)   -> boolean;
-get(X) when is_function(X)  -> function;
-get(X) when is_pid(X)       -> pid;
-get(X) when is_port(X)      -> port;
-get(X) when is_reference(X) -> reference;
-get(X) when is_atom(X)      -> atom;
-get(X) when is_map(X)       -> map;
+%type:check( {tuple, 3}, X)
+%type:check( {tuple, {integer, string, integer}}, X)
+%type:check( #person{}, X )
 
-get(_X)                     -> undefined.
+
+%%%%% ------------------------------------------------------- %%%%%
+%
+%
+%
+-spec check( type_id(), term() ) -> ok | exception().
+
+check(Type, X) ->
+    check_1(Type, get(X)).
+    
+check_1(X, X) -> ok;
+check_1(X, T) -> error:throw_error({failed_assert, X, T}).
+
 
 
 %%%%% ------------------------------------------------------- %%%%%

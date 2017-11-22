@@ -152,8 +152,8 @@ sequence(List, Bytes)
             fun
                 (_, {error,_} = E)      -> E
             ;   (_, {more,_} = M)       -> M
-            ;   (X, {InBytes, Values})    ->
-                    Result = X(InBytes),
+            ;   (F, {InBytes, Values})    ->
+                    Result = F(InBytes),
                     case Result of
                         {ok, Value, Rest}   ->
                             {Rest, [Value | Values]}

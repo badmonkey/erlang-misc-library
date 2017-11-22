@@ -13,9 +13,9 @@
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % replace all entries Key by single entry {Key, Value}
-
-
+%
 -spec update( atom(), term(), type:properties() ) -> type:properties().
 
 update(Key, Value, Prop)
@@ -28,9 +28,9 @@ update(Key, Value, Prop)
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % replace all entries Key by multivalue entry or single entry 
-
-
+%
 -spec set_multi( atom(), list(), type:properties() ) -> type:properties().
 
 set_multi(Key, Values, Prop)
@@ -50,9 +50,9 @@ set_impl(Key, Values, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % Add new value to Key, if not a multivalue make it a multivalue
-
-
+%
 -spec append( atom(), term(), type:properties() ) -> type:properties().
 
 append(Key, Value, Prop)
@@ -74,9 +74,9 @@ append(Key, Value, Prop)
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % delete all entries for Key
-
-
+%
 -spec delete( atom(), type:properties() ) -> type:properties().
 
 delete(Key, Prop)
@@ -89,8 +89,9 @@ delete(Key, Prop)
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
+%
+%
 -spec is_defined( atom(), type:properties() ) -> boolean().
 
 is_defined(Key, Prop) when is_map(Prop) ->
@@ -101,8 +102,9 @@ is_defined(Key, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
+%
+%
 -spec is_multivalue( atom(), type:properties() ) -> boolean().
 
 is_multivalue(Key, Prop) when is_map(Prop) ->
@@ -120,8 +122,9 @@ is_multivalue(Key, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
-
-
+%
+%
+%
 -spec get_bool( atom(), type:properties() ) -> boolean().
 
 get_bool(Key, Prop) when is_map(Prop) ->
@@ -132,8 +135,9 @@ get_bool(Key, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % return Value associated with Key, or first Value of multivalue
-
+%
 
 get_value(Key, Prop) -> get_value(Key, Prop, undefined).
 
@@ -163,8 +167,9 @@ keys(Prop) when is_list(Prop) ->
     
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % return all values of a multivalue or single value as list.
-
+%
 -spec get_all_values( atom(), type:properties() ) -> [ term() ].
 
 get_all_values(Key, Prop) when is_map(Prop) ->
@@ -179,8 +184,9 @@ get_all_values(Key, Prop) when is_list(Prop) ->
 
 
 %%%%% ------------------------------------------------------- %%%%%
+%
 % return a subset of a property by keys
-
+%
 
 select(Keys, Prop) ->
     select(Keys, with, Prop).

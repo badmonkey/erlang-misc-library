@@ -66,6 +66,23 @@
     }).
 
     
+% -export_records([name1, ..., nameN]).
+% becomes =>
+% -export([records/0, ..., ]).
+% ...
+% records() -> [name1, ..., nameN].
+% record_new(rname) -> #rname{}.
+% record_new( rname, map() ) -> #rname{}.
+% record_info(size, name1) ->
+%           ;(size, nameN) ->
+%           ;(fields, name1) ->
+%           ;(fields, nameN) ->
+%           .
+% record_fields(rname) ->
+% record_field_info(type, rname, fname) ->
+%
+%
+    
 %%%%% ------------------------------------------------------- %%%%%
 
     

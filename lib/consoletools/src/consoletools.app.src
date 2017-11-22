@@ -9,8 +9,7 @@
         [ 
         ] },
     {applications,
-        [ kernel, stdlib
-        , lager, getopt
+        [ kernel, stdlib, lager
         ] },
     {env, []}
 ]}.

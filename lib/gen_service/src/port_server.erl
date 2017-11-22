@@ -60,6 +60,9 @@
     | {stop, Reason :: term(), Reply :: term(), NewState :: term()}
     | {stop, Reason :: term(), NewState :: term()}.
     
+%-callback handle_call(_, gen_type:from(), State) -> gen_type:call_result(State)
+%                                                  | gen_type:send_result(State) when State :: term().
+    
 -callback handle_cast(Request :: term(), State :: term()) ->
       {noreply, NewState :: term()}
     | {noreply, NewState :: term(), timeout() | hibernate}

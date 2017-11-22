@@ -34,11 +34,11 @@ reset(Key, {frequency, Map})
 %%%%% ------------------------------------------------------- %%%%%
 
 
-update(Key, Ammt, {frequency, Map})
-        when is_number(Ammt), is_map(Map) ->
+update(Key, Amt, {frequency, Map})
+        when is_number(Amt), is_map(Map) ->
     case maps:find(Key, Map) of
-        error       -> {frequency, Map#{ Key => Ammt }}
-    ;   {ok, Value} -> {frequency, Map#{ Key => (Value + Ammt) }}
+        error       -> {frequency, Map#{ Key => Amt }}
+    ;   {ok, Value} -> {frequency, Map#{ Key => (Value + Amt) }}
     end.
 
 
